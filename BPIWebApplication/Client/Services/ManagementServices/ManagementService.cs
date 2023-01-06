@@ -43,6 +43,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
             try
             {
                 var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/Management/getAllBisnisUnitData");
+                //var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/endUser/BPIBase/getAllBisnisUnitData");
 
                 if (result.isSuccess)
                 {
