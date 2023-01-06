@@ -1,0 +1,148 @@
+﻿@page "/management/project"
+@page "/management/editproject/{param}"
+@inject IManagementService ManagementService
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject NavigationManager navigate
+
+@if (!activeUser.role.Contains("admin"))
+{
+    <div class="container-fluid">
+        <div class="d-flex align-items-center">
+            <h3>User Require Elevation</h3>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col col-md-12">
+                <div class="d-flex flex-column align-items-start">
+                    @if (param == null)
+                    {
+                        <PageTitle>Management - Add Project</PageTitle>
+                        <h3>Project Management</h3>
+                        <small><i>Add Project</i></small>
+                    }
+                    else
+                    {
+                        <PageTitle>Management - Edit Project</PageTitle>
+                        <h3>Project Management</h3>
+                        <small><i>Edit Project</i></small>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (alertTrigger)
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong>@alertMessage</strong> @alertBody
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+
+        @if (successAlert)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <strong>@alertMessage</strong> @alertBody
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        <div class="row">
+            <div class="d-flex flex-column align-items-center">
+                @if (param == null)
+                {
+                    @* ADD DOCUMENT *@
+                    <EditForm Model="@project" OnSubmit="@submitProject">
+
+                        <div class="row">
+                            <div class="col">
+                                <label for="project_name">Project Name : </label>
+                                <InputText id="project_name" @bind-Value="project.ProjectName" class="form-control"></InputText>
+                                <!-- <input type="text" class="form-control" name="DocumentNo" id="doc_no" /> -->
+                            </div>
+                             <div class="col">
+                                <label for="project_status">Project status : </label>
+                                <InputSelect id="project_status" @bind-Value="project.ProjectStatus" class="form-select">
+                                    <option disabled hidden>Choose Status</option>
+                                    <option value="onschedule">On Schedule</option>
+                                    <option value="ongoing">On Going</option>
+                                    <option value="postponed">Postponed</option>
+                                    <option value="finished">Finished</option>
+                                </InputSelect>
+                                <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col">
+                                <label for="project_detail">Project Detail : </label>
+                                <InputTextArea id="project_detail" @bind-Value="project.ProjectNote" class="form-control"></InputTextArea>
+                                <!-- <input type="date" class="form-control" name="DocumentDate" id="doc_date" /> -->
+                            </div>
+                        </div>
+
+
+                        <div class="row justify-content-md-end">
+                            <div class="col">
+                                <button type="button" class="btn btn-danger form-button" @onclick="ClearInput">Reset</button>
+                                <button type="submit" class="btn btn-primary form-button">Add</button>
+                            </div>
+                        </div>
+                    </EditForm>
+                }
+                else
+                {
+                    @* EDIT DOCUMENT *@
+                    <EditForm Model="@project" OnSubmit="@editProject">
+
+                        <div class="row">
+                            <div class="col">
+                                <label for="project_name">Project Name : </label>
+                                <InputText id="project_name" @bind-Value="project.ProjectName" class="form-control"></InputText>
+                                <!-- <input type="text" class="form-control" name="DocumentNo" id="doc_no" /> -->
+                            </div>
+                            <div class="col">
+                                <label for="project_status">Project status : </label>
+                                <InputSelect id="project_status" @bind-Value="project.ProjectStatus" class="form-select">
+                                    <option disabled hidden>Choose Status</option>
+                                    <option value="postponed">Postponed</option>
+                                    <option value="onschedule">On Schedule</option>
+                                    <option value="ongoing">On Going</option>
+                                    <option value="finished">Finished</option>
+                                </InputSelect>
+                                <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col">
+                                <label for="project_detail">Project Detail : </label>
+                                <InputTextArea id="project_detail" @bind-Value="project.ProjectNote" class="form-control"></InputTextArea>
+                                <!-- <input type="date" class="form-control" name="DocumentDate" id="doc_date" /> -->
+                            </div>
+                        </div>
+
+
+                        <div class="row justify-content-md-end">
+                            <div class="col">
+                                <button type="submit" class="btn btn-primary form-button">Edit</button>
+                            </div>
+                        </div>
+                    </EditForm>
+                }
+
+            </div>
+        </div>
+
+
+    </div>
+}
+

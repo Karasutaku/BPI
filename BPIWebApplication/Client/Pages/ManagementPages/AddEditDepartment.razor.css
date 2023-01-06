@@ -1,0 +1,55 @@
+﻿label {
+    margin-top: 5px;
+}
+
+input {
+    margin-bottom: 5px;
+}
+
+select {
+    margin-bottom: 5px;
+}
+
+.form-button {
+    margin: 10px;
+}
+
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+
+    .separator::before,
+    .separator::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #000;
+    }
+
+    .separator:not(:empty)::before {
+        margin-right: .25em;
+    }
+
+    .separator:not(:empty)::after {
+        margin-left: .25em;
+    }
+
+th {
+    font-size: 13px;
+    text-align: center;
+}
+
+td {
+    font-size: 13px;
+    text-align: center;
+}
+
+table {
+    margin-top: 25px;
+}
+
+.table-wrap {
+    height: 400px;
+    overflow-y: auto;
+}

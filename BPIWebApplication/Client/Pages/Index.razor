@@ -1,0 +1,52 @@
+﻿@page "/Index"
+@inject NavigationManager navigate
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject IManagementService ManagementService
+
+<PageTitle>Index</PageTitle>
+
+<div class="container-fluid">
+    <div class="jumbotron jumbotron-fluid jumbotron-style">
+        <h1 class="jumbotron-item">Welcome to BPI Application !</h1>
+        <p class="jumbotron-item">Let's get started</p>
+        
+    </div>
+
+    <h5 class="section-title"><u>On Going Project by BPI</u></h5>
+
+    <div class="d-flex">
+        @foreach (var proj in ManagementService.projects)
+        {
+
+            @if (!proj.ProjectStatus.Contains("finished"))
+            {
+                <div class="col-lg-2 col-md-3 col-sm-4 mx-1">
+                    <div class="card hovercard" data-hover="@proj.ProjectNote">
+                        <div class="card-header text-center">
+                            <p class="card-text"><b>@proj.ProjectName</b></p>
+                        </div>
+                        <div class="card-body" @onclick="(() => redirectEditProject(proj.ProjectName))">
+                            @if (proj.ProjectStatus.Contains("ongoing"))
+                            {
+                                <p class="card-text text-center"><span class="spinner-grow spinner-grow-sm text-primary" aria-hidden="true"></span> Ongoing</p>
+                            }
+                            else if (proj.ProjectStatus.Contains("onschedule"))
+                            {
+                                <p class="card-text text-center"><span class="spinner-grow spinner-grow-sm text-warning" aria-hidden="true"></span> Onschedule</p>
+                            }
+                            else if (proj.ProjectStatus.Contains("postponed"))
+                            {
+                                <p class="card-text text-center"><span class="spinner-grow spinner-grow-sm text-danger" aria-hidden="true"></span> Postponed</p>
+                            }
+
+                        </div>
+                    </div>
+                </div>
+            }
+                
+        }
+
+    </div>
+
+
+</div>

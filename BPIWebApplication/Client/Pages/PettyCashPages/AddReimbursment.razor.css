@@ -1,0 +1,66 @@
+﻿.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+
+    .separator::before,
+    .separator::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #000;
+    }
+
+    .separator:not(:empty)::before {
+        margin-right: .25em;
+    }
+
+    .separator:not(:empty)::after {
+        margin-left: .25em;
+    }
+
+label {
+    margin-top: 5px;
+}
+
+input {
+    margin-bottom: 5px;
+}
+
+select {
+    margin-bottom: 5px;
+}
+
+th {
+    font-size: 13px;
+    text-align: center;
+}
+
+td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+#title_amount {
+    text-align: center;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+#total_amount {
+    text-align: end;
+}
+
+#nominal_amount {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+.modal-body {
+    height: 70vh;
+    overflow-y: auto;
+}
+
+.modal {
+    overflow-y: hidden;
+}

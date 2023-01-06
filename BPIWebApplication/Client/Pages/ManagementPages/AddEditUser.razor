@@ -1,0 +1,201 @@
+﻿@page "/management/user"
+@page "/management/edituser/{param}"
+@inject IManagementService ManagementService
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject NavigationManager navigate
+
+@if (!activeUser.role.Contains("admin"))
+{
+    <div class="container-fluid">
+        <div class="d-flex align-items-center">
+            <h3>User Require Elevation</h3>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col col-md-12">
+                <div class="d-flex flex-column align-items-start">
+                    @if (param == null)
+                    {
+                        <PageTitle>Management - Add User</PageTitle>
+                        <h3>User Management</h3>
+                    }
+                    else
+                    {
+                        <PageTitle>Management - Edit User</PageTitle>
+                        <h3>User Management</h3>
+                        <small><i>Edit User</i></small>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (alertTrigger)
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong>@alertMessage</strong> @alertBody
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+
+        @if (successAlert)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <strong>@alertMessage</strong> @alertBody
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        <br>
+
+        @if (param == null)
+        {
+            @* TAB MENU *@
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="list-tab" data-toggle="tab" href="#list" role="tab" aria-controls="home" aria-selected="true">List</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="add-tab" data-toggle="tab" href="#add" role="tab" aria-controls="profile" aria-selected="false">Add</a>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
+                    @if (param == null)
+                    {
+                        <div class="table-responsive table-wrap">
+                            <table class="table table-sm table-hover table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">User Name</th>
+                                        <th scope="col">User Email</th>
+                                        <th scope="col">User Role</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var user in ManagementService.users)
+                                    {
+                                        <tr>
+                                            <td class="align-middle">@user.UserID</td>
+                                            <td class="align-middle">@user.UserEmail</td>
+                                            <td class="align-middle">@user.UserRole</td>
+                                            <td><button class="btn btn-sm btn-info" @onclick="(() => redirectEditUser(user.UserEmail))">Edit</button></td>
+                                        </tr>
+                                    }
+
+                                </tbody>
+                            </table>
+
+                        </div>
+                    }
+                </div>
+
+                <div class="tab-pane fade" id="add" role="tabpanel" aria-labelledby="add-tab">
+
+                    <div class="row my-3">
+                        <div class="d-flex flex-column align-items-center">
+                            @* ADD DOCUMENT *@
+                            <EditForm Model="@userAdmin" OnSubmit="@submitUser">
+
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="user_id">User Actual Name : </label>
+                                        <InputText id="user_id" @bind-Value="userAdmin.UserID" class="form-control"></InputText>
+                                        <!-- <input type="text" class="form-control" name="DocumentNo" id="doc_no" /> -->
+                                    </div>
+                                    <div class="col">
+                                        <label for="user_email">User Email : </label>
+                                        <InputText id="user_email" @bind-Value="userAdmin.UserEmail" class="form-control"></InputText>
+                                        <!-- <input type="date" class="form-control" name="DocumentDate" id="doc_date" /> -->
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="user_role">User Role : </label>
+                                        <InputSelect id="user_role" @bind-Value="userAdmin.UserRole" class="form-select">
+                                            <option disabled hidden>Choose Bisnis Unit</option>
+                                            <option value="admin">Admin</option>
+                                            <option value="guest">Guest</option>
+                                            <option value="inactive">Inactive</option>
+                                        </InputSelect>
+                                        <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
+                                    </div>
+                                </div>
+
+
+                                <div class="row justify-content-md-end">
+                                    <div class="col">
+                                        <button type="button" class="btn btn-danger mx-1 my-2" @onclick="ClearInput">Reset</button>
+                                        <button type="submit" class="btn btn-primary mx-1 my-2">Add</button>
+                                    </div>
+                                </div>
+                            </EditForm>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        }
+        else
+        {
+            <div class="row my-3">
+                <div class="d-flex flex-column align-items-center">
+                    @* EDIT DOCUMENT *@
+                    <EditForm Model="@editUserAdmin" OnSubmit="@editUser">
+
+                        <div class="row">
+                            <div class="col">
+                                <label for="user_id">User Actual Name : </label>
+                                <InputText id="user_id" @bind-Value="editUserAdmin.UserID" class="form-control"></InputText>
+                                <!-- <input type="text" class="form-control" name="DocumentNo" id="doc_no" /> -->
+                            </div>
+                            <div class="col">
+                                <label for="user_email">User Email : </label>
+                                <InputText id="user_email" @bind-Value="editUserAdmin.UserEmail" class="form-control"></InputText>
+                                <!-- <input type="date" class="form-control" name="DocumentDate" id="doc_date" /> -->
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col">
+                                <label for="user_role">User Role : </label>
+                                <InputSelect id="user_role" @bind-Value="editUserAdmin.UserRole" class="form-select">
+                                    <option disabled hidden>Choose Bisnis Unit</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="guest">Guest</option>
+                                    <option value="inactive">Inactive</option>
+                                </InputSelect>
+                                <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
+                            </div>
+                        </div>
+
+
+                        <div class="row justify-content-md-end">
+                            <div class="col">
+                                <button type="submit" class="btn btn-sm btn-primary form-button my-2">Edit</button>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        }
+
+
+
+    </div>
+}
+

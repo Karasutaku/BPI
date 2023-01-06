@@ -1,0 +1,56 @@
+﻿@inherits LayoutComponentBase
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+
+@code {
+    private bool sessionActive;
+    private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+
+    private static string Base64Decode(string base64EncodedData)
+    {
+        var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
+        return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+    }
+
+    protected override void OnInitialized()
+    {
+        if (sessionStorage.ContainKey("userName"))
+        {
+            sessionActive = true;
+
+            activeUser.UserLogin = new LoginUser();
+            activeUser.UserLogin.userName = "";
+            activeUser.UserLogin.password = "";
+
+            activeUser.Name = Base64Decode(sessionStorage.GetItem<string>("userName"));
+            activeUser.role = Base64Decode(sessionStorage.GetItem<string>("role"));
+        }
+    }
+}
+
+@if (!sessionActive)
+{
+    <main>
+        <BPIWebApplication.Client.Pages.LoginPages.Login />
+    </main>    
+} else
+{
+    <div class="page">
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+
+        <main>
+            <div class="top-row px-4">
+                <div class="float-start">
+
+                </div>
+                 Welcome, @activeUser.Name
+            </div>
+
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </div>
+
+}

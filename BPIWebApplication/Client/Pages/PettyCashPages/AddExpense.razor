@@ -1,0 +1,153 @@
+﻿@*@page "/pettycash/addexpense"*@
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject IPettyCashService PettyCashService
+
+@if (!(activeUser.role.Contains("admin") || activeUser.role.Contains("guest")))
+{
+    <h3>User Require Elevation</h3>
+}
+else
+{
+    @*
+    <h3>Petty Cash</h3>
+    <small><i>Expense Submision</i></small>
+
+    <div class="row">
+        <div class="d-flex flex-column align-items-center">
+
+            <EditForm Model="expense" OnValidSubmit="submitExpense">
+
+                <div class="row my-1">
+                    <div class="col">
+                        <label for="expense_id">Expense ID :</label>
+                        <InputText id="expense_id" @bind-Value="expense.ExpenseID" class="form-control" disabled></InputText>
+                    </div>
+                </div>
+
+                <div class="row my-1">
+                    <div class="col">
+                        <label for="expense_id">Advance ID :</label>
+                        <div class="input-group">
+                            <InputText id="advance_id" @bind-Value="expense.AdvanceID" class="form-control" placeholder="optional" readonly></InputText>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-sm btn-primary-cus h-100" @onclick="selectAdvance">...</button>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+
+                <div class="row my-1">
+                    <div class="col">
+                        <label for="expense_detail">Expense Detail :</label>
+                        <InputTextArea id="expense_detail" @bind-Value="expense.ExpenseDetail" class="form-control"></InputTextArea>
+                    </div>
+                </div>
+
+                <div class="row my-1">
+                    <div class="col">
+                        <label for="expense_amount">Expense Amount :</label>
+                        <InputNumber id="expense_amount" @bind-Value="expense.ExpenseAmount" class="form-control"></InputNumber>
+                    </div>
+                </div>
+
+                <div class="row my-2">
+                    <div class="col">
+                        <button type="button" class="btn btn-sm btn-outline-primary w-100 h-100" @onclick="triggerCamera">Camera</button>
+                    </div>
+                    <div class="col">
+                        <button type="button" class="btn btn-sm btn-outline-info w-100 h-100" @onclick="triggerPDF">PDF File</button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        
+                        @if (pdfInputFile)
+                        {
+                            <label for="expense_file">PDF File :</label>
+                            <InputFile id="expense_file" class="form-control"></InputFile>
+                        }
+
+                        @if (cameraInputFile)
+                        {
+                            <label for="expense_camera">Image :</label>
+                            <InputFile id="expense_camera" class="form-control" accept="image/*" multiple></InputFile>
+                        }
+                    </div>
+                </div>
+
+                <div class="row my-3">
+                    <div class="col">
+                        <button type="submit" title="Reset" class="btn btn-sm btn-danger" @onclick="resetInput">Reset</button>
+                        <button type="submit" title="Please Recheck the Total Amount" class="btn btn-sm btn-primary">Submit Expense</button>
+                    </div>
+                </div>
+
+            </EditForm>
+        </div>
+
+    </div>
+
+    @if (showModal)
+    {
+        <div class="modal fade show" id="selectAdvanceModal" tabindex="-1" role="dialog" aria-labelledby="selectAdvanceModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    @ header @
+                    <div class="modal-header">
+                        <h5 class="modal-title">Select Advance Settlement</h5>
+
+                        <button type="button" class="close" @onclick="modalHide">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        @ body @
+
+                        <div class="my-3">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover" style="width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" style="width: 2%;">Select</th>
+                                            <th scope="col" style="width: 15%;">Advance ID</th>
+                                            <th scope="col" style="width: 53%;">Advance Detail</th>
+                                            <th scope="col" style="width: 15%;">Location</th>
+                                            <th scope="col" style="width: 15%;" class="d-none d-sm-table-cell">Advance Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var adv in PettyCashService.advances)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <input class="form-check-input" type="radio" id="@adv.AdvanceID" value="@adv.AdvanceID" checked="@(adv == selectedAdvance == false ? null : "checked")" @onclick="(() => selectAdvanceItem(adv))" />
+                                                </td>
+
+                                                <td>@adv.AdvanceID</td>
+                                                <td>@adv.AdvanceDetail</td>
+                                                <td>@adv.Location.LocationName</td>
+                                                <td>@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        @ footer @
+
+                        <button type="button" class="btn btn-sm btn-primary" @onclick="modalHide">Select</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    *@
+    
+}

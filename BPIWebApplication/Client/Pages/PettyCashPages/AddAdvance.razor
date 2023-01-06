@@ -1,0 +1,80 @@
+﻿@*@page "/pettycash/addadvance"*@
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject IPettyCashService PettyCashService
+
+@if (!(activeUser.role.Contains("admin") || activeUser.role.Contains("guest")))
+{
+    <h3>User Require Elevation</h3>
+}
+else
+{
+    <h3>Petty Cash</h3>
+    <small><i>Expense Submision</i></small>
+
+    <div class="container-fluid">
+        <div class="d-flex flex-column align-items-center">
+
+            <EditForm Model="advance" OnValidSubmit="submitAdvance">
+
+                <div class="row my-3">
+                    <div class="col">
+                        <label for="advance_id">Advance ID :</label>
+                        <InputText id="expense_id" @bind-Value="advance.AdvanceID" class="form-control" disabled></InputText>
+                    </div>
+                    <div class="col">
+                        <label for="location_id">Location :</label>
+                        <InputSelect id="location_id" @bind-Value="advance.LocationID" class="form-control" readonly>
+                            <option hidden value="">Your Location</option>
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="separator">Advance Details</div>
+
+                <button type="button" class="btn btn-sm btn-warning my-2" @onclick="addLine"><b>Add</b></button>
+
+                @if (advanceLines.Any())
+                {
+                    <table class="table table-sm table-bordered" style="width: 100%">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">Action</th>
+                                <th style="width: 70%;">Description</th>
+                                <th style="width: 20%;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var line in advanceLines)
+                            {
+                                <tr>
+                                    <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" @onclick="(() => deleteLine(line))"><i class="oi oi-delete"></i></button></td>
+
+                                    <td><input type="text" class="form-control" @bind-value="line.Details" /></td>
+                                    <td><input type="number" class="form-control" @bind-value="line.Amount" /></td>
+                                </tr>
+                            }
+                            <tr>
+                                <td colspan="3" id="total_amount">Rp <span id="nominal_amount"> @advanceLines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="alert alert-warning fade show" role="alert">
+                        <strong>Add New Expense !</strong>
+                    </div>
+                }
+
+                <div class="row my-3">
+                    <div class="col">
+                        <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary">Submit Advance</button>
+                    </div>
+                </div>
+
+            </EditForm>
+
+        </div>
+
+    </div>
+}

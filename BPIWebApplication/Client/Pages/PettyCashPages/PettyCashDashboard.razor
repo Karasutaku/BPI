@@ -1,0 +1,506 @@
+﻿@*@page "/pettycash/dashboard"*@
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject IPettyCashService PettyCashService
+
+<PageTitle>Petty Cash - Dashboard</PageTitle>
+
+
+@if (!(activeUser.role.Contains("admin") || activeUser.role.Contains("guest")))
+{
+    <h3>User Require Elevation</h3>
+}
+else
+{
+    
+    <div class="container-fluid">
+        <h3>Petty Cash</h3>
+        <small><i>Dashboard</i></small>
+
+        @* CARD STORE LIST *@
+
+        <div class="my-4">
+
+            <div class="row flex-row flex-nowrap wrap-card overflow-auto">
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title"><b>Store A</b></h6>
+                        <small><i>Balance</i></small>
+                        <p class="card-text-custom">Rp. 000.000.000</p>
+                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title"><b>Store A</b></h6>
+                        <small><i>Balance</i></small>
+                        <p class="card-text-custom">Rp. 000.000.000</p>
+                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title"><b>Store A</b></h6>
+                        <small><i>Balance</i></small>
+                        <p class="card-text-custom">Rp. 000.000.000</p>
+                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title"><b>Store A</b></h6>
+                        <small><i>Balance</i></small>
+                        <p class="card-text-custom">Rp. 000.000.000</p>
+                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title"><b>Store A</b></h6>
+                        <small><i>Balance</i></small>
+                        <p class="card-text-custom">Rp. 000.000.000</p>
+                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title"><b>Store A</b></h6>
+                        <small><i>Balance</i></small>
+                        <p class="card-text-custom">Rp. 000.000.000</p>
+                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title"><b>Store A</b></h6>
+                        <small><i>Balance</i></small>
+                        <p class="card-text-custom">Rp. 000.000.000</p>
+                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title"><b>Store A</b></h6>
+                        <small><i>Balance</i></small>
+                        <p class="card-text-custom">Rp. 000.000.000</p>
+                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title"><b>Store A</b></h6>
+                        <small><i>Balance</i></small>
+                        <p class="card-text-custom">Rp. 000.000.000</p>
+                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="border border-2 p-2">
+            <h5 class="float-lg-end"><b>Ongoing Petty Cash Document</b></h5>
+            <ul class="nav nav-pills flex-column flex-sm-row" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="advance-tab" data-toggle="tab" href="#advance" role="tab" aria-controls="advance" aria-selected="true">Advance</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="expense-tab" data-toggle="tab" href="#expense" role="tab" aria-controls="expense" aria-selected="false">Expense</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="reimburse-tab" data-toggle="tab" href="#reimburse" role="tab" aria-controls="reimburse" aria-selected="false">Reimbursment</a>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="advance" role="tabpanel" aria-labelledby="advance-tab">
+
+                    <div class="my-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Advance ID</th>
+                                        <th scope="col">Applicant</th>
+                                        <th scope="col" class="d-none d-sm-table-cell">Request Date</th>
+                                        <th scope="col" class="d-none d-sm-table-cell">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var adv in PettyCashService.advances)
+                                    {
+                                        <tr @onclick="@(() => modalShow(adv, new(), new(), "advance"))">
+                                            <td>@adv.AdvanceID</td>
+                                            <td>@adv.Applicant</td>
+                                            <td scope="col" class="d-none d-sm-table-cell">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
+                                            <td scope="col" class="d-none d-sm-table-cell">@adv.AdvanceStatus</td>
+                                        </tr>
+                                    }
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="tab-pane fade" id="expense" role="tabpanel" aria-labelledby="expense-tab">
+
+                    <div class="my-3">
+                        <div class="table-responsive">
+                            
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Expense ID</th>
+                                        <th scope="col">Advance ID</th>
+                                        <th scope="col">Applicant</th>
+                                        <th scope="col" class="d-none d-sm-table-cell">Request Date</th>
+                                        <th scope="col" class="d-none d-sm-table-cell">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var exp in PettyCashService.expenses)
+                                    {
+                                        <tr @onclick="@(() => modalShow(new(), exp, new(), "expense"))">
+                                            <td>@exp.ExpenseID</td>
+                                            <td>@exp.AdvanceID</td>
+                                            <td>@exp.Applicant</td>
+                                            <td class="d-none d-sm-table-cell">@exp.ExpenseDate.ToString("dd / MM / yyyy")</td>
+                                            <td class="d-none d-sm-table-cell">@exp.ExpenseStatus</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="tab-pane" id="reimburse" role="tabpanel" aria-labelledby="reimburse-tab">
+
+                    <div class="my-3">
+                        <div class="table-responsive">
+                            
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Reimbursment ID</th>
+                                        <th scope="col">Applicant</th>
+                                        <th scope="col" class="d-none d-sm-table-cell">Create Date</th>
+                                        <th scope="col" class="d-none d-sm-table-cell">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var reim in PettyCashService.reimbursments)
+                                    {
+                                        <tr @onclick="@(() => modalShow(new(), new(), reim, "reimburse"))">
+                                            <td>@reim.ReimburseID</td>
+                                            <td>@reim.Applicant</td>
+                                            <td class ="d-none d-sm-table-cell">@reim.ReimburseDate.ToString("dd / MM / yyyy")</td>
+                                            <td class="d-none d-sm-table-cell">@reim.ReimburseStatus</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <p></p>
+
+        @* Detail Approve Modal *@
+
+        @if (showModal)
+        {
+            @if (transacType.Contains("advance"))
+            {
+                <div class="modal fade show" id="advanceModal" tabindex="-1" role="dialog" aria-labelledby="advanceModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            @* header *@
+                            <div class="modal-header">
+                                <h5 class="modal-title">Advance Detail</h5>
+
+                                <button type="button" class="close" aria-label="Close" @onclick="modalHide">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                @* body *@
+
+                                <EditForm Model="advance">
+
+                                    <div class="row my-1">
+                                        <div class="col">
+                                            <label for="advance_id">Advance ID :</label>
+                                            <InputText id="advance_id" @bind-Value="advance.AdvanceID" class="form-control-sm" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label for="advance_date">Advance Date :</label>
+                                            <InputDate id="advance_date" @bind-Value="advance.AdvanceDate" class="form-control-sm" readonly></InputDate>
+                                        </div>
+                                    </div>
+
+                                    <div class="row my-1">
+                                        <div class="col">
+                                            <label for="advance_status">Status :</label>
+                                            <InputText id="advance_status" @bind-Value="advance.AdvanceStatus" class="form-control-sm" readonly></InputText>
+                                        </div>
+                                    </div>
+
+                                    <div class="row my-1">
+                                        <div class="col">
+                                            <label for="location_id">Location :</label>
+                                            <InputText id="location_id" @bind-Value="advance.LocationID" class="form-control-sm" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label for="advance_appl">Applicant :</label>
+                                            <InputText id="advance_appl" @bind-Value="advance.Applicant" class="form-control-sm" readonly></InputText>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive border-1">
+                                        <table class="table table-sm table-bordered" style="width: 100%">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 70%;">Description</th>
+                                                    <th style="width: 20%;">Amount</th>
+                                                    <th style="width: 10%;">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var line in advanceLines)
+                                                {
+                                                    <tr>
+                                                        <td><input type="text" class="form-control" @bind-value="line.Details" /></td>
+                                                        <td><input type="number" class="form-control" @bind-value="line.Amount" /></td>
+                                                        <td><input type="text" class="form-control" @bind-value="line.Status" /></td>
+                                                    </tr>
+                                                }
+                                                <tr>
+                                                    <td colspan="3" id="total_amount">Rp <span id="nominal_amount"> @advanceLines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+
+                                </EditForm>
+                            </div>
+
+                            <div class="modal-footer">
+                                @* footer *@
+                                <button type="button" class="btn btn-sm btn-danger" @onclick="modalHide">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (transacType.Contains("expense"))
+            {
+                <div class="modal fade show" id="expenseModal" tabindex="-1" role="dialog" aria-labelledby="expenseModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            @* header *@
+                            <div class="modal-header">
+                                <h5 class="modal-title">Expense Detail</h5>
+
+                                <button type="button" class="close" @onclick="modalHide">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                @* body *@
+
+                                <EditForm Model="expense">
+
+                                    <div class="row my-1">
+                                        <div class="col">
+                                            <label for="expense_id">Expense ID :</label>
+                                            <InputText id="expense_id" @bind-Value="expense.ExpenseID" class="form-control" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label for="advance_id">Advance ID :</label>
+                                            <InputText id="advance_id" @bind-Value="expense.AdvanceID" class="form-control" placeholder="Empty" readonly></InputText>
+                                        </div>
+                                    </div>
+
+                                    <div class="row my-1">
+                                        <div class="col">
+                                            <label for="location_id">Location :</label>
+                                            <InputText id="location_id" @bind-Value="expense.LocationID" class="form-control" placeholder="Empty" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label for="expense_date">Create Date :</label>
+                                            <InputDate id="expense_date" @bind-Value="expense.ExpenseDate" class="form-control" placeholder="Empty" readonly></InputDate>
+                                        </div>
+                                    </div>
+
+                                    <div class="row my-1">
+                                        <div class="col">
+                                            <label for="expense_appl">Applicant :</label>
+                                            <InputText id="expense_appl" @bind-Value="expense.Applicant" class="form-control" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label for="expense_status">Status :</label>
+                                            <InputText id="expense_status" @bind-Value="expense.ExpenseStatus" class="form-control" placeholder="Empty" readonly></InputText>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive border-1">
+                                        <table class="table table-sm table-bordered" style="width: 100%">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 65%;">Description</th>
+                                                    <th style="width: 20%;">Req. Amount</th>
+                                                    <th style="width: 20%;">Act. Amount</th>
+                                                    <th style="width: 5%;">File</th>
+                                                    <th style="width: 10%;">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var line in ExpenseLines)
+                                                {
+                                                    <tr>
+                                                        <td><input type="text" class="form-control" @bind-value="line.Details" /></td>
+                                                        <td><input type="number" class="form-control" @bind-value="line.Amount" /></td>
+                                                        <td><input type="number" class="form-control" @bind-value="line.ActualAmount" /></td>
+                                                        <td><button type="button" class="btn btn-sm btn-primary-cus"><i class="oi oi-cloud-download"></i>/i></button></td>
+                                                        <td><input type="text" class="form-control" @bind-value="line.Status" /></td>
+                                                    </tr>
+                                                }
+                                                <tr>
+                                                    <td id="title_amount" colspan="2">Total Amount :</td>
+                                                    <td colspan="3" id="total_amount">Rp <span id="nominal_amount"> @ExpenseLines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </EditForm>
+                            </div>
+                            <div class="modal-footer">
+                                @* footer *@
+                                <button type="button" class="btn btn-sm btn-danger" @onclick="modalHide">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (transacType.Contains("reimburse"))
+            {
+                <div class="modal fade show" id="reimburseModal" tabindex="-1" role="dialog" aria-labelledby="reimburseModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            @* header *@
+                            <div class="modal-header">
+                                <h5 class="modal-title">Reimburse Detail</h5>
+
+                                <button type="button" class="close" @onclick="modalHide">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                @* body *@
+
+                                <EditForm Model="reimburse">
+                                    <div class="row">
+                                        <div class="col">
+                                            <label for="reimburs_id">PCR Number :</label>
+                                            <InputText id="reimburs_id" @bind-Value="reimburse.ReimburseID" class="form-control" readonly></InputText>
+                                        </div>
+
+                                        <div class="col">
+                                            <label for="reimburs_date">Reimburse Date :</label>
+                                            <InputDate id="reimburs_date" @bind-Value="reimburse.ReimburseDate" class="form-control" readonly></InputDate>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-5">
+                                            <label for="reimburs_status">Status :</label>
+                                            <InputText id="reimburs_status" @bind-Value="reimburse.ReimburseStatus" class="form-control" readonly></InputText>
+                                        </div>
+
+                                        <div class="col-5">
+                                            <label for="reimburs_appl">Applicant :</label>
+                                            <InputText id="reimburs_appl" @bind-Value="reimburse.Applicant" class="form-control" readonly></InputText>
+                                        </div>
+
+                                        <div class="col-2">
+                                            <label for="reimburs_file">Doc :</label>
+                                            <button type="button" id="reimburse_file" class="btn btn-primary-cus w-100" readonly> <span class="oi oi-cloud-download"></span> </button>
+                                        </div>
+                                    </div>
+
+                                    <table class="table table-sm table-bordered" style="width: 100%">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 10%;">Account No.</th>
+                                                <th style="width: 65%;">Description</th>
+                                                <th style="width: 20%;">Req. Amount</th>
+                                                <th style="width: 20%;">Act. Amount</th>
+                                                <th style="width: 5%;">File</th>
+                                                <th style="width: 10%;">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var line in reimburseLines)
+                                            {
+                                                <tr>
+                                                    <td><input type="text" class="form-control" @bind-value="line.AccountNo" /></td>
+                                                    <td><input type="text" class="form-control" @bind-value="line.Details" /></td>
+                                                    <td><input type="number" class="form-control" @bind-value="line.Amount" /></td>
+                                                    <td><input type="number" class="form-control" @bind-value="line.ApprovedAmount" /></td>
+                                                    <td><button type="button" class="btn btn-sm btn-primary-cus"><i class="oi oi-cloud-download"></i></button></td>
+                                                    <td><input type="text" class="form-control" @bind-value="line.Status" /></td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td id="title_amount" colspan="2">Total Amount :</td>
+                                                <td id="total_amount" colspan="2">Rp <span id="nominal_amount"> @reimburseLines.Sum(amount => amount.ApprovedAmount).ToString("N0") </span> ,- </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                </EditForm>
+                            </div>
+                            <div class="modal-footer">
+                                @* footer *@
+
+                                <button type="button" class="btn btn-sm btn-danger" @onclick="modalHide">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+
+
+    </div>
+    
+
+}

@@ -1,0 +1,220 @@
+﻿@page "/management/department"
+@page "/management/editdepartment/{param}"
+@inject IManagementService ManagementService
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject NavigationManager navigate
+
+@if (!activeUser.role.Contains("admin"))
+{
+    <div class="container-fluid">
+        <div class="d-flex align-items-center">
+            <h3>User Require Elevation</h3>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col col-md-12">
+                <div class="d-flex flex-column align-items-start">
+                    @if (param == null)
+                    {
+                        <PageTitle>Management - Add Department</PageTitle>
+                        <h3>Department Management</h3>
+                        <small><i>Add Department</i></small>
+                    }
+                    else
+                    {
+                        <PageTitle>Management - Edit Department</PageTitle>
+                        <h3>Department Management</h3>
+                        <small><i>Edit Department</i></small>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (alertTrigger)
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong>@alertMessage</strong> @alertBody
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+
+        @if (successAlert)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <strong>@alertMessage</strong> @alertBody
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        <br>
+
+        @if (param == null)
+        {
+            @* TAB MENU *@
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="list-tab" data-toggle="tab" href="#list" role="tab" aria-controls="home" aria-selected="true">List</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="add-tab" data-toggle="tab" href="#add" role="tab" aria-controls="profile" aria-selected="false">Add</a>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="myTabContent">
+
+                <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
+                    @if (param == null)
+                    {
+                        <div class="table-responsive table-wrap">
+                            <table class="table table-sm table-hover table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Department ID</th>
+                                        <th scope="col">Department Name</th>
+                                        <th scope="col">Department Label</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var dept in ManagementService.departments)
+                                    {
+                                        <tr>
+                                            <td class="align-middle">@dept.DepartmentID</td>
+                                            <td class="align-middle">@dept.DepartmentName</td>
+                                            <td class="align-middle">@dept.DepartmentLabel</td>
+                                            <td><button class="btn btn-sm btn-info" @onclick="(() => redirectEditDepartment(dept.DepartmentID))">Edit</button></td>
+                                        </tr>
+                                    }
+
+                                </tbody>
+                            </table>
+
+                        </div>
+                    }
+                </div>
+
+                <div class="tab-pane fade" id="add" role="tabpanel" aria-labelledby="add-tab">
+
+                    <div class="row my-3">
+                        <div class="d-flex flex-column align-items-center">
+
+                            @* ADD DOCUMENT *@
+                            <EditForm Model="@department" OnSubmit="@submitDepartment">
+
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="dept_id">Department ID : </label>
+                                        <InputText id="dept_id" @bind-Value="department.DepartmentID" class="form-control"></InputText>
+                                        <!-- <input type="text" class="form-control" name="DocumentNo" id="doc_no" /> -->
+                                    </div>
+                                    <div class="col">
+                                        <label for="dept_label">Department Label : </label>
+                                        <InputText id="dept_label" @bind-Value="department.DepartmentLabel" class="form-control"></InputText>
+                                        <!-- <input type="date" class="form-control" name="DocumentDate" id="doc_date" /> -->
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="doc_name">Department Name : </label>
+                                        <InputTextArea id="doc_name" @bind-Value="department.DepartmentName" class="form-control"></InputTextArea>
+                                        <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="dept_bu">Select Bisnis Unit : </label>
+                                        <InputSelect id="dept_bu" @bind-Value="department.BisnisUnitID" class="form-select">
+                                            <option disabled hidden>Choose Bisnis Unit</option>
+                                            @foreach (var bisnisUnit in ManagementService.bisnisUnits)
+                                            {
+                                                <option value="@bisnisUnit.BisnisUnitID">@bisnisUnit.BisnisUnitName</option>
+                                            }
+                                        </InputSelect>
+                                        <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
+                                    </div>
+                                </div>
+
+                                <div class="row justify-content-md-end">
+                                    <div class="col">
+                                        <button type="button" class="btn btn-danger form-button" @onclick="ClearInput">Reset</button>
+                                        <button type="submit" class="btn btn-primary form-button">Add</button>
+                                    </div>
+                                </div>
+                            </EditForm>
+
+                        </div>
+                    </div>
+
+                </div>
+
+
+            </div>
+        }
+        else
+        {
+            <div class="row my-3">
+                <div class="d-flex flex-column align-items-center">
+
+                    @* EDIT DOCUMENT *@
+                    <EditForm Model="@editDepartment" OnSubmit="@editDepartmentData">
+                        <div class="row">
+                            <div class="col">
+                                <label for="doc_no">Department ID : </label>
+                                <InputText id="doc_no" @bind-Value="editDepartment.DepartmentID" class="form-control" disabled></InputText>
+                                <!-- <input type="text" class="form-control" name="DocumentNo" id="doc_no" /> -->
+                            </div>
+                            <div class="col">
+                                <label for="doc_date">Department Label : </label>
+                                <InputText id="doc_date" @bind-Value="editDepartment.DepartmentLabel" class="form-control"></InputText>
+                                <!-- <input type="date" class="form-control" name="DocumentDate" id="doc_date" /> -->
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col">
+                                <label for="doc_name">Department Name : </label>
+                                <InputTextArea id="doc_name" @bind-Value="editDepartment.DepartmentName" class="form-control"></InputTextArea>
+                                <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col">
+                                <label for="dept_bu">Select Bisnis Unit : </label>
+                                <InputSelect id="dept_bu" @bind-Value="editDepartment.BisnisUnitID" class="form-select">
+                                    <option disabled hidden>Choose Bisnis Unit</option>
+                                    @foreach (var bisnisUnit in ManagementService.bisnisUnits)
+                                    {
+                                        <option value="@bisnisUnit.BisnisUnitID">@bisnisUnit.BisnisUnitName</option>
+                                    }
+                                </InputSelect>
+                                <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
+                            </div>
+                        </div>
+
+                        <div class="row justify-content-md-end">
+                            <div class="col">
+                                <button type="submit" class="btn btn-primary form-button">Edit</button>
+                            </div>
+                        </div>
+                    </EditForm>
+
+                </div>
+            </div>
+
+        }
+
+    </div>
+}
+

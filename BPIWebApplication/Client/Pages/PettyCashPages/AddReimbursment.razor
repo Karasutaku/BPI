@@ -1,0 +1,160 @@
+﻿@*@page "/pettycash/request"*@
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject IPettyCashService PettyCashService
+
+
+@if (!(activeUser.role.Contains("admin") || activeUser.role.Contains("guest")))
+{
+    <h3>User Require Elevation</h3>
+}
+else
+{
+    @*
+    <h3>Petty Cash</h3>
+    <small><i>Request Reimbursment</i></small>
+
+    <div class="row">
+        <div class="d-flex flex-column align-items-center">
+
+            <EditForm Model="reimbursment" OnValidSubmit="submitReimbursment">
+                <div class="row">
+                    <div class="col">
+                        <label for="reimburs_id">PCR Number :</label>
+                        <InputText id="reimburs_id" @bind-Value="reimbursment.ReimbursID" class="form-control"></InputText>
+                    </div>
+
+                    <div class="col">
+                        <label for="reimburs_loc">Location :</label>
+                        <InputText id="reimburs_loc" @bind-Value="reimbursment.Location.LocationName" class="form-control"></InputText>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <label for="reimburs_date">PCR Date :</label>
+                        <InputDate id="reimburs_date" @bind-Value="reimbursment.ReimbursDate" class="form-control"></InputDate>
+                    </div>
+
+                    <div class="col">
+                        <label for="reimburs_file">PCR Document :</label>
+                        <InputFile id="reimburs_file" @bind-Value="reimbursment.ReimbursAttach" class="form-control"></InputFile>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <label for="reimburs_status">Status :</label>
+                        <InputText id="reimburs_status" @bind-Value="reimbursment.ReimbursStatus" class="form-control" disabled></InputText>
+                    </div>
+                </div>
+
+                <div class="separator my-2">Expense Details</div>
+
+                <button type="button" class="btn btn-sm btn-warning my-2" @onclick="showModal"><b>Apply</b></button>
+
+                @if (expense.Any())
+                {
+                    <table class="table table-sm table-bordered" style="width: 100%">
+                        <thead>
+                            <tr>
+                                <th style="width: 2%;">Action</th>
+                                <th style="width: 13%;">No Account</th>
+                                <th style="width: 51%;">Description</th>
+                                <th style="width: 23%;">Amount</th>
+                                <th style="width: 10%;">Attachment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var exp in expense)
+                            {
+                                <tr>
+                                    <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" @onclick="(() => removeExpense(exp))">Remove</button></td>
+
+                                    <td><InputText @bind-Value="exp.ExpenseCoa" class="form-control-sm h-100 w-100"></InputText></td>
+                                    <td><InputText @bind-Value="exp.ExpenseDetail" class="form-control-sm h-100 w-100"></InputText></td>
+                                    <td><input type="text" value="@exp.ExpenseAmount.ToString("N0")" class="form-control-sm h-100 w-100" readonly></td>
+                                    <td><button type="button" class="btn btn-sm btn-info w-100 h-100"><span class="oi oi-cloud-download"></span></button></td>
+                                </tr>
+                            }
+                            <tr>
+                                <td id="title_amount" colspan="3">Total Amount :</td>
+                                <td id="total_amount" colspan="2">Rp <span id="nominal_amount"> @expense.Sum(amount => amount.ExpenseAmount).ToString("N0") </span> ,- </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p>Select Expense Above</p>
+                }
+                
+
+                <div class="row">
+                    <div class="col">
+                        <button type="submit" title="Please Recheck the Total Amount" class="btn btn-sm btn-primary">Submit Request</button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+        
+    </div>
+
+    @if (triggerModal)
+    {
+        <div class="modal fade show" id="selectExpenseModal" tabindex="-1" role="dialog" aria-labelledby="selectExpenseModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    @ header @
+                    <div class="modal-header">
+                        <p class="modal-title"><b>Select Expense</b></p>
+                        <button type="button" class="close" @onclick="hideModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        @ body @
+                        @if (PettyCashService.expenses.Any())
+                        {
+                            <table class="table table-sm table-bordered" style="width: 100%">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">Select</th>
+                                        <th style="width: 20%;">ID</th>
+                                        <th style="width: 35%;">Description</th>
+                                        <th style="width: 20%;">Amount</th>
+                                        <th style="width: 20%;">Applicant</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var exp in PettyCashService.expenses)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <input class="form-check-input" type="checkbox" id="@exp.ExpenseID" value="@exp.ExpenseID" checked="@(expense.SingleOrDefault(a => a.ExpenseID == exp.ExpenseID) == null ? null : "checked")" @onclick="(() => appendExpenseSelected(exp))" />
+                                            </td>
+                                            <td>@exp.ExpenseID</td>
+                                            <td>@exp.ExpenseDetail</td>
+                                            <td>@exp.ExpenseAmount.ToString("N0")</td>
+                                            <td>@exp.Applicant</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <p>There is no Outstanding Expense</p>
+                        }
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" @onclick="hideModal">Close</button>
+                        <button type="button" class="btn btn-primary" @onclick="applySelectedExpense">Select</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    *@
+}
