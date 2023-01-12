@@ -34,3 +34,56 @@ table {
     .btn-primary-cus:hover {
         opacity: 0.9;
     }
+
+.iframe-container {
+    overflow: hidden;
+    /* 16:9 aspect ratio */
+    padding-top: 56.25%;
+    position: relative;
+    height: 100%;
+}
+
+    .iframe-container iframe {
+        border: 0;
+        height: 100%;
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 100%;
+    }
+
+#layer {
+    position: absolute;
+    z-index: 3;
+    background-color: transparent;
+    height: 97%;
+    width: 93%;
+    top: 0;
+    visibility: visible;
+    user-select: none;
+}
+
+@media (max-width: 992px) {
+    #layer {
+        width: 90%;
+        height: 93%;
+    }
+}
+
+@media (max-width: 520px) {
+    #layer {
+        width: 89%;
+    }
+}
+
+@media (max-width: 520px) {
+    #layer {
+        width: 88%;
+    }
+}
+
+@media (max-width: 420px) {
+    #layer {
+        width: 87%;
+    }
+}

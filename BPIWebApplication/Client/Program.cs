@@ -17,7 +17,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<ILoginService, LoginService>();
 builder.Services.AddScoped<IProcedureService, ProcedureService>();
 builder.Services.AddScoped<IManagementService, ManagementService>();
-//builder.Services.AddScoped<IPettyCashService, PettyCashService>();
+builder.Services.AddScoped<IPettyCashService, PettyCashService>();
 
 builder.Services.AddBlazoredSessionStorage();
 

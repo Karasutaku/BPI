@@ -13,7 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
-builder.Services.AddHttpClient<ILoginService, LoginService>();
+builder.Services.AddHttpClient();
+//builder.Services.AddHttpClient<ILoginService, LoginService>();
 // builder.Services.AddHttpClient<IProcedureService, ProcedureService>();
 // builder.Configuration.GetSection("FilePath");
 

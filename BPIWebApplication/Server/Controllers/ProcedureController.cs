@@ -32,7 +32,7 @@ namespace BPIWebApplication.Server.Controllers
             _uploadPath = _configuration.GetValue<string>("FilePath:FileUploadPath");
             _archivePath = _configuration.GetValue<string>("FilePath:FileArchivePath");
             _rowPerPage = _configuration.GetValue<int>("Paging:RowPerPage");
-            _maxFileSize = _configuration.GetValue<long>("File:Procedure:Upload");
+            _maxFileSize = _configuration.GetValue<long>("File:Procedure:MaxUpload");
         }
 
         // DECODER
@@ -795,6 +795,54 @@ namespace BPIWebApplication.Server.Controllers
             return conInt;
         }
 
+        internal DateTime getProcedureUploadDate(string procNo)
+        {
+            DateTime temp;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getProcedureUploadDate]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ProcedureNo", procNo);
+                    var data = command.ExecuteScalar();
+                    temp = Convert.ToDateTime(data);
+
+                    /*
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                    if (dt.Rows.Count > 0)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                    */
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return temp;
+        }
+
         // edit DA
 
         internal void editProcedureData(QueryModel<Procedure> data)
@@ -876,8 +924,23 @@ namespace BPIWebApplication.Server.Controllers
 
         // retrieve file for client download
 
-        internal Byte[] getFileStream(string path)
+        internal Byte[] getFileStream(string dataPath, string procNo)
         {
+            var date = getProcedureUploadDate(procNo);
+
+            string type = string.Empty;
+
+            if (dataPath.Contains("WI"))
+            {
+                type = "WI";
+            }
+            else if (dataPath.Contains("SOP"))
+            {
+                type = "SOP";
+            }
+
+            string path = Path.Combine(_uploadPath, type, date.Year.ToString(), date.Month.ToString(), date.Day.ToString(), Path.GetFileName(dataPath));
+
             return System.IO.File.ReadAllBytes(path);
         }
 
@@ -1502,11 +1565,13 @@ namespace BPIWebApplication.Server.Controllers
             {
                 // string[] file = Directory.GetFiles("F:\\BPI\\MainData\\WI\\2022\\08\\01");
 
+                string[] splt = temp.Split("!_!");
+
                 res.Data = new FileReadyDownload();
-                res.Data.content = getFileStream(temp);
+                res.Data.content = getFileStream(splt[0], splt[1]);
 
                 // foreach (string f in file)
-                res.Data.fileName = Path.GetFileName(temp);
+                res.Data.fileName = Path.GetFileName(splt[0]);
 
                 res.isSuccess = true;
                 res.ErrorCode = "00";
@@ -1756,7 +1821,7 @@ namespace BPIWebApplication.Server.Controllers
 
                         string pathArchive = Path.Combine(_archivePath, "WI", DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), trustedFileNameArc);
 
-                        await saveFiletoDirectory(pathArchive, getFileStream(data.procedureDetails.Data.ProcedureWi));
+                        await saveFiletoDirectory(pathArchive, getFileStream(data.procedureDetails.Data.ProcedureWi, data.procedureDetails.Data.ProcedureNo));
                         System.IO.File.Delete(data.procedureDetails.Data.ProcedureWi);
                     }
                 }
@@ -1772,7 +1837,7 @@ namespace BPIWebApplication.Server.Controllers
 
                         string pathArchive = Path.Combine(_archivePath, "SOP", DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), trustedFileNameArc);
 
-                        await saveFiletoDirectory(pathArchive, getFileStream(data.procedureDetails.Data.ProcedureSop));
+                        await saveFiletoDirectory(pathArchive, getFileStream(data.procedureDetails.Data.ProcedureSop, data.procedureDetails.Data.ProcedureNo));
                         System.IO.File.Delete(data.procedureDetails.Data.ProcedureSop);
                     }
                 }

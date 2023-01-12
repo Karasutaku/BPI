@@ -81,8 +81,8 @@
                             <td class="d-none d-sm-table-cell align-middle">@departmentProcedure.Procedure.ProcedureDate.ToString("dd / MM / yyyy")</td>
                             <td class="d-none d-sm-table-cell align-middle">@departmentProcedure.Department.BisnisUnit.BisnisUnitName</td>
                             <td class="d-none d-sm-table-cell align-middle">@departmentProcedure.Department.DepartmentName</td>
-                            <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureSop.Contains("SOP") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureSop, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-cloud-download"></span></button></td>
-                            <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureWi.Contains("WI") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureWi, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-cloud-download"></span></button></td>
+                            <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureSop.Contains("SOP") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureSop, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-magnifying-glass"></span></button></td>
+                            <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureWi.Contains("WI") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureWi, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-magnifying-glass"></span></button></td>
 
                             @if (activeUser.role.Contains("admin"))
                             {
@@ -95,7 +95,7 @@
             </table>
         </div>
 
-        <ul class="pagination pagination-sm justify-content-center">
+        <ul class="pagination pagination-sm justify-content-center my-2">
             
             @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
             @if ((pageActive - 1) > 0)
@@ -127,4 +127,42 @@
         </ul>
 
     </div>
+
+    @if (showModal)
+    {
+        <div class="modal fade show" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    @* header *@
+                    <div class="modal-header">
+                        <div class="nav">
+                            <p class="modal-title">Preview</p>
+                        </div>
+
+                        <button type="button" class="close" @onclick="modalHide">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body" style="height: 70vh;">
+                        @* body *@
+                        <div class="iframe-container" oncontextmenu="return false;">
+                            <iframe src="data:application/pdf;base64, @Convert.ToBase64String(streamdata, 0, streamdata.Length) #toolbar=0" type="application/pdf" style="width: 100%; height: 100%;" >
+                                <p>Your browser doesn't support preview document.</p>
+                            </iframe>
+                        </div>
+
+                        <div id="layer">
+                            @**@
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-warning" @onclick="modalHide">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+   
 </body>

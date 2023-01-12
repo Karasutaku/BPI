@@ -6,6 +6,8 @@ using System.Buffers.Text;
 using System.Runtime.CompilerServices;
 using BPIWebApplication.Shared.DbModel;
 using BPIWebApplication.Shared.PagesModel.Dashboard;
+using Microsoft.AspNetCore.Components.Web;
+using System.Diagnostics;
 
 namespace BPIWebApplication.Client.Pages.SopPages
 {
@@ -17,6 +19,10 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
         private bool filterActive = false;
         DashboardFilter filterDetails = new DashboardFilter();
+
+        private Byte[] streamdata = new Byte[0];
+
+        private bool showModal = false;
 
         public string bisnisUnitSelected () {
             return bisnisUnitSelect;
@@ -93,6 +99,9 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
         private string? param;
 
+        //private void modalShow() => showModal = true;
+        private void modalHide() => showModal = false;
+
         private Stream GetFileStream(byte[] data)
         {
             var fileBinData = data;
@@ -103,8 +112,13 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
         private async void handleDownload(string path, string procNo, string procName)
         {
-            var dt = await ProcedureService.GetFile(path);
-            
+            var temp = path + "!_!" + procNo;
+
+            var dt = await ProcedureService.GetFile(temp);
+
+            Thread.Sleep(700);
+            showModal = true;
+
             if (!dt.isSuccess)
             {
                 // alert file download not found
@@ -116,10 +130,15 @@ namespace BPIWebApplication.Client.Pages.SopPages
                 var filestream = GetFileStream(dt.Data.content);
                 string filename = procNo + ".pdf";
 
-                using var streamRef = new DotNetStreamReference(stream: filestream);
+                streamdata = dt.Data.content;
 
-                await _jsModule.InvokeVoidAsync("downloadFileFromStream", filename, streamRef);
-                await _jsModule.InvokeVoidAsync("showAlert", $"File {procNo} Downloaded");
+                StateHasChanged();
+
+                //using var streamRef = new DotNetStreamReference(stream: filestream);
+
+                //await _jsModule.InvokeVoidAsync("downloadFileFromStream", filename, streamRef);
+                //await _jsModule.InvokeVoidAsync("showAlert", $"File {procNo} Downloaded");
+
 
                 // insert history data
                 try
@@ -143,7 +162,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
                     await _jsModule.InvokeVoidAsync("showAlert", ex.Message);
                     throw new Exception(ex.Message);
                 }
-                
+
             }
         }
         

@@ -6,7 +6,7 @@
 <PageTitle>SOP - History</PageTitle>
 
 
-@if (!(activeUser.role.Contains("admin") || activeUser.role.Contains("guest")))
+@if (!(activeUser.role.Contains("admin") || !activeUser.role.Contains("guest")))
 {
     <h3>User Require Elevation</h3>
 }
