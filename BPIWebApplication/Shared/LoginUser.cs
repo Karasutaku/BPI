@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BPIWebApplication.Shared
+﻿namespace BPIWebApplication.Shared
 {
     public class LoginUser
     {
         public string userName { get; set; } = string.Empty;
         public string password { get; set; } = string.Empty;
+        public int companyId { get; set; } = 0;
+        public string locationId { get; set; } = string.Empty;
     }
 }

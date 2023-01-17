@@ -1,11 +1,12 @@
-﻿using BPIWebApplication.Shared.MainModel.PettyCash;
+﻿using BPIWebApplication.Shared.MainModel.Login;
+using BPIWebApplication.Shared.MainModel.PettyCash;
 using Microsoft.AspNetCore.Components;
 
 namespace BPIWebApplication.Client.Pages.PettyCashPages
 {
     public partial class AddExpense : ComponentBase
     {
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
 
         private Expense expense = new Expense();
         private Advance selectedAdvance = new Advance();
@@ -29,10 +30,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         protected override async Task OnInitializedAsync()
         {
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
 
             //PettyCashService.advanceTestData();
             // _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");

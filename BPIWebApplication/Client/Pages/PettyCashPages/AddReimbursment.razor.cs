@@ -1,4 +1,5 @@
-﻿using BPIWebApplication.Shared.MainModel.PettyCash;
+﻿using BPIWebApplication.Shared.MainModel.Login;
+using BPIWebApplication.Shared.MainModel.PettyCash;
 using BPIWebApplication.Shared.PagesModel.ApplyProcedure;
 using Microsoft.AspNetCore.Components;
 
@@ -6,7 +7,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 {
     public partial class AddReimbursment : ComponentBase
     {
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
 
         private Reimburse reimbursment = new Reimburse();
         private List<Expense> expense = new List<Expense>();
@@ -29,10 +30,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         protected override async Task OnInitializedAsync()
         {
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
 
             // _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
         }

@@ -1,7 +1,7 @@
-﻿using BPIWebApplication.Shared;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using BPIWebApplication.Shared.PagesModel.ApplyProcedure;
 using BPIWebApplication.Shared.DbModel;
+using BPIWebApplication.Shared.MainModel.Login;
 
 namespace BPIWebApplication.Client.Pages.SopPages
 {
@@ -12,7 +12,8 @@ namespace BPIWebApplication.Client.Pages.SopPages
         List<DeptSelected> deptSelected = new List<DeptSelected>();
         List<DeptSelected> deptDeleted = new List<DeptSelected>();
 
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser activeUser = new();
 
         // filter
         private string procNoFilter = string.Empty;
@@ -30,10 +31,18 @@ namespace BPIWebApplication.Client.Pages.SopPages
             await ManagementService.GetAllDepartment();
             await ProcedureService.GetAllDepartmentProcedure();
 
-            activeUser.UserLogin = new LoginUser();
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+
+            //activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            //activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            //activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            //activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            //activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
         }
 
         // modal trigger
@@ -181,7 +190,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
                     applyData.Data.ProcedureNo = procNoFilter;
                     applyData.Data.listDepartment = deptSelected;
-                    applyData.userEmail = activeUser.UserLogin.userName;
+                    applyData.userEmail = LoginService.activeUser.userName;
                     applyData.userAction = "I";
                     applyData.userActionDate = DateTime.Now;
 
@@ -196,7 +205,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
                             applyDelData.Data.ProcedureNo = procNoFilter;
                             applyDelData.Data.listDepartment = deptDeleted;
-                            applyDelData.userEmail = activeUser.UserLogin.userName;
+                            applyDelData.userEmail = LoginService.activeUser.userName;
                             applyDelData.userAction = "D";
                             applyDelData.userActionDate = DateTime.Now;
 

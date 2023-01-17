@@ -1,4 +1,5 @@
 ﻿using BPIWebApplication.Shared.DbModel;
+using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.PagesModel.AddEditUser;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Components;
@@ -21,7 +22,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
 
         private UserAdmin userAdmin = new UserAdmin();
         private UserAdmin editUserAdmin = new UserAdmin();
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
 
         private static string Base64Decode(string base64EncodedData)
         {
@@ -42,10 +43,10 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
 
             await ManagementService.GetAllUserAdmin();
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
 
             // _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
 
@@ -81,7 +82,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
                     insertData.Data = new UserAdmin();
 
                     insertData.Data = userAdmin;
-                    insertData.userEmail = activeUser.UserLogin.userName;
+                    //insertData.userEmail = activeUser.UserLogin.userName;
                     insertData.userAction = "I";
                     insertData.userActionDate = DateTime.Now;
 
@@ -115,7 +116,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
                 updateData.Data = new UserAdmin();
 
                 updateData.Data = editUserAdmin;
-                updateData.userEmail = activeUser.UserLogin.userName;
+                //updateData.userEmail = activeUser.UserLogin.userName;
                 updateData.userAction = "U";
                 updateData.userActionDate = DateTime.Now;
 

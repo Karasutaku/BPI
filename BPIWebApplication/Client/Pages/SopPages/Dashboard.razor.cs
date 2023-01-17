@@ -1,5 +1,4 @@
-﻿using BPIWebApplication.Shared;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using System.Runtime.InteropServices;
 using Microsoft.JSInterop;
 using System.Buffers.Text;
@@ -8,6 +7,7 @@ using BPIWebApplication.Shared.DbModel;
 using BPIWebApplication.Shared.PagesModel.Dashboard;
 using Microsoft.AspNetCore.Components.Web;
 using System.Diagnostics;
+using BPIWebApplication.Shared.MainModel.Login;
 
 namespace BPIWebApplication.Client.Pages.SopPages
 {
@@ -62,7 +62,8 @@ namespace BPIWebApplication.Client.Pages.SopPages
         //    return false;
         //}
 
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser activeUser = new();
 
         private IJSObjectReference _jsModule;
         private int pageActive, numberofPage;
@@ -89,11 +90,19 @@ namespace BPIWebApplication.Client.Pages.SopPages
             filterActive = false;
             filterDetails = new DashboardFilter();
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            //activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            //activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            //activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            //activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
         }
 
@@ -148,9 +157,9 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
                     historyData.Data.ProcedureNo = procNo;
                     historyData.Data.ProcedureName = procName;
-                    historyData.Data.UserEmail = activeUser.UserLogin.userName;
+                    historyData.Data.UserEmail = LoginService.activeUser.userName;
                     historyData.Data.HistoryAccessDate = DateTime.Now;
-                    historyData.userEmail = activeUser.UserLogin.userName;
+                    historyData.userEmail = LoginService.activeUser.userName;
                     historyData.userAction = "I";
                     historyData.userActionDate = DateTime.Now;
 

@@ -2,14 +2,14 @@
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject IPettyCashService PettyCashService
 
-
+@*
 @if (!(activeUser.role.Contains("admin") || activeUser.role.Contains("guest")))
 {
     <h3>User Require Elevation</h3>
 }
 else
 {
-    @*
+    
     <h3>Petty Cash</h3>
     <small><i>Request Reimbursment</i></small>
 
@@ -156,5 +156,5 @@ else
             </div>
         </div>
     }
-    *@
-}
+    
+}*@

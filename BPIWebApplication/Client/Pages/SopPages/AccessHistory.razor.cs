@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Components;
 using ClosedXML.Excel;
 using Microsoft.JSInterop;
 using System.IO;
+using BPIWebApplication.Shared.MainModel.Login;
 
 namespace BPIWebApplication.Client.Pages.SopPages
 {
     public partial class AccessHistory : ComponentBase
     {
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser activeUser = new();
 
         private int pageActive, numberofPage;
         private bool filterActive = false;
@@ -41,10 +42,18 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
         protected override async Task OnInitializedAsync()
         {
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+
+            //activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            //activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            //activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            //activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            //activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
             filterActive = false;
             filterData = new AccessHistoryFilter();
@@ -124,7 +133,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
             using (var workbook = new XLWorkbook())
             {
-                workbook.Properties.Author = activeUser.UserLogin.userName;
+                workbook.Properties.Author = LoginService.activeUser.userName;
                 workbook.Properties.Title = "Access History Report";
                 
                 var worksheet = workbook.AddWorksheet("Report");

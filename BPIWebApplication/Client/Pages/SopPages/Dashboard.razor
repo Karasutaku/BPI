@@ -3,166 +3,187 @@
 @inject NavigationManager navigate
 @inject IProcedureService ProcedureService
 @inject IManagementService ManagementService
+@inject ILoginService LoginService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
 @inject IJSRuntime JS
 
 <PageTitle>SOP - Dashboard</PageTitle>
 
-<body>
-    <div class="container-fluid">
-        <div class="row justify-content-md-between">
-            <div class="col-md-auto">
-                <div class="d-flex flex-column align-items-start">
-                    <h3>Standard Operational Procedures</h3>
-                    <small><i>Dashboard - Page @pageActive of @numberofPage</i></small>
-                </div>
-            </div>
-            <div class="col-md-4">
-                
-                <div class="row">
-                    <label class="fw-bold">Filter</label>
-                </div>
-                    
-                <div class="row d-flex flex-row">
-                    <select class="form-select-sm" @bind="bisnisUnitSelect" onselect="bisnisUnitSelected" id="inputFilter">
-                        <option disabled hidden>Choose Bisnis Unit</option>
-                        @foreach (var bisnisUnit in ManagementService.bisnisUnits)
-                        {
-                            <option value="@bisnisUnit.BisnisUnitID">@bisnisUnit.BisnisUnitName</option>
-                        }
-                    </select>
-                    <select class="form-select-sm" @bind="departmentSelect" onselect="departmentSelected">
-                        <option value="" disabled hidden>Choose Department</option>
-                        @foreach (var department in ManagementService.departments)
-                        {
-                            if (bisnisUnitSelected() == department.BisnisUnitID)
-                            {
-                                <option value="@department.DepartmentID">@department.DepartmentName</option>
-                            }
-                        }
-                    </select>
-                    <input type="text" class="form-control" placeholder="Procedure Filter..." @bind="FilterProcedure" @bind:event="oninput" />
-                    <button type="button" class="btn btn-sm btn-primary-cus" @onclick="applyFilter">Filter</button>
-                    <button type="button" class="btn btn-sm btn-secondary" @onclick="resetFilter">Reset</button>
-                </div>
-                
-            </div>
-        </div>
-
-        
-        <div class="table-responsive">
-            <table class="table table-sm table-hover">
-                <thead>
-                    <tr>
-                        <th scope="col">Nomor Dokumen</th>
-                        <th scope="col">Nama Dokumen</th>
-                        <th scope="col" class="d-none d-sm-table-cell">Tanggal Berlaku</th>
-                        <th scope="col" class="d-none d-sm-table-cell">Bisnis Unit</th>
-                        <th scope="col" class="d-none d-sm-table-cell">Departemen</th>
-                        <th scope="col">Link SOP</th>
-                        <th scope="col">Link WI</th>
-                        @if (activeUser.role.Contains("admin"))
-                        {
-                            <th scope="col">Action</th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var departmentProcedure in ProcedureService.departmentProcedures)
-                    {
-                        @*
-                        if (!isVisible(departmentProcedure))
-                            continue;
-                        *@
-
-                        <tr>
-                            <th role="row" class="align-middle">@departmentProcedure.ProcedureNo</th>
-                            <td class="align-middle">@departmentProcedure.Procedure.ProcedureName</td>
-                            <td class="d-none d-sm-table-cell align-middle">@departmentProcedure.Procedure.ProcedureDate.ToString("dd / MM / yyyy")</td>
-                            <td class="d-none d-sm-table-cell align-middle">@departmentProcedure.Department.BisnisUnit.BisnisUnitName</td>
-                            <td class="d-none d-sm-table-cell align-middle">@departmentProcedure.Department.DepartmentName</td>
-                            <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureSop.Contains("SOP") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureSop, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-magnifying-glass"></span></button></td>
-                            <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureWi.Contains("WI") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureWi, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-magnifying-glass"></span></button></td>
-
-                            @if (activeUser.role.Contains("admin"))
-                            {
-                                <td><button class="btn btn-sm btn-primary-cus" @onclick="(() => redirectProcedure(departmentProcedure.ProcedureNo))">Edit</button></td>
-                            }
-                            
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <ul class="pagination pagination-sm justify-content-center my-2">
-            
-            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
-            @if ((pageActive - 1) > 0)
-            {
-                <li class="page-item px-1 paging-style" @onclick="(() => pageSelect((pageActive - 1)))"><span class="page-link">Previous</span></li>
-                <li class="page-item paging-style" @onclick="(() => pageSelect((pageActive - 1)))"><span class="page-link">@(pageActive - 1)</span></li>
-            }
-            else
-            {
-                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
-                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
-            }
-
-            <li class="page-item active paging-style" @onclick="(() => pageSelect(pageActive))"><span class="page-link">@pageActive</span></li>
-
-            @if (pageActive < numberofPage)
-            {
-                <li class="page-item paging-style" @onclick="(() => pageSelect((pageActive + 1)))"><span class="page-link">@(pageActive + 1)</span></li>
-                <li class="page-item px-1 paging-style" @onclick="(() => pageSelect((pageActive + 1)))"><span class="page-link">Next</span></li>
-            }
-            else
-            {
-                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
-                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
-            }
-
-
-            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
-        </ul>
-
-    </div>
-
-    @if (showModal)
+@if (LoginService.activeUser == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
     {
-        <div class="modal fade show" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
-            <div class="modal-dialog modal-lg" role="document">
-                <div class="modal-content">
-                    @* header *@
-                    <div class="modal-header">
-                        <div class="nav">
-                            <p class="modal-title">Preview</p>
-                        </div>
-
-                        <button type="button" class="close" @onclick="modalHide">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-
-                    <div class="modal-body" style="height: 70vh;">
-                        @* body *@
-                        <div class="iframe-container" oncontextmenu="return false;">
-                            <iframe src="data:application/pdf;base64, @Convert.ToBase64String(streamdata, 0, streamdata.Length) #toolbar=0" type="application/pdf" style="width: 100%; height: 100%;" >
-                                <p>Your browser doesn't support preview document.</p>
-                            </iframe>
-                        </div>
-
-                        <div id="layer">
-                            @**@
-                        </div>
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-warning" @onclick="modalHide">Close</button>
-                    </div>
-                </div>
+        <div class="container-fluid">
+            <div class="d-flex align-items-center">
+                <h3>User Require Elevation</h3>
             </div>
         </div>
     }
-   
-</body>
+    else
+    {
+        <body>
+            <div class="container-fluid">
+                <div class="row justify-content-md-between">
+                    <div class="col-md-auto">
+                        <div class="d-flex flex-column align-items-start">
+                            <h3>Standard Operational Procedures</h3>
+                            <small><i>Dashboard - Page @pageActive of @numberofPage</i></small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+
+                        <div class="row">
+                            <label class="fw-bold">Filter</label>
+                        </div>
+
+                        <div class="row d-flex flex-row">
+                            <select class="form-select-sm" @bind="bisnisUnitSelect" onselect="bisnisUnitSelected" id="inputFilter">
+                                <option disabled hidden>Choose Bisnis Unit</option>
+                                @foreach (var bisnisUnit in ManagementService.bisnisUnits)
+                                {
+                                    <option value="@bisnisUnit.BisnisUnitID">@bisnisUnit.BisnisUnitName</option>
+                                }
+                            </select>
+                            <select class="form-select-sm" @bind="departmentSelect" onselect="departmentSelected">
+                                <option value="" disabled hidden>Choose Department</option>
+                                @foreach (var department in ManagementService.departments)
+                                {
+                                    if (bisnisUnitSelected() == department.BisnisUnitID)
+                                    {
+                                        <option value="@department.DepartmentID">@department.DepartmentName</option>
+                                    }
+                                }
+                            </select>
+                            <input type="text" class="form-control" placeholder="Procedure Filter..." @bind="FilterProcedure" @bind:event="oninput" />
+                            <button type="button" class="btn btn-sm btn-primary-cus" @onclick="applyFilter">Filter</button>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="resetFilter">Reset</button>
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">Nomor Dokumen</th>
+                                <th scope="col">Nama Dokumen</th>
+                                <th scope="col" class="d-none d-sm-table-cell">Tanggal Berlaku</th>
+                                <th scope="col" class="d-none d-sm-table-cell">Bisnis Unit</th>
+                                <th scope="col" class="d-none d-sm-table-cell">Departemen</th>
+                                <th scope="col">Link SOP</th>
+                                <th scope="col">Link WI</th>
+                                @if (LoginService.activeUser.userPrivileges.Contains("ED"))
+                                {
+                                    <th scope="col">Action</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var departmentProcedure in ProcedureService.departmentProcedures)
+                            {
+                                @*
+                    if (!isVisible(departmentProcedure))
+                    continue;
+                    *@
+
+                                <tr>
+                                    <th role="row" class="align-middle">@departmentProcedure.ProcedureNo</th>
+                                    <td class="align-middle">@departmentProcedure.Procedure.ProcedureName</td>
+                                    <td class="d-none d-sm-table-cell align-middle">@departmentProcedure.Procedure.ProcedureDate.ToString("dd / MM / yyyy")</td>
+                                    <td class="d-none d-sm-table-cell align-middle">@departmentProcedure.Department.BisnisUnit.BisnisUnitName</td>
+                                    <td class="d-none d-sm-table-cell align-middle">@departmentProcedure.Department.DepartmentName</td>
+                                    <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureSop.Contains("SOP") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureSop, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-magnifying-glass"></span></button></td>
+                                    <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureWi.Contains("WI") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureWi, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-magnifying-glass"></span></button></td>
+
+                                    @if (LoginService.activeUser.userPrivileges.Contains("ED"))
+                                    {
+                                        <td><button class="btn btn-sm btn-primary-cus" @onclick="(() => redirectProcedure(departmentProcedure.ProcedureNo))">Edit</button></td>
+                                    }
+
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <ul class="pagination pagination-sm justify-content-center my-2">
+
+                    @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                    @if ((pageActive - 1) > 0)
+                    {
+                        <li class="page-item px-1 paging-style" @onclick="(() => pageSelect((pageActive - 1)))"><span class="page-link">Previous</span></li>
+                        <li class="page-item paging-style" @onclick="(() => pageSelect((pageActive - 1)))"><span class="page-link">@(pageActive - 1)</span></li>
+                    }
+                    else
+                    {
+                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                    }
+
+                    <li class="page-item active paging-style" @onclick="(() => pageSelect(pageActive))"><span class="page-link">@pageActive</span></li>
+
+                    @if (pageActive < numberofPage)
+                    {
+                        <li class="page-item paging-style" @onclick="(() => pageSelect((pageActive + 1)))"><span class="page-link">@(pageActive + 1)</span></li>
+                        <li class="page-item px-1 paging-style" @onclick="(() => pageSelect((pageActive + 1)))"><span class="page-link">Next</span></li>
+                    }
+                    else
+                    {
+                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                    }
+
+
+                    @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                </ul>
+
+            </div>
+
+            @if (showModal)
+            {
+                <div class="modal fade show" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            @* header *@
+                            <div class="modal-header">
+                                <div class="nav">
+                                    <p class="modal-title">Preview</p>
+                                </div>
+
+                                <button type="button" class="close" @onclick="modalHide">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body" style="height: 70vh;">
+                                @* body *@
+                                <div class="iframe-container" oncontextmenu="return false;">
+                                    <iframe src="data:application/pdf;base64, @Convert.ToBase64String(streamdata, 0, streamdata.Length) #toolbar=0&zoom=100%" type="application/pdf" style="width: 100%; height: 100%;">
+                                        <p>Your browser doesn't support preview document.</p>
+                                    </iframe>
+                                </div>
+
+                                <div id="layer">
+                                    @**@
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-warning" @onclick="modalHide">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </body>
+
+    }
+}

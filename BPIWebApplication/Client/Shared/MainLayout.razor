@@ -3,7 +3,7 @@
 
 @code {
     private bool sessionActive;
-    private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+    //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
 
     private static string Base64Decode(string base64EncodedData)
     {
@@ -17,12 +17,12 @@
         {
             sessionActive = true;
 
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = "";
-            activeUser.UserLogin.password = "";
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = "";
+            //activeUser.UserLogin.password = "";
 
-            activeUser.Name = Base64Decode(sessionStorage.GetItem<string>("userName"));
-            activeUser.role = Base64Decode(sessionStorage.GetItem<string>("role"));
+            //activeUser.Name = Base64Decode(sessionStorage.GetItem<string>("userName"));
+            //activeUser.role = Base64Decode(sessionStorage.GetItem<string>("role"));
         }
     }
 }
@@ -44,7 +44,7 @@
                 <div class="float-start">
 
                 </div>
-                 Welcome, @activeUser.Name
+                Welcome, @* @activeUser.Name *@
             </div>
 
             <article class="content px-4">
