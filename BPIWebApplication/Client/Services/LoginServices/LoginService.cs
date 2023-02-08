@@ -1,4 +1,5 @@
-﻿using BPIWebApplication.Shared.MainModel.Login;
+﻿using BPIWebApplication.Shared.MainModel;
+using BPIWebApplication.Shared.MainModel.Login;
 using Irony.Parsing;
 using System.Net.Http.Json;
 using System.Text.Json;

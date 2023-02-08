@@ -1,7 +1,8 @@
 ﻿using BPIWebApplication.Client.Pages.SopPages;
-using BPIWebApplication.Shared;
 using BPIWebApplication.Shared.DbModel;
 using BPIWebApplication.Shared.FileUploadModel;
+using BPIWebApplication.Shared.MainModel;
+using BPIWebApplication.Shared.MainModel.Procedure;
 using BPIWebApplication.Shared.PagesModel.AccessHistory;
 using BPIWebApplication.Shared.PagesModel.ApplyProcedure;
 using BPIWebApplication.Shared.PagesModel.Dashboard;
@@ -31,18 +32,19 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
         Task<ResultModel<List<DepartmentProcedure>>> GetAllDepartmentProcedure();
         Task<ResultModel<List<DepartmentProcedure>>> GetDepartmentProcedurewithFilterbyPaging(DashboardFilter data);
         Task<ResultModel<List<DepartmentProcedure>>> GetDepartmentProcedurewithPaging(int pageNo);
-        Task<ResultModel<FileReadyDownload>> GetFile(string path);
+        Task<ResultModel<BPIWebApplication.Shared.MainModel.Stream.FileStream>> GetFile(string path);
 
         // create
-        Task<ResultModel<QueryModel<ApplyProcedureMultiDept>>> createDepartmentProcedure(QueryModel<ApplyProcedureMultiDept> data);
-        Task<ResultModel<ProcedureUpload>> createProcedure(ProcedureUpload data);
+        //Task<ResultModel<QueryModel<ApplyProcedureMultiDept>>> createDepartmentProcedure(QueryModel<ApplyProcedureMultiDept> data);
+        Task<ResultModel<QueryModel<List<DepartmentProcedure>>>> createDepartmentProcedure(QueryModel<List<DepartmentProcedure>> data);
+        Task<ResultModel<ProcedureStream>> createProcedure(ProcedureStream data);
         Task<ResultModel<QueryModel<HistoryAccess>>> createHistoryAccess(QueryModel<HistoryAccess> data);
 
         // edit
-        Task<ResultModel<ProcedureUpload>> editProcedure(ProcedureUpload data);
+        Task<ResultModel<ProcedureStream>> editProcedure(ProcedureStream data);
 
         // delete
-        Task<ResultModel<QueryModel<ApplyProcedureMultiDept>>> deleteDepartmentProcedure(QueryModel<ApplyProcedureMultiDept> data);
+        Task<ResultModel<QueryModel<List<DepartmentProcedure>>>> deleteDepartmentProcedure(QueryModel<List<DepartmentProcedure>> data);
 
         // is exist
         Task<bool> checkProsedureExisting(string ProcNo);

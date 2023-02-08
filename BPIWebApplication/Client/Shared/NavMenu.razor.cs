@@ -58,48 +58,99 @@ namespace BPIWebApplication.Client.Shared
         {
             // module
 
-            moduleData.SoapHeader.sessionid = LoginService.activeUser.sessionId;
-            moduleData.SoapHeader.macaddress = ""; //
-            moduleData.SoapHeader.ipclient = ""; //
-            moduleData.SoapHeader.applicationid = LoginService.activeUser.appV; //
-            moduleData.SoapHeader.locationid = LoginService.activeUser.location;
-            moduleData.SoapHeader.companyid = Convert.ToInt32(LoginService.activeUser.company);
-            moduleData.CompanyId = Convert.ToInt32(LoginService.activeUser.company);
-            moduleData.LocationId = LoginService.activeUser.location;
-
-            if (LoginService.activeUser.location.IsNullOrEmpty())
+            if (await sessionStorage.ContainKeyAsync("userName"))
             {
-                moduleData.ModuleTypeId = "CMP";
+                moduleData.SoapHeader.sessionid = await sessionStorage.GetItemAsync<string>("SessionId");
+                moduleData.SoapHeader.macaddress = ""; //
+                moduleData.SoapHeader.ipclient = ""; //
+                moduleData.SoapHeader.applicationid = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV"))); //
+                moduleData.SoapHeader.locationid = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+                moduleData.SoapHeader.companyid = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0]);
+                moduleData.CompanyId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0]);
+                moduleData.LocationId = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+
+                moduleData.ApplicationId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV"))); //
+                moduleData.UserName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+
+                string locStr = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+
+                if (locStr.IsNullOrEmpty())
+                {
+                    moduleData.ModuleTypeId = "CMP";
+                }
+                else
+                {
+                    moduleData.ModuleTypeId = "LOC";
+                }
+
+                string tkn = await sessionStorage.GetItemAsync<string>("token");
+
+                var moduleResp = await LoginService.frameworkApiFacadeModule(moduleData, tkn);
+
+                if (moduleResp.Data.Any())
+                {
+                    module = moduleResp.Data;
+
+                    foreach (var modId in module)
+                    {
+                        ModuleCategory temp = new();
+
+                        temp.moduleCategoryId = modId.moduleCategoryId;
+                        temp.moduleCategoryName = modId.moduleCategoryName;
+
+                        if (mainModule.FirstOrDefault(x => x.moduleCategoryId.Equals(temp.moduleCategoryId)) == null)
+                        {
+                            mainModule.Add(temp);
+                        }
+
+                    }
+                }
             }
             else
             {
-                moduleData.ModuleTypeId = "LOC";
-            }
+                moduleData.SoapHeader.sessionid = LoginService.activeUser.sessionId;
+                moduleData.SoapHeader.macaddress = ""; //
+                moduleData.SoapHeader.ipclient = ""; //
+                moduleData.SoapHeader.applicationid = LoginService.activeUser.appV; //
+                moduleData.SoapHeader.locationid = LoginService.activeUser.location;
+                moduleData.SoapHeader.companyid = Convert.ToInt32(LoginService.activeUser.company);
+                moduleData.CompanyId = Convert.ToInt32(LoginService.activeUser.company);
+                moduleData.LocationId = LoginService.activeUser.location;
 
-            moduleData.ApplicationId = LoginService.activeUser.appV; //
-            moduleData.UserName = LoginService.activeUser.userName;
-
-            var moduleResp = await LoginService.frameworkApiFacadeModule(moduleData, LoginService.activeUser.token);
-
-            if (moduleResp.Data.Any())
-            {
-                module = moduleResp.Data;
-
-                foreach (var modId in module)
+                if (LoginService.activeUser.location.IsNullOrEmpty())
                 {
-                    ModuleCategory temp = new();
-
-                    temp.moduleCategoryId = modId.moduleCategoryId;
-                    temp.moduleCategoryName = modId.moduleCategoryName;
-
-                    if (mainModule.FirstOrDefault(x => x.moduleCategoryId.Equals(temp.moduleCategoryId)) == null)
-                    {
-                        mainModule.Add(temp);
-                    }
-                    
+                    moduleData.ModuleTypeId = "CMP";
                 }
-            }
+                else
+                {
+                    moduleData.ModuleTypeId = "LOC";
+                }
 
+                moduleData.ApplicationId = LoginService.activeUser.appV; //
+                moduleData.UserName = LoginService.activeUser.userName;
+
+                var moduleResp = await LoginService.frameworkApiFacadeModule(moduleData, LoginService.activeUser.token);
+
+                if (moduleResp.Data.Any())
+                {
+                    module = moduleResp.Data;
+
+                    foreach (var modId in module)
+                    {
+                        ModuleCategory temp = new();
+
+                        temp.moduleCategoryId = modId.moduleCategoryId;
+                        temp.moduleCategoryName = modId.moduleCategoryName;
+
+                        if (mainModule.FirstOrDefault(x => x.moduleCategoryId.Equals(temp.moduleCategoryId)) == null)
+                        {
+                            mainModule.Add(temp);
+                        }
+
+                    }
+                }
+
+            }
             
         }
 
@@ -109,33 +160,38 @@ namespace BPIWebApplication.Client.Shared
 
             string tkn = await sessionStorage.GetItemAsync<string>("token");
 
-            //privData.moduleId = menu.moduleId;
-            //privData.UserName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            //privData.userLocationParam = new();
-            //privData.userLocationParam.SessionId = await sessionStorage.GetItemAsync<string>("SessionId");
-            //privData.userLocationParam.MacAddress = "";
-            //privData.userLocationParam.IpClient = "";
-            //privData.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-            //privData.userLocationParam.LocationId = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
-            //privData.userLocationParam.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            //privData.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0]);
-            //privData.userLocationParam.PageIndex = 1;
-            //privData.userLocationParam.PageSize = 100;
-            //privData.privileges = new();
-
-            privData.moduleId = menu.moduleId;
-            privData.UserName = LoginService.activeUser.userName;
-            privData.userLocationParam = new();
-            privData.userLocationParam.SessionId = LoginService.activeUser.sessionId;
-            privData.userLocationParam.MacAddress = "";
-            privData.userLocationParam.IpClient = "";
-            privData.userLocationParam.ApplicationId = LoginService.activeUser.appV;
-            privData.userLocationParam.LocationId = LoginService.activeUser.location;
-            privData.userLocationParam.Name = LoginService.activeUser.userName;
-            privData.userLocationParam.CompanyId = Convert.ToInt32(LoginService.activeUser.company);
-            privData.userLocationParam.PageIndex = 1;
-            privData.userLocationParam.PageSize = 100;
-            privData.privileges = new();
+            if (await sessionStorage.ContainKeyAsync("userName"))
+            {
+                privData.moduleId = menu.moduleId;
+                privData.UserName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+                privData.userLocationParam = new();
+                privData.userLocationParam.SessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+                privData.userLocationParam.MacAddress = "";
+                privData.userLocationParam.IpClient = "";
+                privData.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+                privData.userLocationParam.LocationId = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+                privData.userLocationParam.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+                privData.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0]);
+                privData.userLocationParam.PageIndex = 1;
+                privData.userLocationParam.PageSize = 100;
+                privData.privileges = new();
+            }
+            else
+            {
+                privData.moduleId = menu.moduleId;
+                privData.UserName = LoginService.activeUser.userName;
+                privData.userLocationParam = new();
+                privData.userLocationParam.SessionId = LoginService.activeUser.sessionId;
+                privData.userLocationParam.MacAddress = "";
+                privData.userLocationParam.IpClient = "";
+                privData.userLocationParam.ApplicationId = LoginService.activeUser.appV;
+                privData.userLocationParam.LocationId = LoginService.activeUser.location;
+                privData.userLocationParam.Name = LoginService.activeUser.userName;
+                privData.userLocationParam.CompanyId = Convert.ToInt32(LoginService.activeUser.company);
+                privData.userLocationParam.PageIndex = 1;
+                privData.userLocationParam.PageSize = 100;
+                privData.privileges = new();
+            }
 
             var res = await LoginService.frameworkApiFacadePrivilege(privData, tkn);
 
@@ -152,8 +208,8 @@ namespace BPIWebApplication.Client.Shared
                 }
 
                 //syncSessionStorage.RemoveItem("PagePrivileges");
-                //await sessionStorage.SetItemAsync("PagePrivileges", userPriv);
 
+                await sessionStorage.SetItemAsync("PagePrivileges", userPriv);
                 LoginService.activeUser.userPrivileges = userPriv;
             }
 
@@ -191,6 +247,13 @@ namespace BPIWebApplication.Client.Shared
         private async void confirmLogout()
         {
             await sessionStorage.ClearAsync();
+
+            LoginService.activeUser.token = "";
+            LoginService.activeUser.userName = "";
+            LoginService.activeUser.company = "";
+            LoginService.activeUser.location = "";
+            LoginService.activeUser.appV = 0;
+            LoginService.activeUser.userPrivileges.Clear();
 
             navigate.NavigateTo("/");
         }

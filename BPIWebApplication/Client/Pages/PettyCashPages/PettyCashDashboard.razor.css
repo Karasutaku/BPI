@@ -4,37 +4,40 @@
     overflow-y: hidden;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
+    background: rgba(84,132,219,0.879);
 }
 
-.card {
+#balanceCard {
     width: 180px;
-    margin-right: 5px;
-    margin-bottom: 5px;
-}
-
-th {
-    font-weight: bold;
-    font-size: 13px;
-    text-align: center;
-}
-
-tr {
-    user-select: none;
-}
-
-td {
-    font-size: 13px;
-    text-align: center;
+    min-height: 140px;
+    margin-top: 12px;
+    margin-bottom: 12px;
     cursor: pointer;
 }
 
-table {
-    margin-top: 20px;
+.bg-special {
+    background: rgb(254,255,125);
+    background: linear-gradient(90deg, rgba(254,255,125,0.44870448179271705) 0%, rgba(255,222,87,0.5439425770308124) 38%, rgba(245,255,118,0.48792016806722693) 100%);
+}
+
+#attachCard {
+    width: 100% !important;
+    background: rgb(254,255,125);
+    background: linear-gradient(90deg, rgba(254,255,125,0.44870448179271705) 0%, rgba(255,222,87,0.5439425770308124) 38%, rgba(245,255,118,0.48792016806722693) 100%);
+    cursor: pointer;
+}
+
+#AccordionTitleCard {
+    width: 100%;
+    color: white;
+    background-color: #515060;
 }
 
 @media (min-width: 640px) {
     .wrap-card {
-        width: 79vw;
+        /*width: 80vw;*/
+        width: calc(100vw - 300px);
+        /*width: 100%;*/
     }
 }
 
@@ -49,12 +52,64 @@ table {
     }
 
 #nominal_amount {
-    font-size: 25px;
+    font-size: 23px;
     font-weight: bold;
 }
 
-#title_amount {
-    text-align: center;
-    font-weight: bold;
-    vertical-align: middle;
+.cus-text-right {
+    text-align: right;
 }
+
+.table {
+    -webkit-overflow-scrolling: touch;
+}
+
+/*#tbodyDashboard {
+    height: 330px;
+}*/
+
+#previewRow {
+    cursor: pointer;
+    user-select: none;
+}
+
+.modal-body {
+    max-height: 75vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.cus-bg {
+    background: rgb(2,0,36);
+    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,0.41789215686274506) 35%, rgba(27,66,138,0.6643907563025211) 100%);
+}
+
+.paging-style {
+    user-select: none;
+    cursor: pointer;
+}
+
+.dis-paging-style {
+    user-select: none;
+}
+
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+
+    .separator::before,
+    .separator::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #000;
+    }
+
+    .separator:not(:empty)::before {
+        margin-right: .25em;
+    }
+
+    .separator:not(:empty)::after {
+        margin-left: .25em;
+    }

@@ -1,6 +1,10 @@
 ﻿@page "/pettycash/dashboard"
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject IPettyCashService PettyCashService
+@inject IManagementService ManagementService
+@inject ILoginService LoginService
+@inject IJSRuntime JS
+@inject NavigationManager navigate
 
 <PageTitle>Petty Cash - Dashboard</PageTitle>
 
@@ -19,206 +23,373 @@ else
         @* CARD STORE LIST *@
 
         <div class="my-4">
+            @if (activeUser.location.Equals(""))
+            {
+                <div class="row mb-2">
+                    <div class="col">
+                        <input type="text" @bind="storeFilter" @bind:event="oninput" class="form-control h-100 w-100" placeholder="Filter Store" />
+                    </div>
+                </div>
+            }
 
             <div class="row flex-row flex-nowrap wrap-card overflow-auto">
 
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title"><b>Store A</b></h6>
-                        <small><i>Balance</i></small>
-                        <p class="card-text-custom">Rp. 000.000.000</p>
-                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                @if (activeUser.location.Equals(""))
+                {
+                    <div style="width: 190px;">
+                        <div class="card" id="balanceCard" @onclick="@(() => showBalanceDetails(""))">
+                            <div class="card-body">
+                                <h6 class="card-title text-wrap"><b> HEAD OFFICE </b></h6>
+                                @*<small><i>Balance</i></small>
+                                <p class="card-text-custom">Rp. 000.000.000</p>*@
+                                    
+                                @if (isFetchBalanceActive)
+                                {
+                                    <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                }
+                                @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                            </div>
+                            <div class="card-footer">
+                                <small class="text-muted"><i>Click To View Details</i></small>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                }
 
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title"><b>Store A</b></h6>
-                        <small><i>Balance</i></small>
-                        <p class="card-text-custom">Rp. 000.000.000</p>
-                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
-                    </div>
-                </div>
+                @foreach (var loc in ManagementService.locations)
+                {
+                    @if ((!activeUser.location.Contains(loc.locationId) && !activeUser.location.Equals("")) || !isVisible(loc))
+                        continue;
 
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title"><b>Store A</b></h6>
-                        <small><i>Balance</i></small>
-                        <p class="card-text-custom">Rp. 000.000.000</p>
-                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                    <div style="width: 190px;">
+                        <div class="card" id="balanceCard" @onclick="@(() => showBalanceDetails(loc.locationId))">
+                            <div class="card-body">
+                                <h6 class="card-title text-wrap"><b> @loc.locationName </b></h6>
+                                @*<small><i>Balance</i></small>
+                                <p class="card-text-custom">Rp. 000.000.000</p>*@
+                                    
+                                @if (isFetchBalanceActive)
+                                {
+                                    <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                }
+                                @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
+                            </div>
+                            <div class="card-footer">
+                                <small class="text-muted"><i>Click To View Details</i></small>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title"><b>Store A</b></h6>
-                        <small><i>Balance</i></small>
-                        <p class="card-text-custom">Rp. 000.000.000</p>
-                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title"><b>Store A</b></h6>
-                        <small><i>Balance</i></small>
-                        <p class="card-text-custom">Rp. 000.000.000</p>
-                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title"><b>Store A</b></h6>
-                        <small><i>Balance</i></small>
-                        <p class="card-text-custom">Rp. 000.000.000</p>
-                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title"><b>Store A</b></h6>
-                        <small><i>Balance</i></small>
-                        <p class="card-text-custom">Rp. 000.000.000</p>
-                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title"><b>Store A</b></h6>
-                        <small><i>Balance</i></small>
-                        <p class="card-text-custom">Rp. 000.000.000</p>
-                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title"><b>Store A</b></h6>
-                        <small><i>Balance</i></small>
-                        <p class="card-text-custom">Rp. 000.000.000</p>
-                        @* <button type="button" class="btn btn-sm btn-primary">Details</button> *@
-                    </div>
-                </div>
+                }
 
             </div>
 
         </div>
-
+        
         <div class="border border-2 p-2">
             <h5 class="float-lg-end"><b>Ongoing Petty Cash Document</b></h5>
-            <ul class="nav nav-pills flex-column flex-sm-row" id="myTab" role="tablist">
+                <ul class="nav nav-pills flex-column flex-sm-row" id="myTab" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link active" id="advance-tab" data-toggle="tab" href="#advance" role="tab" aria-controls="advance" aria-selected="true">Advance</a>
+                <a class="nav-link active" id="advance-tab" data-toggle="tab" href="#advance" role="tab" aria-controls="advance" aria-selected="true">Advance &lt; @advancePageActive of @advanceNumberofPage &gt;</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="expense-tab" data-toggle="tab" href="#expense" role="tab" aria-controls="expense" aria-selected="false">Expense</a>
+                    <a class="nav-link" id="expense-tab" data-toggle="tab" href="#expense" role="tab" aria-controls="expense" aria-selected="false">Expense &lt; @expensePageActive of @expenseNumberofPage &gt;</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="reimburse-tab" data-toggle="tab" href="#reimburse" role="tab" aria-controls="reimburse" aria-selected="false">Reimbursment</a>
+                <a class="nav-link" id="reimburse-tab" data-toggle="tab" href="#reimburse" role="tab" aria-controls="reimburse" aria-selected="false">Reimbursment &lt; @reimbursePageActive of @reimburseNumberofPage &gt;</a>
                 </li>
             </ul>
 
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="advance" role="tabpanel" aria-labelledby="advance-tab">
 
-                    <div class="my-3">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Advance ID</th>
-                                        <th scope="col">Applicant</th>
-                                        <th scope="col" class="d-none d-sm-table-cell">Request Date</th>
-                                        <th scope="col" class="d-none d-sm-table-cell">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var adv in PettyCashService.advances)
-                                    {
-                                        <tr @onclick="@(() => modalShow(adv, new(), new(), "advance"))">
-                                            <td>@adv.AdvanceID</td>
-                                            <td>@adv.Applicant</td>
-                                            <td scope="col" class="d-none d-sm-table-cell">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
-                                            <td scope="col" class="d-none d-sm-table-cell">@adv.AdvanceStatus</td>
-                                        </tr>
-                                    }
+                    <div class="row my-3">
 
-                                </tbody>
-                            </table>
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <select class="form-select w-100 h-100" @bind="advFilterType">
+                                <option hidden disabled value="">Filter By</option>
+                                <option value="ID">Advance ID</option>
+                                <option value="NOTE">Applicant</option>
+                                <option value="NIK">Applicant NIK</option>
+                                <option value="USER">User Email</option>
+                            </select>
                         </div>
 
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="text" class="form-control w-100 h-100" @bind-value="advFilterValue" disabled="@(checkAdvanceDataPresent() ? null : "disabled")" />
+                        </div>
+
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkAdvanceDataPresent() ? null : "disabled")" @onclick="@(() => advanceFilter())">Filter</button>
+                        </div>
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!isAdvanceFilterActive.Equals(false) ? null : "disabled")" @onclick="advanceFilterReset">Reset</button>
+                        </div>
+                            
                     </div>
+
+                    @if (checkAdvanceDataPresent())
+                    {
+
+                        <div class="mb-3">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover" style="width: 100%">
+                                    <thead>
+                                        <tr title="Click to view">
+                                            <th scope="col" class="text-center align-middle" style="width: 15%; font-size: 15px;">Advance ID</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">User</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Applicant</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 10%; font-size: 15px;">Applicant NIK</th>
+                                            <th scope="col" style="width: 20%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Request Date</th>
+                                            <th scope="col" style="width: 10%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyDashboard">
+                                        @foreach (var adv in PettyCashService.advances)
+                                        {
+                                            <tr @onclick="@(() => modalShow(adv, new(), new(), "advance", "MASTER"))" id="previewRow">
+                                                <td class="text-center align-middle" style="font-size:14px;">@adv.AdvanceID</td>
+                                                <td class="text-center align-middle" style="font-size:14px;">@adv.Applicant</td>
+                                                <td class="text-center text-truncate align-middle"style="font-size:14px;">@adv.AdvanceNote</td>
+                                                <td class="text-center text-truncate align-middle"style="font-size:14px;">@adv.AdvanceNIK</td>
+                                                <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
+                                                <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceStatus</td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+                        <ul class="pagination pagination-sm justify-content-center my-2">
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                            @if ((advancePageActive - 1) > 0)
+                            {
+                                <li class="page-item px-1 paging-style" @onclick="(() => advancePageSelect((advancePageActive - 1)))"><span class="page-link">Previous</span></li>
+                                <li class="page-item paging-style" @onclick="(() => advancePageSelect((advancePageActive - 1)))"><span class="page-link">@(advancePageActive - 1)</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            }
+
+                            <li class="page-item active paging-style" @onclick="(() => advancePageSelect(advancePageActive))"><span class="page-link">@advancePageActive</span></li>
+
+                            @if (advancePageActive < advanceNumberofPage)
+                            {
+                                <li class="page-item paging-style" @onclick="(() => advancePageSelect((advancePageActive + 1)))"><span class="page-link">@(advancePageActive + 1)</span></li>
+                                <li class="page-item px-1 paging-style" @onclick="(() => advancePageSelect((advancePageActive + 1)))"><span class="page-link">Next</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                            }
+
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                        </ul>
+                    }
+                    else
+                    {
+                    <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                    }
 
                 </div>
-
+                
                 <div class="tab-pane fade" id="expense" role="tabpanel" aria-labelledby="expense-tab">
 
-                    <div class="my-3">
-                        <div class="table-responsive">
-                            
-                            <table class="table table-sm table-hover">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Expense ID</th>
-                                        <th scope="col">Advance ID</th>
-                                        <th scope="col">Applicant</th>
-                                        <th scope="col" class="d-none d-sm-table-cell">Request Date</th>
-                                        <th scope="col" class="d-none d-sm-table-cell">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var exp in PettyCashService.expenses)
-                                    {
-                                        <tr @onclick="@(() => modalShow(new(), exp, new(), "expense"))">
-                                            <td>@exp.ExpenseID</td>
-                                            <td>@exp.AdvanceID</td>
-                                            <td>@exp.Applicant</td>
-                                            <td class="d-none d-sm-table-cell">@exp.ExpenseDate.ToString("dd / MM / yyyy")</td>
-                                            <td class="d-none d-sm-table-cell">@exp.ExpenseStatus</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                            
+                    <div class="row my-3">
+
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <select class="form-select w-100 h-100" @bind="expFilterType">
+                                <option hidden disabled value="">Filter By</option>
+                                <option value="ID">Expense ID</option>
+                                <option value="NOTE">Applicant</option>
+                                <option value="NIK">Applicant NIK</option>
+                                <option value="USER">User Email</option>
+                            </select>
                         </div>
 
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="text" class="form-control w-100 h-100" @bind-value="expFilterValue" disabled="@(checkExpenseDataPresent() ? null : "disabled")" />
+                        </div>
+
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkExpenseDataPresent() ? null : "disabled")" @onclick="@(() => expenseFilter())">Filter</button>
+                        </div>
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!isExpenseFilterActive.Equals(false) ? null : "disabled")" @onclick="expenseFilterReset">Reset</button>
+                        </div>
+                            
                     </div>
 
+                    @if (checkExpenseDataPresent())
+                    {
+                        <div class="my-3">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover" style="width: 100%">
+                                    <thead>
+                                        <tr title="Click to view">
+                                            <th scope="col" class="text-center align-middle" style="width: 15%; font-size: 15px;">Expense ID</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Applicant</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 35%; font-size: 15px;">Details</th>
+                                            <th scope="col" style="width: 20%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Request Date</th>
+                                            <th scope="col" style="width: 10%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyDashboard">
+                                        @foreach (var exp in PettyCashService.expenses)
+                                        {
+                                            <tr @onclick="@(() => modalShow(new(), exp, new(), "expense", "MASTER"))" id="previewRow">
+                                                <td class="text-center align-middle" style="font-size:14px;">@exp.ExpenseID</td>
+                                                <td class="text-center align-middle" style="font-size:14px;">@exp.Applicant</td>
+                                                <td class="text-center text-truncate align-middle" style="font-size:14px;">@exp.ExpenseNote</td>
+                                                <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@exp.ExpenseDate.ToString("dd / MM / yyyy")</td>
+                                                <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@exp.ExpenseStatus</td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+                        <ul class="pagination pagination-sm justify-content-center my-2">
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                            @if ((expensePageActive - 1) > 0)
+                            {
+                                <li class="page-item px-1 paging-style" @onclick="(() => expensePageSelect((expensePageActive - 1)))"><span class="page-link">Previous</span></li>
+                                <li class="page-item paging-style" @onclick="(() => expensePageSelect((expensePageActive - 1)))"><span class="page-link">@(expensePageActive - 1)</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            }
+
+                            <li class="page-item active paging-style" @onclick="(() => expensePageSelect(expensePageActive))"><span class="page-link">@expensePageActive</span></li>
+
+                            @if (expensePageActive < expenseNumberofPage)
+                            {
+                                <li class="page-item paging-style" @onclick="(() => expensePageSelect((expensePageActive + 1)))"><span class="page-link">@(expensePageActive + 1)</span></li>
+                                <li class="page-item px-1 paging-style" @onclick="(() => expensePageSelect((expensePageActive + 1)))"><span class="page-link">Next</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                            }
+
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                    }
+                    
                 </div>
 
                 <div class="tab-pane" id="reimburse" role="tabpanel" aria-labelledby="reimburse-tab">
 
-                    <div class="my-3">
-                        <div class="table-responsive">
-                            
-                            <table class="table table-sm table-hover">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Reimbursment ID</th>
-                                        <th scope="col">Applicant</th>
-                                        <th scope="col" class="d-none d-sm-table-cell">Create Date</th>
-                                        <th scope="col" class="d-none d-sm-table-cell">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var reim in PettyCashService.reimbursments)
-                                    {
-                                        <tr @onclick="@(() => modalShow(new(), new(), reim, "reimburse"))">
-                                            <td>@reim.ReimburseID</td>
-                                            <td>@reim.Applicant</td>
-                                            <td class ="d-none d-sm-table-cell">@reim.ReimburseDate.ToString("dd / MM / yyyy")</td>
-                                            <td class="d-none d-sm-table-cell">@reim.ReimburseStatus</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                            
+                    <div class="row my-3">
+
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <select class="form-select w-100 h-100" @bind="remFilterType">
+                                <option hidden disabled value="">Filter By</option>
+                                <option value="ID">Reimburse ID</option>
+                                <option value="LOC">Location</option>
+                                <option value="USER">User Email</option>
+                            </select>
                         </div>
 
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="text" class="form-control w-100 h-100" @bind-value="remFilterValue" disabled="@(checkReimburseDataPresent() ? null : "disabled")" />
+                        </div>
+
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkReimburseDataPresent() ? null : "disabled")" @onclick="@(() => reimburseFilter())">Filter</button>
+                        </div>
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!isReimburseFilterActive.Equals(false) ? null : "disabled")" @onclick="reimburseFilterReset">Reset</button>
+                        </div>
+                            
                     </div>
+
+                    @if (checkReimburseDataPresent())
+                    {
+                        <div class="my-3">
+                            <div class="table-responsive">
+
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Reimbursment ID</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Location</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Applicant</th>
+                                            <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 20%; font-size: 15px;">Create Date</th>
+                                            <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 20%; font-size: 15px;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyDashboard">
+                                        @foreach (var reim in PettyCashService.reimburses)
+                                        {
+                                            <tr @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "MASTER"))" id="previewRow">
+                                                <td class="text-center align-middle" style="font-size:14px;">@reim.ReimburseID</td>
+                                                <td class="text-center align-middle" style="font-size:14px;">@reim.LocationID</td>
+                                                <td class="text-center align-middle" style="font-size:14px;">@reim.Applicant</td>
+                                                <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseDate.ToString("dd / MM / yyyy")</td>
+                                                <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseStatus</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                        <ul class="pagination pagination-sm justify-content-center my-2">
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                            @if ((reimbursePageActive - 1) > 0)
+                            {
+                                <li class="page-item px-1 paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive - 1)))"><span class="page-link">Previous</span></li>
+                                <li class="page-item paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive - 1)))"><span class="page-link">@(reimbursePageActive - 1)</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            }
+
+                        <li class="page-item active paging-style" @onclick="(() => reimbursePageSelect(reimbursePageActive))"><span class="page-link">@reimbursePageActive</span></li>
+
+                            @if (reimbursePageActive < reimburseNumberofPage)
+                            {
+                                <li class="page-item paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive + 1)))"><span class="page-link">@(reimbursePageActive + 1)</span></li>
+                                <li class="page-item px-1 paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive + 1)))"><span class="page-link">Next</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                            }
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                    }
 
                 </div>
 
@@ -227,280 +398,1249 @@ else
 
         <p></p>
 
-        @* Detail Approve Modal *@
+        <div class="border border-2 p-2">
+            <h5 class="float-lg-end"><b>Posted Petty Cash Document</b></h5>
+            <ul class="nav nav-pills flex-column flex-sm-row" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="padvance-tab" data-toggle="tab" href="#padvance" role="tab" aria-controls="padvance" aria-selected="true">Advance &lt; @padvancePageActive of @padvanceNumberofPage &gt;</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="pexpense-tab" data-toggle="tab" href="#pexpense" role="tab" aria-controls="pexpense" aria-selected="false">Expense &lt; @pexpensePageActive of @pexpenseNumberofPage &gt;</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="preimburse-tab" data-toggle="tab" href="#preimburse" role="tab" aria-controls="preimburse" aria-selected="false">Reimbursment &lt; @preimbursePageActive of @preimburseNumberofPage &gt;</a>
+                </li>
+            </ul>
 
-        @if (showModal)
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="padvance" role="tabpanel" aria-labelledby="padvance-tab">
+
+                    <div class="row my-3">
+
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <select class="form-select w-100 h-100" @bind="padvFilterType">
+                                <option hidden disabled value="">Filter By</option>
+                                <option value="ID">Advance ID</option>
+                                <option value="NOTE">Applicant</option>
+                                <option value="NIK">Applicant NIK</option>
+                                <option value="USER">User Email</option>
+                            </select>
+                        </div>
+
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="text" class="form-control w-100 h-100" @bind-value="padvFilterValue" disabled="@(checkpAdvanceDataPresent() ? null : "disabled")" />
+                        </div>
+
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkpAdvanceDataPresent() ? null : "disabled")" @onclick="@(() => padvanceFilter())">Filter</button>
+                        </div>
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!ispAdvanceFilterActive.Equals(false) ? null : "disabled")" @onclick="padvanceFilterReset">Reset</button>
+                        </div>
+
+                    </div>
+
+                    @if (checkpAdvanceDataPresent())
+                    {
+
+                        <div class="mb-3">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover" style="width: 100%">
+                                    <thead>
+                                        <tr title="Click to view">
+                                            <th scope="col" class="text-center align-middle" style="width: 15%; font-size: 15px;">Advance ID</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">User</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Applicant</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 10%; font-size: 15px;">Applicant NIK</th>
+                                            <th scope="col" style="width: 20%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Request Date</th>
+                                            <th scope="col" style="width: 10%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyDashboard">
+                                        @foreach (var adv in PettyCashService.padvances)
+                                        {
+                                            <tr @onclick="@(() => modalShow(adv, new(), new(), "advance", "POSTED"))" id="previewRow">
+                                                <td class="text-center align-middle" style="font-size:14px;">@adv.AdvanceID</td>
+                                                <td class="text-center align-middle" style="font-size:14px;">@adv.Applicant</td>
+                                                <td class="text-center text-truncate align-middle" style="font-size:14px;">@adv.AdvanceNote</td>
+                                                <td class="text-center text-truncate align-middle" style="font-size:14px;">@adv.AdvanceNIK</td>
+                                                <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
+                                                <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceStatus</td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+                        <ul class="pagination pagination-sm justify-content-center my-2">
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                            @if ((padvancePageActive - 1) > 0)
+                            {
+                                <li class="page-item px-1 paging-style" @onclick="(() => padvancePageSelect((padvancePageActive - 1)))"><span class="page-link">Previous</span></li>
+                                <li class="page-item paging-style" @onclick="(() => padvancePageSelect((padvancePageActive - 1)))"><span class="page-link">@(padvancePageActive - 1)</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            }
+
+                            <li class="page-item active paging-style" @onclick="(() => padvancePageSelect(padvancePageActive))"><span class="page-link">@padvancePageActive</span></li>
+
+                            @if (padvancePageActive < padvanceNumberofPage)
+                            {
+                                <li class="page-item paging-style" @onclick="(() => padvancePageSelect((padvancePageActive + 1)))"><span class="page-link">@(padvancePageActive + 1)</span></li>
+                                <li class="page-item px-1 paging-style" @onclick="(() => padvancePageSelect((padvancePageActive + 1)))"><span class="page-link">Next</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                            }
+
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                    }
+
+                </div>
+
+                <div class="tab-pane fade" id="pexpense" role="tabpanel" aria-labelledby="pexpense-tab">
+
+                    <div class="row my-3">
+
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <select class="form-select w-100 h-100" @bind="pexpFilterType">
+                                <option hidden disabled value="">Filter By</option>
+                                <option value="ID">Expense ID</option>
+                                <option value="NOTE">Applicant</option>
+                                <option value="NIK">Applicant NIK</option>
+                                <option value="USER">User Email</option>
+                            </select>
+                        </div>
+
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="text" class="form-control w-100 h-100" @bind-value="pexpFilterValue" disabled="@(checkpExpenseDataPresent() ? null : "disabled")" />
+                        </div>
+
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkpExpenseDataPresent() ? null : "disabled")" @onclick="@(() => pexpenseFilter())">Filter</button>
+                        </div>
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!ispExpenseFilterActive.Equals(false) ? null : "disabled")" @onclick="pexpenseFilterReset">Reset</button>
+                        </div>
+
+                    </div>
+
+                    @if (checkpExpenseDataPresent())
+                    {
+                        <div class="my-3">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover" style="width: 100%">
+                                    <thead>
+                                        <tr title="Click to view">
+                                            <th scope="col" class="text-center align-middle" style="width: 15%; font-size: 15px;">Expense ID</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Applicant</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 35%; font-size: 15px;">Details</th>
+                                            <th scope="col" style="width: 20%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Request Date</th>
+                                            <th scope="col" style="width: 10%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyDashboard">
+                                        @foreach (var exp in PettyCashService.pexpenses)
+                                        {
+                                            <tr @onclick="@(() => modalShow(new(), exp, new(), "expense", "POSTED"))" id="previewRow">
+                                                <td class="text-center align-middle" style="font-size:14px;">@exp.ExpenseID</td>
+                                                <td class="text-center align-middle" style="font-size:14px;">@exp.Applicant</td>
+                                                <td class="text-center text-truncate align-middle" style="font-size:14px;">@exp.ExpenseNote</td>
+                                                <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@exp.ExpenseDate.ToString("dd / MM / yyyy")</td>
+                                                <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@exp.ExpenseStatus</td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+                        <ul class="pagination pagination-sm justify-content-center my-2">
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                            @if ((pexpensePageActive - 1) > 0)
+                            {
+                                <li class="page-item px-1 paging-style" @onclick="(() => pexpensePageSelect((pexpensePageActive - 1)))"><span class="page-link">Previous</span></li>
+                                <li class="page-item paging-style" @onclick="(() => pexpensePageSelect((pexpensePageActive - 1)))"><span class="page-link">@(pexpensePageActive - 1)</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            }
+
+                            <li class="page-item active paging-style" @onclick="(() => pexpensePageSelect(pexpensePageActive))"><span class="page-link">@pexpensePageActive</span></li>
+
+                            @if (pexpensePageActive < pexpenseNumberofPage)
+                            {
+                                <li class="page-item paging-style" @onclick="(() => pexpensePageSelect((pexpensePageActive + 1)))"><span class="page-link">@(pexpensePageActive + 1)</span></li>
+                                <li class="page-item px-1 paging-style" @onclick="(() => pexpensePageSelect((pexpensePageActive + 1)))"><span class="page-link">Next</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                            }
+
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                    }
+
+                </div>
+
+                <div class="tab-pane" id="preimburse" role="tabpanel" aria-labelledby="preimburse-tab">
+
+                    <div class="row my-3">
+
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <select class="form-select w-100 h-100" @bind="premFilterType">
+                                <option hidden disabled value="">Filter By</option>
+                                <option value="ID">Reimburse ID</option>
+                                <option value="LOC">Location</option>
+                                <option value="USER">User Email</option>
+                            </select>
+                        </div>
+
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="text" class="form-control w-100 h-100" @bind-value="premFilterValue" disabled="@(checkpReimburseDataPresent() ? null : "disabled")" />
+                        </div>
+
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkpReimburseDataPresent() ? null : "disabled")" @onclick="@(() => preimburseFilter())">Filter</button>
+                        </div>
+                        <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!ispReimburseFilterActive.Equals(false) ? null : "disabled")" @onclick="preimburseFilterReset">Reset</button>
+                        </div>
+
+                    </div>
+
+                    @if (checkpReimburseDataPresent())
+                    {
+                        <div class="my-3">
+                            <div class="table-responsive">
+
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Reimbursment ID</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Location</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Applicant</th>
+                                            <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 20%; font-size: 15px;">Create Date</th>
+                                            <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 20%; font-size: 15px;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyDashboard">
+                                        @foreach (var reim in PettyCashService.preimburses)
+                                        {
+                                            <tr @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "POSTED"))" id="previewRow">
+                                                <td class="text-center align-middle" style="font-size:14px;">@reim.ReimburseID</td>
+                                                <td class="text-center align-middle" style="font-size:14px;">@reim.LocationID</td>
+                                                <td class="text-center align-middle" style="font-size:14px;">@reim.Applicant</td>
+                                                <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseDate.ToString("dd / MM / yyyy")</td>
+                                                <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseStatus</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                        <ul class="pagination pagination-sm justify-content-center my-2">
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                            @if ((preimbursePageActive - 1) > 0)
+                            {
+                                <li class="page-item px-1 paging-style" @onclick="(() => preimbursePageSelect((preimbursePageActive - 1)))"><span class="page-link">Previous</span></li>
+                                <li class="page-item paging-style" @onclick="(() => preimbursePageSelect((preimbursePageActive - 1)))"><span class="page-link">@(preimbursePageActive - 1)</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            }
+
+                            <li class="page-item active paging-style" @onclick="(() => preimbursePageSelect(preimbursePageActive))"><span class="page-link">@preimbursePageActive</span></li>
+
+                            @if (preimbursePageActive < preimburseNumberofPage)
+                            {
+                                <li class="page-item paging-style" @onclick="(() => preimbursePageSelect((preimbursePageActive + 1)))"><span class="page-link">@(preimbursePageActive + 1)</span></li>
+                                <li class="page-item px-1 paging-style" @onclick="(() => preimbursePageSelect((preimbursePageActive + 1)))"><span class="page-link">Next</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                            }
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                    }
+
+                </div>
+
+            </div>
+        </div>
+
+        <p></p>
+        
+    </div>
+    
+    @* Detail Approve Modal *@
+
+    @if (showModal)
+    {
+        @if (transacType.Contains("advance"))
         {
-            @if (transacType.Contains("advance"))
-            {
-                <div class="modal fade show" id="advanceModal" tabindex="-1" role="dialog" aria-labelledby="advanceModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
-                    <div class="modal-dialog modal-dialog-centered" role="document">
-                        <div class="modal-content">
-                            @* header *@
-                            <div class="modal-header">
-                                <h5 class="modal-title">Advance Detail</h5>
+            <div class="modal fade show" id="advanceModal" tabindex="-1" role="dialog" aria-labelledby="advanceModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+                    <div class="modal-content">
+                        @* header *@
+                        <div class="modal-header cus-bg">
+                            <h5 class="modal-title fw-bolder text-white">Advance Detail</h5>
 
-                                <button type="button" class="close" aria-label="Close" @onclick="modalHide">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
+                            <button type="button" class="close border-0" aria-label="Close" @onclick="modalHide">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
 
-                            <div class="modal-body">
-                                @* body *@
+                        <div class="modal-body">
+                            @* body *@
 
-                                <EditForm Model="advance">
+                            <EditForm Model="advance">
 
-                                    <div class="row my-1">
-                                        <div class="col">
-                                            <label for="advance_id">Advance ID :</label>
-                                            <InputText id="advance_id" @bind-Value="advance.AdvanceID" class="form-control-sm" readonly></InputText>
-                                        </div>
-                                        <div class="col">
-                                            <label for="advance_date">Advance Date :</label>
-                                            <InputDate id="advance_date" @bind-Value="advance.AdvanceDate" class="form-control-sm" readonly></InputDate>
-                                        </div>
+                                <div class="row my-1">
+                                    <div class="col col-sm-12 col-md-6">
+                                        <label class="fw-bold" for="advance_id">Advance ID :</label>
+                                        <InputText id="expense_id" @bind-Value="advance.AdvanceID" class="form-control-sm w-100 border-1" readonly></InputText>
                                     </div>
-
-                                    <div class="row my-1">
-                                        <div class="col">
-                                            <label for="advance_status">Status :</label>
-                                            <InputText id="advance_status" @bind-Value="advance.AdvanceStatus" class="form-control-sm" readonly></InputText>
-                                        </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="advance_stat">Status :</label>
+                                        <InputText id="expense_stat" @bind-Value="advance.AdvanceStatus" class="form-control-sm w-100 border-1" readonly></InputText>
                                     </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="advance_date">Date :</label>
+                                        <InputDate id="expense_date" @bind-Value="advance.AdvanceDate" class="form-control-sm w-100 border-1" readonly></InputDate>
+                                    </div>
+                                </div>
 
-                                    <div class="row my-1">
+                                <hr class="w-100">
+
+                                <div class="row my-1">
+                                    <div class="col">
+                                        <label class="fw-bold" for="user_id">User :</label>
+                                        <InputText id="user_id" @bind-Value="advance.Applicant" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="user_detail">Applicant :</label>
+                                        <InputText id="user_detail" @bind-Value="advance.AdvanceNote" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                    <div class="col">
+                                    <label class="fw-bold" for="user_nik">Applicant NIK :</label>
+                                        <InputText id="user_nik" @bind-Value="advance.AdvanceNIK" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                </div>
+
+                                <div class="row my-1">
+
+
+                                    @if (advance.AdvanceType.Equals("TF"))
+                                    {
                                         <div class="col">
-                                            <label for="location_id">Location :</label>
-                                            <InputText id="location_id" @bind-Value="advance.LocationID" class="form-control-sm" readonly></InputText>
+                                            <label class="fw-bold" for="type">Type :</label>
+                                            <InputText id="type" @bind-Value="advance.AdvanceType" class="form-control-sm w-100 border-1" readonly></InputText>
                                         </div>
                                         <div class="col">
-                                            <label for="advance_appl">Applicant :</label>
-                                            <InputText id="advance_appl" @bind-Value="advance.Applicant" class="form-control-sm" readonly></InputText>
+                                            <label class="fw-bold" for="account_no">Account No :</label>
+                                            <InputText id="account_no" @bind-Value="advance.TypeAccount" class="form-control-sm w-100 border-1" readonly></InputText>
                                         </div>
-                                    </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col">
+                                            <label class="fw-bold" for="type">Type :</label>
+                                            <InputText id="type" @bind-Value="advance.AdvanceType" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                    }
 
-                                    <div class="table-responsive border-1">
-                                        <table class="table table-sm table-bordered" style="width: 100%">
-                                            <thead>
-                                                <tr>
-                                                    <th style="width: 70%;">Description</th>
-                                                    <th style="width: 20%;">Amount</th>
-                                                    <th style="width: 10%;">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach (var line in advanceLines)
-                                                {
-                                                    <tr>
-                                                        <td><input type="text" class="form-control" @bind-value="line.Details" /></td>
-                                                        <td><input type="number" class="form-control" @bind-value="line.Amount" /></td>
-                                                        <td><input type="text" class="form-control" @bind-value="line.Status" /></td>
-                                                    </tr>
-                                                }
-                                                <tr>
-                                                    <td colspan="3" id="total_amount">Rp <span id="nominal_amount"> @advanceLines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                </div>
+
+                                <div class="row my-1">
+                                    <div class="col">
+                                        <label class="fw-bold" for="location_id">Location :</label>
+                                        <InputText id="location_id" @bind-Value="advance.LocationID" class="form-control-sm w-100 border-1" readonly></InputText>
                                     </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="dept_id">Department :</label>
+                                        <InputText id="dept_id" @bind-Value="advance.Department.DepartmentName" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                </div>
+
+                                <div id="accordion" style="width: 100%;" class="mt-2">
+
                                     
+                                        <div class="card" style="width: 100%;">
+                                            <div class="card-header" id="header_@advance.AdvanceID">
+                                                <div class="input-group border border-1">
+                                                    <button id="AccordionTitleCard" class="btn" data-toggle="collapse" data-target="#@advance.AdvanceID" aria-expanded="true" aria-controls="@advance.AdvanceID">
+                                                        <b>Approval Details</b>
+                                                    </button>
+                                                </div>
+                                            </div>
 
-                                </EditForm>
-                            </div>
+                                            <div id="@advance.AdvanceID" class="collapse bg-special" aria-labelledby="@advance.AdvanceID" data-parent="#accordion">
+                                                <div class="card-body">
 
-                            <div class="modal-footer">
-                                @* footer *@
-                                <button type="button" class="btn btn-sm btn-danger" @onclick="modalHide">Close</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-            else if (transacType.Contains("expense"))
-            {
-                <div class="modal fade show" id="expenseModal" tabindex="-1" role="dialog" aria-labelledby="expenseModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
-                    <div class="modal-dialog modal-dialog-centered" role="document">
-                        <div class="modal-content">
-                            @* header *@
-                            <div class="modal-header">
-                                <h5 class="modal-title">Expense Detail</h5>
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="sub_user">Submit User :</label>
+                                                            <input type="text" id="sub_user" value="@advance.statusDetails.submitUser" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="sub_date">Submit Date :</label>
+                                                            <input type="text" value="@advance.statusDetails.submitDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="con_user">Confirm User :</label>
+                                                            <input type="text" id="con_user" value="@advance.statusDetails.confirmUser" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="con_date">Confirm Date :</label>
+                                                            <input type="text" id="con_date" value="@advance.statusDetails.confirmDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="rej_user">Reject User :</label>
+                                                            <input type="text" id="rej_user" value="@advance.statusDetails.rejectUser" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="rej_date">Reject Date :</label>
+                                                            <input type="text" id="rej_date" value="@advance.statusDetails.rejectDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                    </div>
 
-                                <button type="button" class="close" @onclick="modalHide">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-
-                            <div class="modal-body">
-                                @* body *@
-
-                                <EditForm Model="expense">
-
-                                    <div class="row my-1">
-                                        <div class="col">
-                                            <label for="expense_id">Expense ID :</label>
-                                            <InputText id="expense_id" @bind-Value="expense.ExpenseID" class="form-control" readonly></InputText>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col">
-                                            <label for="advance_id">Advance ID :</label>
-                                            <InputText id="advance_id" @bind-Value="expense.AdvanceID" class="form-control" placeholder="Empty" readonly></InputText>
-                                        </div>
-                                    </div>
+                                    
+                                </div>
 
-                                    <div class="row my-1">
-                                        <div class="col">
-                                            <label for="location_id">Location :</label>
-                                            <InputText id="location_id" @bind-Value="expense.LocationID" class="form-control" placeholder="Empty" readonly></InputText>
-                                        </div>
-                                        <div class="col">
-                                            <label for="expense_date">Create Date :</label>
-                                            <InputDate id="expense_date" @bind-Value="expense.ExpenseDate" class="form-control" placeholder="Empty" readonly></InputDate>
-                                        </div>
-                                    </div>
+                                <div class="separator my-4"><b>Advance Line(s)</b></div>
 
-                                    <div class="row my-1">
-                                        <div class="col">
-                                            <label for="expense_appl">Applicant :</label>
-                                            <InputText id="expense_appl" @bind-Value="expense.Applicant" class="form-control" readonly></InputText>
-                                        </div>
-                                        <div class="col">
-                                            <label for="expense_status">Status :</label>
-                                            <InputText id="expense_status" @bind-Value="expense.ExpenseStatus" class="form-control" placeholder="Empty" readonly></InputText>
-                                        </div>
-                                    </div>
-
-                                    <div class="table-responsive border-1">
-                                        <table class="table table-sm table-bordered" style="width: 100%">
-                                            <thead>
-                                                <tr>
-                                                    <th style="width: 65%;">Description</th>
-                                                    <th style="width: 20%;">Req. Amount</th>
-                                                    <th style="width: 20%;">Act. Amount</th>
-                                                    <th style="width: 5%;">File</th>
-                                                    <th style="width: 10%;">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach (var line in ExpenseLines)
-                                                {
-                                                    <tr>
-                                                        <td><input type="text" class="form-control" @bind-value="line.Details" /></td>
-                                                        <td><input type="number" class="form-control" @bind-value="line.Amount" /></td>
-                                                        <td><input type="number" class="form-control" @bind-value="line.ActualAmount" /></td>
-                                                        <td><button type="button" class="btn btn-sm btn-primary-cus"><i class="oi oi-cloud-download"></i>/i></button></td>
-                                                        <td><input type="text" class="form-control" @bind-value="line.Status" /></td>
-                                                    </tr>
-                                                }
-                                                <tr>
-                                                    <td id="title_amount" colspan="2">Total Amount :</td>
-                                                    <td colspan="3" id="total_amount">Rp <span id="nominal_amount"> @ExpenseLines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                </EditForm>
-                            </div>
-                            <div class="modal-footer">
-                                @* footer *@
-                                <button type="button" class="btn btn-sm btn-danger" @onclick="modalHide">Close</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-            else if (transacType.Contains("reimburse"))
-            {
-                <div class="modal fade show" id="reimburseModal" tabindex="-1" role="dialog" aria-labelledby="reimburseModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content">
-                            @* header *@
-                            <div class="modal-header">
-                                <h5 class="modal-title">Reimburse Detail</h5>
-
-                                <button type="button" class="close" @onclick="modalHide">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-
-                            <div class="modal-body">
-                                @* body *@
-
-                                <EditForm Model="reimburse">
-                                    <div class="row">
-                                        <div class="col">
-                                            <label for="reimburs_id">PCR Number :</label>
-                                            <InputText id="reimburs_id" @bind-Value="reimburse.ReimburseID" class="form-control" readonly></InputText>
-                                        </div>
-
-                                        <div class="col">
-                                            <label for="reimburs_date">Reimburse Date :</label>
-                                            <InputDate id="reimburs_date" @bind-Value="reimburse.ReimburseDate" class="form-control" readonly></InputDate>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-5">
-                                            <label for="reimburs_status">Status :</label>
-                                            <InputText id="reimburs_status" @bind-Value="reimburse.ReimburseStatus" class="form-control" readonly></InputText>
-                                        </div>
-
-                                        <div class="col-5">
-                                            <label for="reimburs_appl">Applicant :</label>
-                                            <InputText id="reimburs_appl" @bind-Value="reimburse.Applicant" class="form-control" readonly></InputText>
-                                        </div>
-
-                                        <div class="col-2">
-                                            <label for="reimburs_file">Doc :</label>
-                                            <button type="button" id="reimburse_file" class="btn btn-primary-cus w-100" readonly> <span class="oi oi-cloud-download"></span> </button>
-                                        </div>
-                                    </div>
-
+                                <div class="table-responsive">
                                     <table class="table table-sm table-bordered" style="width: 100%">
                                         <thead>
-                                            <tr>
-                                                <th style="width: 10%;">Account No.</th>
-                                                <th style="width: 65%;">Description</th>
-                                                <th style="width: 20%;">Req. Amount</th>
-                                                <th style="width: 20%;">Act. Amount</th>
-                                                <th style="width: 5%;">File</th>
-                                                <th style="width: 10%;">Status</th>
+                                            <tr style="height: 50px;">
+                                                <th style="width: 5%" class="text-center align-middle">#</th>
+                                                <th style="width: 65%;" class="text-center align-middle">Description</th>
+                                                <th style="width: 30%;" class="text-center align-middle">Amount</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach (var line in reimburseLines)
+                                            @foreach (var line in advance.lines)
                                             {
                                                 <tr>
-                                                    <td><input type="text" class="form-control" @bind-value="line.AccountNo" /></td>
-                                                    <td><input type="text" class="form-control" @bind-value="line.Details" /></td>
-                                                    <td><input type="number" class="form-control" @bind-value="line.Amount" /></td>
-                                                    <td><input type="number" class="form-control" @bind-value="line.ApprovedAmount" /></td>
-                                                    <td><button type="button" class="btn btn-sm btn-primary-cus"><i class="oi oi-cloud-download"></i></button></td>
-                                                    <td><input type="text" class="form-control" @bind-value="line.Status" /></td>
+                                                    <td class="text-center align-middle">@line.LineNo</td>
+                                                    <td class="text-left align-middle px-3 text-wrap">@line.Details</td>
+                                                    <td class="cus-text-right align-middle px-3">@line.Amount.ToString("N0")</td>
                                                 </tr>
                                             }
                                             <tr>
-                                                <td id="title_amount" colspan="2">Total Amount :</td>
-                                                <td id="total_amount" colspan="2">Rp <span id="nominal_amount"> @reimburseLines.Sum(amount => amount.ApprovedAmount).ToString("N0") </span> ,- </td>
+                                                <td colspan="2" class="text-left align-middle fw-bold px-4" style="font-size: 20px;">Total Amount</td>
+                                                <td colspan="1" id="total_amount" class="text-left align-middle px-3">Rp <span id="nominal_amount"> @advance.lines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
 
-                                </EditForm>
-                            </div>
-                            <div class="modal-footer">
-                                @* footer *@
+                            </EditForm>
+                        </div>
 
-                                <button type="button" class="btn btn-sm btn-danger" @onclick="modalHide">Close</button>
-                            </div>
+                        <div class="modal-footer cus-bg">
+                            @* DA *@
+                            <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!advance.AdvanceStatus.Contains("Confirmed") || !advance.AdvanceStatus.Contains("Rejected")) ? null : "disabled")">Reject</button>
+
+                            @* SB *@
+                            <button type="button" class="btn btn-sm btn-warning fw-bold" @onclick="@(() => updateDocumentStatus("Submited"))" disabled="@(advance.AdvanceStatus.Contains("Open") ? null : "disabled")">Submit</button>
+                            @* CF *@
+                            <button type="button" class="btn btn-sm btn-warning fw-bold" @onclick="@(() => updateDocumentStatus("Confirmed"))" disabled="@(advance.AdvanceStatus.Contains("Submited") ? null : "disabled")">Confirm</button>
+                            @* PT *@
+                            @*<button type="button" class="btn btn-sm btn-success fw-bold" @onclick="@(() => updateDocumentStatus("Posted"))">Posting</button>*@
+
+                            <button type="button" class="btn btn btn-danger mx-4  fw-bold" @onclick="modalHide">Close</button>
                         </div>
                     </div>
                 </div>
-            }
+            </div>
         }
+        else if (transacType.Contains("expense"))
+        {
+            <div class="modal fade show" id="expenseModal" tabindex="-1" role="dialog" aria-labelledby="expenseModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+                    <div class="modal-content">
+                        @* header *@
+                        <div class="modal-header cus-bg">
+                            <h5 class="modal-title fw-bolder text-white">Expense Detail</h5>
+
+                            <button type="button" class="close border-0" aria-label="Close" @onclick="modalHide">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            @* body *@
+
+                            <EditForm Model="expense">
+
+                                <div class="row my-1">
+                                    @if (expense.AdvanceID.Equals(""))
+                                    {
+                                        <div class="col col-sm-12 col-md-6">
+                                            <label class="fw-bold" for="expense_id">Expense ID :</label>
+                                            <InputText id="expense_id" @bind-Value="expense.ExpenseID" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col col-sm-12 col-md-4">
+                                            <label class="fw-bold" for="expense_id">Expense ID :</label>
+                                            <InputText id="expense_id" @bind-Value="expense.ExpenseID" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                        <div class="col col-sm-12 col-md-4">
+                                            <label class="fw-bold" for="advance_id">Advance ID :</label>
+                                            <InputText id="advance_id" @bind-Value="expense.AdvanceID" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                    }
+
+                                    <div class="col">
+                                        <label class="fw-bold" for="advance_stat">Status :</label>
+                                        <InputText id="expense_stat" @bind-Value="expense.ExpenseStatus" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="advance_date">Date :</label>
+                                        <InputDate id="expense_date" @bind-Value="expense.ExpenseDate" class="form-control-sm w-100 border-1" readonly></InputDate>
+                                    </div>
+                                </div>
+
+                                <hr class="w-100">
+
+                                <div class="row my-1">
+                                    <div class="col">
+                                        <label class="fw-bold" for="user_id">User :</label>
+                                        <InputText id="user_id" @bind-Value="expense.Applicant" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="user_detail">Applicant :</label>
+                                        <InputText id="user_nik" @bind-Value="expense.ExpenseNote" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="user_detail">Applicant NIK :</label>
+                                        <InputText id="user_nik" @bind-Value="expense.ExpenseNIK" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                </div>
+
+                                <div class="row my-1">
 
 
+                                    @if (expense.ExpenseType.Equals("TF"))
+                                    {
+                                        <div class="col">
+                                            <label class="fw-bold" for="type">Type :</label>
+                                            <InputText id="type" @bind-Value="expense.ExpenseType" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label class="fw-bold" for="account_no">Account No :</label>
+                                            <InputText id="account_no" @bind-Value="expense.TypeAccount" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col">
+                                            <label class="fw-bold" for="type">Type :</label>
+                                            <InputText id="type" @bind-Value="expense.ExpenseType" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                    }
 
-    </div>
-    
+                                </div>
+
+                                <div class="row my-1">
+                                    <div class="col">
+                                        <label class="fw-bold" for="location_id">Location :</label>
+                                        <InputText id="location_id" @bind-Value="expense.LocationID" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="dept_id">Department :</label>
+                                        <InputText id="dept_id" @bind-Value="expense.Department.DepartmentName" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                </div>
+
+                                <div id="accordion" style="width: 100%;" class="mt-2">
+
+
+                                    <div class="card" style="width: 100%;">
+                                        <div class="card-header" id="header_@expense.ExpenseID">
+                                            <div class="input-group border border-1">
+                                                <button id="AccordionTitleCard" class="btn" data-toggle="collapse" data-target="#@expense.ExpenseID" aria-expanded="true" aria-controls="@expense.ExpenseID">
+                                                    <b>Approval Details</b>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div id="@expense.ExpenseID" class="collapse bg-special" aria-labelledby="@expense.ExpenseID" data-parent="#accordion">
+                                            <div class="card-body">
+
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="sub_user">Submit User :</label>
+                                                        <input type="text" id="sub_user" value="@expense.statusDetails.submitUser" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="sub_date">Submit Date :</label>
+                                                        <input type="text" value="@expense.statusDetails.submitDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="con_user">Confirm User :</label>
+                                                        <input type="text" id="con_user" value="@expense.statusDetails.confirmUser" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="con_date">Confirm Date :</label>
+                                                        <input type="text" id="con_date" value="@expense.statusDetails.confirmDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="rej_user">Reject User :</label>
+                                                        <input type="text" id="rej_user" value="@expense.statusDetails.rejectUser" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="rej_date">Reject Date :</label>
+                                                        <input type="text" id="rej_date" value="@expense.statusDetails.rejectDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="separator my-4"><b>Expense Line(s)</b></div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered" style="width: 100%">
+                                        <thead>
+                                            <tr style="height: 50px;">
+                                                <th style="width: 5%" class="text-center align-middle">#</th>
+                                                <th style="width: 65%;" class="text-center align-middle">Description</th>
+                                                <th style="width: 30%;" class="text-center align-middle">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var line in expense.lines)
+                                            {
+                                                <tr>
+                                                    <td class="text-center align-middle">@line.LineNo</td>
+                                                    <td class="text-left align-middle px-3 text-wrap">@line.Details</td>
+                                                    <td class="cus-text-right align-middle px-3">@line.ActualAmount.ToString("N0")</td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td colspan="2" class="text-left align-middle fw-bold px-4" style="font-size: 20px;">Total Amount</td>
+                                                <td colspan="1" id="total_amount" class="text-left align-middle px-3">Rp <span id="nominal_amount"> @expense.lines.Sum(a => a.ActualAmount).ToString("N0") </span> ,- </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="separator my-4"><b>Attachment Line(s)</b></div>
+
+                                @if (PettyCashService.fileStreams.Any())
+                                {
+                                    <div class="card-deck">
+
+                                        @foreach (var f in PettyCashService.fileStreams)
+                                        {
+                                            <div id="attachCard" class="card border-dark" @onclick=@(() => HandleViewDocument(f.content))>
+                                                <div class="card-body">
+                                                    <h6 class="card-title"><b>@f.fileName.Split("!_!")[1]</b></h6>
+                                                    <small><i>Click To View</i></small>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="fw-bold text-center">. . . Loading . . .</p>
+                                }
+
+                            </EditForm>
+                        </div>
+
+                        <div class="modal-footer cus-bg">
+                            @* DA *@
+                            <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!expense.ExpenseStatus.Contains("Confirmed") || !expense.ExpenseStatus.Contains("Rejected"))  ? null : "disabled")">Reject</button>
+
+                            @* SB *@
+                            <button type="button" class="btn btn-sm btn-warning fw-bold" @onclick="@(() => updateDocumentStatus("Submited"))" disabled="@(expense.ExpenseStatus.Contains("Open") ? null : "disabled")">Submit</button>
+                            @* CF *@
+                            <button type="button" class="btn btn-sm btn-warning fw-bold" @onclick="@(() => updateDocumentStatus("Confirmed"))" disabled="@(expense.ExpenseStatus.Contains("Submited") ? null : "disabled")">Confirm</button>
+
+                            <button type="button" class="btn btn btn-danger mx-4  fw-bold" @onclick="modalHide">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (transacType.Contains("reimburse"))
+        {
+            <div class="modal fade show" id="reimburseModal" tabindex="-1" role="dialog" aria-labelledby="reimburseModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+
+                        <div class="modal-header cus-bg">
+                            <h5 class="modal-title fw-bolder text-white">Reimburse Detail</h5>
+
+                            <button type="button" class="close border-0" @onclick="modalHide">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <EditForm Model="reimburse">
+
+                                <div class="row my-1">
+                                    <div class="col">
+                                        <label class="fw-bold" for="reimburs_id">Reimburse ID :</label>
+                                        <InputText id="reimburs_id" @bind-Value="reimburse.ReimburseID" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+
+                                    <div class="col">
+                                        <label class="fw-bold" for="reimburs_date">Reimburse Date :</label>
+                                        <InputDate id="reimburs_date" @bind-Value="reimburse.ReimburseDate" class="form-control-sm w-100 border-1" readonly></InputDate>
+                                    </div>
+                                </div>
+
+                                <div class="row my-1">
+                                    <div class="col">
+                                        <label class="fw-bold" for="reimburse_user">Applicant :</label>
+                                        <InputText id="reimburs_status" @bind-Value="reimburse.Applicant" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+
+                                    <div class="col">
+                                        <label class="fw-bold" for="reimburse_loc">Location :</label>
+                                        <InputText id="reimburs_appl" @bind-Value="reimburse.LocationID" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                </div>
+
+                                <div class="row my-1">
+                                    <div class="col">
+                                        <label class="fw-bold" for="reimburs_status">Status :</label>
+                                        <InputText id="reimburs_status" @bind-Value="reimburse.ReimburseStatus" class="form-control-sm w-100 border-1" readonly></InputText>
+                                    </div>
+                                </div>
+
+                                <div id="accordion" style="width: 100%;" class="mt-2">
+
+
+                                    <div class="card" style="width: 100%;">
+                                        <div class="card-header" id="header_@reimburse.ReimburseID">
+                                            <div class="input-group border border-1">
+                                                <button id="AccordionTitleCard" class="btn" data-toggle="collapse" data-target="#@reimburse.ReimburseID" aria-expanded="true" aria-controls="@reimburse.ReimburseID">
+                                                    <b>Approval Details</b>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div id="@reimburse.ReimburseID" class="collapse bg-special" aria-labelledby="@reimburse.ReimburseID" data-parent="#accordion">
+                                            <div class="card-body">
+
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="sub_user">Submit User :</label>
+                                                    <input type="text" id="sub_user" value="@reimburse.statusDetails.confirmUser" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="sub_date">Submit Date :</label>
+                                                        <input type="text" value="@reimburse.statusDetails.confirmDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="ver_user">Verify User :</label>
+                                                        <input type="text" id="ver_user" value="@reimburse.statusDetails.verifyUser" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="ver_date">Verify Date :</label>
+                                                        <input type="text" id="ver_date" value="@reimburse.statusDetails.verifyDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="rel_user">Release User :</label>
+                                                        <input type="text" id="rel_user" value="@reimburse.statusDetails.releaseUser" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="rel_date">Release Date :</label>
+                                                        <input type="text" id="rel_date" value="@reimburse.statusDetails.releaseDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="apr_user">Approve User :</label>
+                                                        <input type="text" id="apr_user" value="@reimburse.statusDetails.approveUser" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="apr_date">Approve Date :</label>
+                                                        <input type="text" id="apr_date" value="@reimburse.statusDetails.approveDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="clm_user">Claim User :</label>
+                                                        <input type="text" id="clm_user" value="@reimburse.statusDetails.claimUser" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="clm_date">Claim Date :</label>
+                                                        <input type="text" id="clm_date" value="@reimburse.statusDetails.claimDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="rej_user">Reject User :</label>
+                                                        <input type="text" id="rej_user" value="@reimburse.statusDetails.rejectUser" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                    <div class="col">
+                                                        <label class="fw-bold" for="rej_date">Reject Date :</label>
+                                                        <input type="text" id="rej_date" value="@reimburse.statusDetails.rejectDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="separator my-4"><b>Reimburse Line(s)</b></div>
+
+                                @if (reimburse.ReimburseStatus.Contains("Confirmed"))
+                                {
+                                    <button type="button" style="width: 40px;" class="btn btn-sm btn-dark my-1" @onclick="@(() => reimburseAction("revert"))"><i class="oi oi-loop-circular"></i></button>
+                                    <button type="button" style="width: 40px;" class="btn btn-sm btn-danger my-1" @onclick="@(() => reimburseAction("reject"))"><i class="oi oi-circle-x"></i></button>
+                                    <button type="button" style="width: 40px;" class="btn btn-sm btn-success my-1" @onclick="@(() => reimburseAction("approve"))"><i class="oi oi-check"></i></button>
+                                }
+
+
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered" style="width: 100%">
+                                        <thead>
+                                            <tr style="height: 50px;">
+                                                <th style="width: 5%" class="text-center align-middle">
+                                                    <input class="form-check-input" type="checkbox" id="checkall" @onclick="checkAll" checked="@(reimburseCheckAllisChecked.Equals(true) ? "checked" : null)" disabled="@(reimburse.ReimburseStatus.Contains("Confirmed") ? null : "disabled")" />
+                                                </th>
+                                                <th style="width: 5%" class="text-center align-middle">#</th>
+                                                <th style="width: 16%" class="text-center align-middle">Expense ID</th>
+                                                <th style="width: 10%" class="text-center align-middle">Account No</th>
+                                                <th style="width: 30%;" class="text-center align-middle">Description</th>
+                                                <th style="width: 17%;" class="text-center align-middle">Amount</th>
+                                                <th style="width: 17%; background-color: aquamarine;" class="text-center align-middle">Approved Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var line in reimburse.lines)
+                                            {
+                                                <tr>
+                                                    <td style="text-align: center;">
+                                                        <input class="form-check-input" type="checkbox" id="@line.LineNo" @onclick="(() => appendSelectedReimburseLine(line))" checked="@((selectedReimburseLines.SingleOrDefault(a => (a.ExpenseID == line.ExpenseID) && (a.ReimburseID == line.ReimburseID) && (a.LineNo == line.LineNo)) != null) ? "checked" : null)" disabled="@(reimburse.ReimburseStatus.Contains("Confirmed") ? null : "disabled")" />
+                                                    </td>
+
+                                                    <td class="text-center align-middle @(line.Status.Contains("OP") ? null : (line.Status.Contains("CL") ? "bg-danger text-white" : "bg-success text-white"))">@line.LineNo</td>
+                                                    <td class="text-center align-middle">@line.ExpenseID</td>
+                                                    <td class="text-center align-middle">@line.AccountNo</td>
+                                                    <td class="text-left align-middle px-3 text-truncate">@line.Details</td>
+                                                    <td class="cus-text-right align-middle px-3">@line.Amount.ToString("N0")</td>
+                                                    <td><input type="number" class="form-control" @bind-value="line.ApprovedAmount" disabled="@( ((activeUser.location.Equals("") && reimburse.ReimburseStatus.Equals("Confirmed")) && line.Status.Equals("AP")) ? null : "disabled" )" /></td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td colspan="5" class="text-left align-middle fw-bold px-4" style="font-size: 20px;">Total Amount</td>
+                                                <td id="total_amount" class="align-middle px-3">Rp <span id="nominal_amount"> @reimburse.lines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
+                                                <td id="total_amount" class="align-middle px-3">Rp <span id="nominal_amount"> @reimburse.lines.Sum(a => a.ApprovedAmount).ToString("N0") </span> ,- </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="row my-1">
+                                    <div class="col">
+                                        <label class="fw-bold" for="reimburs_status">Line Approval Note :</label>
+                                        <InputText id="reimburs_note" @bind-Value="reimburse.ReimburseNote" class="form-control-sm w-100 border-1" disabled="@(reimburse.ReimburseStatus.Contains("Confirmed") ? null : "disabled")"></InputText>
+                                    </div>
+                                </div>
+
+                                <div id="accordion_summary" style="width: 100%;" class="mt-2">
+
+                                    <div class="card" style="width: 100%;">
+                                        <div class="card-header" id="header_summary">
+                                            <div class="input-group border border-1">
+                                                <button id="AccordionTitleCard" class="btn" data-toggle="collapse" data-target="#summary" aria-expanded="true" aria-controls="header_summary">
+                                                    <b>Account Summary</b>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div id="summary" class="collapse bg-special" aria-labelledby="summary" data-parent="#accordion_summary">
+                                            
+                                            <div class="card-body">
+
+                                                @foreach (var summary in coaSummary)
+                                                {
+
+                                                    <div class="row">
+                                                        <div class="col text-truncate"><b> @summary </b> - @PettyCashService.coas.FirstOrDefault(x => x.AccountCode.Contains(summary)).AccountDescription </div>
+                                                        <div class="col">: @reimburse.lines.Where(x => x.AccountNo.Contains(summary)).Sum(x => x.ApprovedAmount).ToString("N0") </div>
+                                                    </div>
+
+                                                }
+
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="separator my-4"><b>Attachment Line(s)</b></div>
+
+                                @if (PettyCashService.fileStreams.Any())
+                                {
+                                    <div id="accordion" style="width: 100%;">
+
+                                        @foreach (var expenseId in exp)
+                                        {
+                                            <div class="card" style="width: 100%;">
+                                                <div class="card-header" id="header_@expenseId">
+                                                    <div class="input-group border border-1">
+                                                        @*<button id="AccordionDeleteCard" class="btn btn-danger" @onclick="(() => removeExpense(exp))">
+                                                            <i class="oi oi-delete"></i>
+                                                        </button>*@
+                                                        <button id="AccordionTitleCard" class="btn" data-toggle="collapse" data-target="#@expenseId" aria-expanded="true" aria-controls="@expenseId">
+                                                            <b>@expenseId</b>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div id="@expenseId" class="collapse show" aria-labelledby="@expenseId" data-parent="#accordion">
+                                                    <div class="card-body">
+
+                                                        <div class="card-deck">
+
+                                                            @foreach (var f in PettyCashService.fileStreams)
+                                                            {
+                                                                @if (!f.type.Contains(expenseId))
+                                                                    continue;
+
+                                                                <div id="attachCard" class="card border-dark" @onclick=@(() => HandleViewDocument(f.content))>
+                                                                    <div class="card-body">
+                                                                        <h6 class="card-title"><b>@f.fileName.Split("!_!")[1]</b></h6>
+                                                                        <small><i>Click To View</i></small>
+                                                                    </div>
+                                                                </div>
+                                                            }
+
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                }
+                                else
+                                {
+                                    <p class="fw-bold text-center">. . . Loading . . .</p>
+                                }
+
+                            </EditForm>
+                        </div>
+
+                        <div class="modal-footer cus-bg">
+                            @* DA *@
+                            <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!reimburse.ReimburseStatus.Contains("Approved") || reimburse.ReimburseStatus.Contains("Claimed") || !reimburse.ReimburseStatus.Contains("Rejected")) ? null : "disabled")">Reject</button>
+
+                            @* SB *@
+                            <button type="button" class="btn btn-sm btn-success fw-bold" @onclick="@(() => updateDocumentStatus("Claimed"))" disabled="@(reimburse.ReimburseStatus.Contains("Approved") ? null : "disabled")">Claim</button>
+                            @* CF *@
+                            <button type="button" class="btn btn-sm btn-warning fw-bold" @onclick="@(() => updateDocumentStatus("Confirmed"))" disabled="@(reimburse.ReimburseStatus.Contains("Open") ? null : "disabled")">Confirm</button>
+                            @* VR *@
+                            <button type="button" class="btn btn-sm btn-warning fw-bold" @onclick="@(() => updateDocumentStatus("Verified"))" disabled="@(reimburse.ReimburseStatus.Contains("Confirmed") ? null : "disabled")">Verify</button>
+                            @* RL *@
+                            <button type="button" class="btn btn-sm btn-warning fw-bold" @onclick="@(() => updateDocumentStatus("Released"))" disabled="@(reimburse.ReimburseStatus.Contains("Verified") ? null : "disabled")">Release</button>
+                            @* AP *@
+                            <button type="button" class="btn btn-sm btn-warning fw-bold" @onclick="@(() => updateDocumentStatus("Approved"))" disabled="@(reimburse.ReimburseStatus.Contains("Released") ? null : "disabled")">Approve</button>
+
+                            <button type="button" class="btn btn btn-danger mx-4 fw-bold" @onclick="modalHide">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    @if (showBalanceModal)
+    {
+        <div class="modal fade show" id="balanceModal" tabindex="-1" role="dialog" aria-labelledby="balanceModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    @* header *@
+                    <div class="modal-header cus-bg">
+                        <h5 class="modal-title fw-bolder text-white">Balance Detail for @outstandingBalance.locationID</h5>
+
+                        <button type="button" class="close border-0" aria-label="Close" @onclick="hideBalanceDetails">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="row">
+                            <div class="col"><b>Location Budget</b></div>
+                            <div class="col">: Rp. @locBalanceDetails.BudgetAmount.ToString("N0") ,-</div>
+                        </div>
+                        <div class="row">
+                            <div class="col"><b>Edited By</b></div>
+                            <div class="col">: @locBalanceDetails.LatestAuditUser </div>
+                        </div>
+                        <div class="row">
+                            <div class="col"><b>Edit Date</b></div>
+                            <div class="col">: @locBalanceDetails.AuditDate.ToString("dd/MM/yyyy HH:mm:ss") </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col">
+                                @*ED*@
+                                <button type="button" class="btn btn-sm btn-warning h-100 w-100 fw-bold" @onclick="(() => triggerBalanceUpdateModal(locBalanceDetails.LocationID))">Edit Budget</button>
+                            </div>
+                        </div>
+
+                        <div class="separator my-3">On Hand</div>
+
+                        <div class="row">
+                            <div class="col"><b>On Hand Balance</b></div>
+                            <div class="col">: Rp. @outstandingBalance.locationOnhandAmount.ToString("N0") ,-</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col">
+                                @*XP*@
+                                <button type="button" class="btn btn-sm btn-info h-100 w-100 fw-bold" @onclick="(() => triggerExportModal(locBalanceDetails.LocationID))">Export</button>
+                            </div>
+                        </div>
+
+                        <div class="separator my-3">Outstanding Amount</div>
+
+                        <div class="row">
+                            <div class="col"><b>Outstanding Advance</b></div>
+                            <div class="col">: Rp. @outstandingBalance.advanceOutstandingAmount.ToString("N0") ,-</div>
+                        </div>
+                        <div class="row">
+                            <div class="col"><b>Outstanding Expense</b></div>
+                            <div class="col">: Rp. @outstandingBalance.expenseOutstandingAmount.ToString("N0") ,-</div>
+                        </div>
+                        <div class="row">
+                            <div class="col"><b>Outstanding Reimburse Request</b></div>
+                            <div class="col">: Rp. @outstandingBalance.reimbursementReqOutstandingAmount.ToString("N0") ,-</div>
+                        </div>
+                        <div class="row">
+                            <div class="col"><b>Outstanding Reimburse Approved</b></div>
+                            <div class="col">: Rp. @outstandingBalance.reimbursementApvOutstandingAmount.ToString("N0") ,-</div>
+                        </div>
+                        <div class="row">
+                            <div class="col"><b>As Of</b></div>
+                            <div class="col">: @outstandingBalance.lastFetch.ToString("dd/MM/yyyy HH:mm:ss")</div>
+                        </div>
+                    </div>
+                    
+
+                    <div class="modal-footer cus-bg">
+
+                        <button type="button" class="btn btn btn-danger mx-4  fw-bold" @onclick="hideBalanceDetails">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showUpdateBudgetModal)
+    {
+        <div class="modal fade show" id="editBudgetModal" tabindex="-2" role="dialog" aria-labelledby="editBudgetModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    @* header *@
+                    <div class="modal-header cus-bg">
+                    <h5 class="modal-title fw-bolder text-white">Edit Budget for @locBalanceDetails.LocationID</h5>
+
+                        <button type="button" class="close border-0" aria-label="Close" @onclick="hideBudgetDetails">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="row my-1">
+                            <div class="col"><b>Input Budget</b></div>
+                            <div class="col">
+                                <input type="number" @bind-value="editedBudgetAmount" class="form-control-sm w-100 h-100" />
+                            </div>
+                        </div>
+                        <div class="row my-3">
+                            <div class="col"><b>Rp. @editedBudgetAmount.ToString("N0") ,-</b></div>
+                        </div>
+                        <div class="row my-1">
+                            <div class="col">
+                                @*ED*@
+                                <button type="button" class="btn btn-sm btn-warning h-100 w-100 fw-bold" @onclick="(() => updateBudget(locBalanceDetails.LocationID))">Update</button>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    <div class="modal-footer cus-bg">
+                        <button type="button" class="btn btn btn-danger mx-4  fw-bold" @onclick="hideBudgetDetails">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showExportModal)
+    {
+        <div class="modal fade show" id="exportModal" tabindex="-2" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    @* header *@
+                    <div class="modal-header cus-bg">
+                        <h5 class="modal-title fw-bolder text-white">Export Transaction</h5>
+
+                        <button type="button" class="close border-0" aria-label="Close" @onclick="hideExportModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered" style="width: 100%">
+                                <thead>
+                                    <tr style="height: 50px;">
+                                        <th style="width: 5%" class="text-center align-middle">
+                                            <input class="form-check-input" type="checkbox" id="checkall" @onclick="checkAll" checked="@(reimburseCheckAllisChecked.Equals(true) ? "checked" : null)" disabled="@(reimburse.ReimburseStatus.Contains("Confirmed") ? null : "disabled")" />
+                                        </th>
+                                        <th style="width: 15%" class="text-center align-middle">Location ID</th>
+                                        <th style="width: 30%" class="text-center align-middle">Location Name</th>
+                                        <th style="width: 25%" class="text-center align-middle">Start Date</th>
+                                        <th style="width: 25%;" class="text-center align-middle">End Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @*HO*@
+                                    <tr id="tbodyDashboard">
+                                        <td style="text-align: center;">
+                                            <input class="form-check-input" type="checkbox" id="HO" @onclick="@(() => selectExportLocation("HO"))" checked="@(ledgerParam.SingleOrDefault(a => (a.locationID == "HO")) != null ? "checked" : null)" />
+                                        </td>
+
+                                        <td class="text-center align-middle">HO</td>
+                                        <td class="text-center align-middle">HEAD OFFICE</td>
+                                        <td>
+                                            @if (ledgerParam.SingleOrDefault(a => (a.locationID == "HO")) != null)
+                                            {
+                                                <input type="date" class="form-control-sm w-100" @bind-value="@(ledgerParam.SingleOrDefault(a => a.locationID == "HO").startDate)" />
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (ledgerParam.SingleOrDefault(a => (a.locationID == "HO")) != null)
+                                            {
+                                                <input type="date" class="form-control-sm w-100" @bind-value="@(ledgerParam.SingleOrDefault(a => a.locationID == "HO").endDate)" />
+                                            }
+                                        </td>
+                                    </tr>
+
+                                    @foreach (var loc in ManagementService.locations)
+                                    {
+                                        <tr id="tbodyDashboard">
+                                            <td style="text-align: center;">
+                                            <input class="form-check-input" type="checkbox" id="HO" @onclick="@(() => selectExportLocation(loc.locationId))" checked="@(ledgerParam.SingleOrDefault(a => (a.locationID == loc.locationId)) != null ? "checked" : null)" />
+                                            </td>
+
+                                            <td class="text-center align-middle">@loc.locationId</td>
+                                            <td class="text-center align-middle">@loc.locationName</td>
+                                            <td>
+                                                @if (ledgerParam.SingleOrDefault(a => (a.locationID == loc.locationId)) != null)
+                                                {
+                                                    <input type="date" class="form-control-sm w-100" @bind-value="@(ledgerParam.SingleOrDefault(a => a.locationID == loc.locationId).startDate)" />
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (ledgerParam.SingleOrDefault(a => (a.locationID == loc.locationId)) != null)
+                                                {
+                                                    <input type="date" class="form-control-sm w-100" @bind-value="@(ledgerParam.SingleOrDefault(a => a.locationID == loc.locationId).endDate)" />
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+
+                    <div class="modal-footer cus-bg">
+                    <button type="button" class="btn btn-sm btn-primary fw-bold" @onclick="exportLedgerData">Export
+                            @if (isLoading)
+                            {
+                                <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                            }
+                        </button>
+                        <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="hideExportModal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
 @*}*@

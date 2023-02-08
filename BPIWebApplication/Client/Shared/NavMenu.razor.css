@@ -18,7 +18,7 @@ hr {
 }
 
 .sidebarContentWrap {
-    max-height: 450px;
+    max-height: calc(100vh - 200px);
     overflow-y: auto;
 }
 

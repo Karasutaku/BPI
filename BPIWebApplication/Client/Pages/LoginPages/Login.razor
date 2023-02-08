@@ -1,5 +1,6 @@
 ﻿@page "/login"
 @inject ILoginService loginService
+@inject IManagementService ManagementService
 @inject NavigationManager navigate
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
 @inject IJSRuntime JS
@@ -46,9 +47,10 @@
                                             <label class="form-label" ><b>Company</b></label>
                                         </div>
                                         <div class="col-sm-12 col-md-8">
-                                            <InputSelect @bind-Value="user.companyId" id="form_comp" class="form-select-sm w-100">
+                                            <select id="form_comp" class="form-select-sm w-100" @onchange="getLocationsByCompany">
+                                                <option hidden>Select Company</option>
                                                 <option value="1">PT. Catur Mitra Sejati Sentosa</option>
-                                            </InputSelect>
+                                            </select>
                                         </div>
                                     </div>
 
@@ -57,9 +59,21 @@
                                             <label class="form-label" ><b>Site</b></label>
                                         </div>
                                         <div class="col-sm-12 col-md-8">
-                                            <InputSelect @bind-Value="user.companyId" id="form_loc" class="form-select-sm w-100">
-                                                <option></option>
+                                            <InputSelect @bind-Value="user.locationId" id="form_loc" class="form-select-sm w-100" >
+                                                <option hidden value="99999">Select Location</option>
+                                                @if (ManagementService.locations.Any())
+                                                {
+                                                    <option value="">HO - HEAD OFFICE</option>
+                                                    foreach (var loc in ManagementService.locations)
+                                                    {
+                                                        <option value="@loc.locationId">@loc.locationId - @loc.locationName</option>
+                                                    }
+                                                }
                                             </InputSelect>
+                                            @if (isFetchLocationProgress)
+                                            {
+                                                <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                            }
                                         </div>
                                         
                                         

@@ -1,5 +1,4 @@
-﻿using BPIWebApplication.Shared;
-using BPIWebApplication.Shared.FileUploadModel;
+﻿using BPIWebApplication.Shared.FileUploadModel;
 using BPIWebApplication.Shared.PagesModel.ApplyProcedure;
 using BPIWebApplication.Shared.DbModel;
 using Microsoft.AspNetCore.Components.Forms;
@@ -12,6 +11,8 @@ using BPIWebApplication.Client.Pages.SopPages;
 using BPIWebApplication.Shared.PagesModel.Dashboard;
 using BPIWebApplication.Shared.PagesModel.AccessHistory;
 using BPIWebApplication.Shared.ReportModel;
+using BPIWebApplication.Shared.MainModel;
+using BPIWebApplication.Shared.MainModel.Procedure;
 
 namespace BPIWebApplication.Client.Services.ProcedureServices
 {
@@ -52,7 +53,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<string>>($"api/Procedure/isProcedureDataPresent/{temp}");
+                var result = await _http.GetFromJsonAsync<ResultModel<string>>($"api/endUser/Procedure/isProcedureDataPresent/{temp}");
 
                 if (result.isSuccess)
                 {
@@ -90,7 +91,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
             ResultModel<List<BisnisUnit>> resData = new ResultModel<List<BisnisUnit>>();
 
             try {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/Procedure/getAllBisnisUnitData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/endUser/Procedure/getAllBisnisUnitData");
 
                 if (result.isSuccess)
                 {
@@ -117,7 +118,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>("api/Procedure/getAllDepartmentData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>("api/endUser/Procedure/getAllDepartmentData");
 
                 if (result.isSuccess)
                 {
@@ -145,7 +146,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<Procedure>>>("api/Procedure/getAllProcedureData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Procedure>>>("api/endUser/Procedure/getAllProcedureData");
 
                 if (result.isSuccess)
                 {
@@ -173,7 +174,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/Procedure/getDepartmentProcedureData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/endUser/Procedure/getDepartmentProcedureData");
 
                 if (result.isSuccess)
                 {
@@ -201,7 +202,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/Procedure/getDepartmentProcedureDatawithPaging/{pageNo}");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/endUser/Procedure/getDepartmentProcedureDatawithPaging/{pageNo}");
 
                 if (result.isSuccess)
                 {
@@ -229,7 +230,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<HistoryAccess>>>($"api/Procedure/getAllHistoryAccessDatawithPaging/{pageNo}");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<HistoryAccess>>>($"api/endUser/Procedure/getAllHistoryAccessDatawithPaging/{pageNo}");
 
                 if (result.isSuccess)
                 {
@@ -251,13 +252,14 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
             return resData;
         }
 
-        public async Task<ResultModel<FileReadyDownload>> GetFile(string path)
+        public async Task<ResultModel<BPIWebApplication.Shared.MainModel.Stream.FileStream>> GetFile(string path)
         {
-            ResultModel<FileReadyDownload> resData = new ResultModel<FileReadyDownload>();
+            ResultModel<BPIWebApplication.Shared.MainModel.Stream.FileStream> resData = new ResultModel<BPIWebApplication.Shared.MainModel.Stream.FileStream>();
             var temp = Base64Encode(path);
+
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<FileReadyDownload>>($"api/Procedure/getFile/{temp}");
+                var result = await _http.GetFromJsonAsync<ResultModel<BPIWebApplication.Shared.MainModel.Stream.FileStream>>($"api/endUser/Procedure/getFile/{temp}");
 
                 if (result.isSuccess)
                 {
@@ -277,17 +279,17 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
             return resData;
         }
 
-        public async Task<ResultModel<ProcedureUpload>> createProcedure(ProcedureUpload data)
+        public async Task<ResultModel<ProcedureStream>> createProcedure(ProcedureStream data)
         {
-            ResultModel<ProcedureUpload> resData = new ResultModel<ProcedureUpload>();
+            ResultModel<ProcedureStream> resData = new ResultModel<ProcedureStream>();
             
             try
             {
-                var result = await _http.PostAsJsonAsync<ProcedureUpload>("api/Procedure/createProcedureData", data);
+                var result = await _http.PostAsJsonAsync<ProcedureStream>("api/endUser/Procedure/createProcedureData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
-                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<ProcedureUpload>>();
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<ProcedureStream>>();
 
                     if (respBody.isSuccess)
                     {
@@ -309,17 +311,17 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
             return resData;
         }
 
-        public async Task<ResultModel<QueryModel<ApplyProcedureMultiDept>>> createDepartmentProcedure(QueryModel<ApplyProcedureMultiDept> data)
+        public async Task<ResultModel<QueryModel<List<DepartmentProcedure>>>> createDepartmentProcedure(QueryModel<List<DepartmentProcedure>> data)
         {
-            ResultModel<QueryModel<ApplyProcedureMultiDept>> resData = new ResultModel<QueryModel<ApplyProcedureMultiDept>>();
+            ResultModel<QueryModel<List<DepartmentProcedure>>> resData = new ResultModel<QueryModel<List<DepartmentProcedure>>>();
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<ApplyProcedureMultiDept>>("api/Procedure/createDepartmentProcedureData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<List<DepartmentProcedure>>>("api/endUser/Procedure/createDepartmentProcedureData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
-                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<ApplyProcedureMultiDept>>>();
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<List<DepartmentProcedure>>>>();
 
                     if (respBody.isSuccess)
                     {
@@ -347,7 +349,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<HistoryAccess>>("api/Procedure/createHistoryAccessData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<HistoryAccess>>("api/endUser/Procedure/createHistoryAccessData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -373,17 +375,17 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
             return resData;
         }
 
-        public async Task<ResultModel<ProcedureUpload>> editProcedure(ProcedureUpload data)
+        public async Task<ResultModel<ProcedureStream>> editProcedure(ProcedureStream data)
         {
-            ResultModel<ProcedureUpload> resData = new ResultModel<ProcedureUpload>();
+            ResultModel<ProcedureStream> resData = new ResultModel<ProcedureStream>();
 
             try
             {
-                var result = await _http.PostAsJsonAsync<ProcedureUpload>("api/Procedure/editProcedureData", data);
+                var result = await _http.PostAsJsonAsync<ProcedureStream>("api/endUser/Procedure/editProcedureData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
-                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<ProcedureUpload>>();
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<ProcedureStream>>();
 
                     if (respBody.isSuccess)
                     {
@@ -405,17 +407,17 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
             return resData;
         }
 
-        public async Task<ResultModel<QueryModel<ApplyProcedureMultiDept>>> deleteDepartmentProcedure(QueryModel<ApplyProcedureMultiDept> data)
+        public async Task<ResultModel<QueryModel<List<DepartmentProcedure>>>> deleteDepartmentProcedure(QueryModel<List<DepartmentProcedure>> data)
         {
-            ResultModel<QueryModel<ApplyProcedureMultiDept>> resData = new ResultModel<QueryModel<ApplyProcedureMultiDept>>();
+            ResultModel<QueryModel<List<DepartmentProcedure>>> resData = new ResultModel<QueryModel<List<DepartmentProcedure>>>();
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<ApplyProcedureMultiDept>>("api/Procedure/deleteDepartmentProcedureData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<List<DepartmentProcedure>>>("api/endUser/Procedure/deleteDepartmentProcedureData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
-                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<ApplyProcedureMultiDept>>>();
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<List<DepartmentProcedure>>>>();
 
                     if (respBody.isSuccess)
                     {
@@ -443,7 +445,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/Procedure/getHistoryAccessNumberofPage");
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/endUser/Procedure/getHistoryAccessNumberofPage");
 
                 if (result.isSuccess)
                 {
@@ -478,7 +480,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/Procedure/getDepartmentProcedureNumberofPage");
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/endUser/Procedure/getDepartmentProcedureNumberofPage");
 
                 if (result.isSuccess)
                 {
@@ -513,7 +515,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<DashboardFilter>($"api/Procedure/getDepartmentProcedurewithFilterNumberofPage", data);
+                var result = await _http.PostAsJsonAsync<DashboardFilter>($"api/endUser/Procedure/getDepartmentProcedurewithFilterNumberofPage", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -546,7 +548,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<DashboardFilter>("api/Procedure/getDepartmentProcedureDatawithFilterbyPaging", data);
+                var result = await _http.PostAsJsonAsync<DashboardFilter>("api/endUser/Procedure/getDepartmentProcedureDatawithFilterbyPaging", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -580,7 +582,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<AccessHistoryFilter>("api/Procedure/getAllHistoryAccessDatabyFilterwithPaging", data);
+                var result = await _http.PostAsJsonAsync<AccessHistoryFilter>("api/endUser/Procedure/getAllHistoryAccessDatabyFilterwithPaging", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -614,7 +616,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<AccessHistoryFilter>($"api/Procedure/getHistoryAccessbyFilterwithPagingNumberofPage", data);
+                var result = await _http.PostAsJsonAsync<AccessHistoryFilter>($"api/endUser/Procedure/getHistoryAccessbyFilterwithPagingNumberofPage", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -647,7 +649,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<AccessHistoryReport>("api/Procedure/getAllHistoryAccessDataReportbyFilter", data);
+                var result = await _http.PostAsJsonAsync<AccessHistoryReport>("api/endUser/Procedure/getAllHistoryAccessDataReportbyFilter", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -683,7 +685,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<long>>($"api/Procedure/getProcedureMaxSizeUpload");
+                var result = await _http.GetFromJsonAsync<ResultModel<long>>($"api/endUser/Procedure/getProcedureMaxSizeUpload");
 
                 if (result.isSuccess)
                 {

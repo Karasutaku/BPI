@@ -8,6 +8,11 @@ using BPIDA.Models.MainModel.Procedure.Report;
 using BPIDA.Models.MainModel.Company;
 using BPIDA.Models.PagesModel.AddEditProject;
 using BPIDA.Models.MainModel;
+using BPIDA.Models.MainModel.PettyCash;
+using System.Security.Principal;
+using System;
+using BPIDA.Models.MainModel.Mailing;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BPIDA.Controllers
 {
@@ -2169,6 +2174,8 @@ namespace BPIDA.Controllers
 
                 res.Data = new BPIDA.Models.MainModel.Stream.FileStream();
                 res.Data.content = getFileStream(splt[0], splt[1]);
+                res.Data.fileType = "PDF";
+                res.Data.fileSize = res.Data.content.Length;
 
                 // foreach (string f in file)
                 res.Data.fileName = Path.GetFileName(splt[0]);
@@ -2582,5 +2589,2736 @@ namespace BPIDA.Controllers
         }
     }
 
+
+    [Route("api/DA/PettyCash")]
+    [ApiController]
+    public class PettyCashController : ControllerBase
+    {
+        private readonly IConfiguration _configuration;
+        private readonly string _conString;
+        private readonly int _rowPerPage;
+
+        public PettyCashController(IConfiguration config)
+        {
+            _configuration = config;
+            _conString = _configuration.GetValue<string>("ConnectionStrings:Bpi");
+            _rowPerPage = _configuration.GetValue<int>("Paging:PettyCash:RowPerPage");
+        }
+
+        private static string Base64Decode(string base64EncodedData)
+        {
+            var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
+            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
+        // is
+
+        internal bool isAdvanceDataPresent(string AdvanceId)
+        {
+            var conBool = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[isAdvancePresent]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@AdvanceID", AdvanceId);
+                    var data = command.ExecuteScalar();
+                    conBool = Convert.ToBoolean(data);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conBool;
+        }
+
+        // create
+
+        internal DataTable createIDData(string docType)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createID]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@DocumentName", docType);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return dt;
+        }
+
+        internal void createAdvanceData(QueryModel<Advance> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createAdvanceData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@AdvanceID", data.Data.AdvanceID);
+                    command.Parameters.AddWithValue("@LocationID", data.Data.LocationID);
+                    command.Parameters.AddWithValue("@AdvanceDate", data.Data.AdvanceDate);
+                    command.Parameters.AddWithValue("@DepartmentID", data.Data.DepartmentID);
+                    command.Parameters.AddWithValue("@AdvanceNIK", data.Data.AdvanceNIK);
+                    command.Parameters.AddWithValue("@AdvanceNote", data.Data.AdvanceNote);
+                    command.Parameters.AddWithValue("@AdvanceType", data.Data.AdvanceType);
+                    command.Parameters.AddWithValue("@TypeAccount", data.Data.TypeAccount);
+                    command.Parameters.AddWithValue("@AdvanceStatus", data.Data.AdvanceStatus);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void createAdvanceLine(QueryModel<AdvanceLine> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createAdvanceLines]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@AdvanceID", data.Data.AdvanceID);
+                    command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
+                    command.Parameters.AddWithValue("@Details", data.Data.Details);
+                    command.Parameters.AddWithValue("@Amount", data.Data.Amount);
+                    command.Parameters.AddWithValue("@AStatus", data.Data.Status);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void createExpenseData(QueryModel<Expense> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createExpenseData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ExpenseID", data.Data.ExpenseID);
+                    command.Parameters.AddWithValue("@AdvanceID", data.Data.AdvanceID);
+                    command.Parameters.AddWithValue("@LocationID", data.Data.LocationID);
+                    command.Parameters.AddWithValue("@ExpenseDate", data.Data.ExpenseDate);
+                    command.Parameters.AddWithValue("@DepartmentID", data.Data.DepartmentID);
+                    command.Parameters.AddWithValue("@ExpenseNIK", data.Data.ExpenseNIK);
+                    command.Parameters.AddWithValue("@ExpenseNote", data.Data.ExpenseNote);
+                    command.Parameters.AddWithValue("@ExpenseType", data.Data.ExpenseType);
+                    command.Parameters.AddWithValue("@TypeAccount", data.Data.TypeAccount);
+                    command.Parameters.AddWithValue("@ExpenseStatus", data.Data.ExpenseStatus);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void createExpenseLine(QueryModel<ExpenseLine> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createExpenseLines]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ExpenseID", data.Data.ExpenseID);
+                    command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
+                    command.Parameters.AddWithValue("@Details", data.Data.Details);
+                    command.Parameters.AddWithValue("@Amount", data.Data.Amount);
+                    command.Parameters.AddWithValue("@ActualAmount", data.Data.ActualAmount);
+                    command.Parameters.AddWithValue("@EStatus", data.Data.Status);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void createExpenseAttachLine(QueryModel<BPIDA.Models.MainModel.Stream.FileStream> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createExpenseAttachData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ExpenseID", data.Data.type);
+                    command.Parameters.AddWithValue("@PathFile", data.Data.fileName);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void createReimburseData(QueryModel<Reimburse> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createReimburseData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ReimburseID", data.Data.ReimburseID);
+                    command.Parameters.AddWithValue("@LocationID", data.Data.LocationID);
+                    command.Parameters.AddWithValue("@ReimburseNote", data.Data.ReimburseNote);
+                    command.Parameters.AddWithValue("@ReimburseDate", data.Data.ReimburseDate);
+                    command.Parameters.AddWithValue("@ReimburseStatus", data.Data.ReimburseStatus);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void createReimburseLine(QueryModel<ReimburseLine> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createReimburseLines]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ReimburseID", data.Data.ReimburseID);
+                    command.Parameters.AddWithValue("@ExpenseID", data.Data.ExpenseID);
+                    command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
+                    command.Parameters.AddWithValue("@AccountNo", data.Data.AccountNo);
+                    command.Parameters.AddWithValue("@Details", data.Data.Details);
+                    command.Parameters.AddWithValue("@Amount", data.Data.Amount);
+                    command.Parameters.AddWithValue("@ApprovedAmount", data.Data.ApprovedAmount);
+                    command.Parameters.AddWithValue("@RStatus", data.Data.Status);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void createReimburseAttachLine(QueryModel<BPIDA.Models.MainModel.Stream.FileStream> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    string exp = data.Data.type.Split("!_!")[0];
+                    string rmb = data.Data.type.Split("!_!")[1];
+
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createReimburseAttachData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ReimburseID", rmb);
+                    command.Parameters.AddWithValue("@ExpenseID", exp);
+                    command.Parameters.AddWithValue("@PathFile", data.Data.fileName);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        // update
+
+        internal void updateSettleAdvance(QueryModel<string> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editAdvanceSettlement]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@AdvanceID", data.Data);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void updateSettleExpense(string Id, string user, string act, DateTime actdate)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editExpenseSettlement]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ExpenseID", Id);
+                    command.Parameters.AddWithValue("@AuditUser", user);
+                    command.Parameters.AddWithValue("@AuditAction", act);
+                    command.Parameters.AddWithValue("@AuditActionDate", actdate);
+
+                    command.ExecuteNonQuery();
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void updateSettleReimburse(QueryModel<string> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editReimburseSettlement]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ReimburseID", data.Data);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void updateDocumentStatus(string TbName, string Id, string statusValue, string reimburseNote, string user, string act, DateTime actdate)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editPettyCashDocumentStatus]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@TbName", TbName);
+                    command.Parameters.AddWithValue("@DocID", Id);
+                    command.Parameters.AddWithValue("@StatusValue", statusValue);
+                    command.Parameters.AddWithValue("@ReimburseNote", reimburseNote);
+                    command.Parameters.AddWithValue("@AuditUser", user);
+                    command.Parameters.AddWithValue("@AuditAction", act);
+                    command.Parameters.AddWithValue("@AuditActionDate", actdate);
+
+                    command.ExecuteNonQuery();
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void updateReimburseLine(QueryModel<ReimburseLine> line)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editReimburseLine]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ReimburseID", line.Data.ReimburseID);
+                    command.Parameters.AddWithValue("@ExpenseID", line.Data.ExpenseID);
+                    command.Parameters.AddWithValue("@LineNum", line.Data.LineNo);
+                    command.Parameters.AddWithValue("@AccountNo", line.Data.AccountNo);
+                    command.Parameters.AddWithValue("@Details", line.Data.Details);
+                    command.Parameters.AddWithValue("@Amount", line.Data.Amount);
+                    command.Parameters.AddWithValue("@ApprovedAmount", line.Data.ApprovedAmount);
+                    command.Parameters.AddWithValue("@RStatus", line.Data.Status);
+                    command.Parameters.AddWithValue("@AuditUser", line.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", line.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", line.userActionDate);
+
+                    command.ExecuteNonQuery();
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void updateLocationBudget(QueryModel<BalanceDetails> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editLocationBudget]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", data.Data.LocationID);
+                    command.Parameters.AddWithValue("@Budget", data.Data.BudgetAmount);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        // get
+
+        internal DataTable getPettyCashLedgerDatabyDate(ledgerParam data)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getPettyCashLedgerDataEntry]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@StartDate", data.startDate);
+                    command.Parameters.AddWithValue("@EndDate", data.endDate);
+                    command.Parameters.AddWithValue("@LocationID", data.locationID);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getAttachmentLines(string Id, string denom)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getAttachmentLines]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ExpenseID", Id);
+                    command.Parameters.AddWithValue("@TbDenom", denom);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getLocationBudgetDetails(string loc)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getLocationBudgetDetails]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getAdvanceDatabyLocation(string denom, string location, string value, string type, string filValue, int PageNo, int rowPerPage)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getAdvanceDatabyLocation]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@TbDenom", denom);
+                    command.Parameters.AddWithValue("@LocationID", location);
+                    command.Parameters.AddWithValue("@StatusValue", value);
+                    command.Parameters.AddWithValue("@FilterType", type);
+                    command.Parameters.AddWithValue("@FilterValue", filValue);
+                    command.Parameters.AddWithValue("@PageNo", PageNo);
+                    command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getAdvanceDatabyUser(string userName)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getAdvanceDatabyUser]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@AuditUser", userName);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getExpenseDatabyLocation(string denom, string location, string value, string type, string filValue, int PageNo, int rowPerPage)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getExpenseDatabyLocation]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@TbDenom", denom);
+                    command.Parameters.AddWithValue("@LocationID", location);
+                    command.Parameters.AddWithValue("@StatusValue", value);
+                    command.Parameters.AddWithValue("@FilterType", type);
+                    command.Parameters.AddWithValue("@FilterValue", filValue);
+                    command.Parameters.AddWithValue("@PageNo", PageNo);
+                    command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getReimburseDatabyLocation(string denom, string location, string value, string type, string filValue, int PageNo, int rowPerPage)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getReimburseDatabyLocation]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@TbDenom", denom);
+                    command.Parameters.AddWithValue("@LocationID", location);
+                    command.Parameters.AddWithValue("@StatusValue", value);
+                    command.Parameters.AddWithValue("@FilterType", type);
+                    command.Parameters.AddWithValue("@FilterValue", filValue);
+                    command.Parameters.AddWithValue("@PageNo", PageNo);
+                    command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getAdvanceLinesbyID(string AdvanceId, string denom)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getAdvanceLinesbyID]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@AdvanceID", AdvanceId);
+                    command.Parameters.AddWithValue("@TbDenom", denom);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getExpenseLinesbyID(string ExpenseId, string denom)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getExpenseLinesbyID]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ExpenseID", ExpenseId);
+                    command.Parameters.AddWithValue("@TbDenom", denom);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getReimburseLinesbyID(string ReimburseId, string denom)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getReimburseLinesbyID]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ReimburseID", ReimburseId);
+                    command.Parameters.AddWithValue("@TbDenom", denom);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal int getModuleNumberOfPage(int RowPerPage, string TbName, string TbCol, string value, string type, string filValue, string loc)
+        {
+            int conInt = 0;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getModulePageSize]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@TbName", TbName);
+                    command.Parameters.AddWithValue("@TbCol", TbCol);
+                    command.Parameters.AddWithValue("@StatusValue", value);
+                    command.Parameters.AddWithValue("@FilterType", type);
+                    command.Parameters.AddWithValue("@FilterValue", filValue);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@RowPerPage", RowPerPage);
+                    
+                    var data = command.ExecuteScalar();
+                    conInt = Convert.ToInt32(data);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conInt;
+        }
+
+        internal decimal getAdvanceOutstandingAmount(string loc)
+        {
+            decimal conInt = decimal.Zero;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getAdvanceOutstandingAmount]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    var data = command.ExecuteScalar();
+                    conInt = Convert.ToDecimal(data);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conInt;
+        }
+
+        internal decimal getExpenseOutstandingAmount(string loc)
+        {
+            decimal conInt = decimal.Zero;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getExpenseOutstandingAmount]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    var data = command.ExecuteScalar();
+                    conInt = Convert.ToDecimal(data);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conInt;
+        }
+
+        internal DataTable getReimburseOutstandingAmount(string loc)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getReimburseOutstandingAmount]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return dt;
+        }
+
+        internal decimal getLocationOnhandAmount(string loc)
+        {
+            decimal conInt = decimal.Zero;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getLocationOnhandAmount]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    var data = command.ExecuteScalar();
+                    conInt = Convert.ToDecimal(data);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return conInt;
+        }
+
+        internal DataTable getCoabyModule(string moduleName)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getCOAbyModule]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ModuleName", moduleName);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getMailingDetails(string moduleName, string ActionName, string loc)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getMailingDetails]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ModuleName", moduleName);
+                    command.Parameters.AddWithValue("@ActionName", ActionName);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        // http
+
+        // is
+
+        [HttpGet("isAdvanceDataPresent/{AdvanceId}")]
+        public async Task<IActionResult> isAdvanceDataPresentInTable(string AdvanceId)
+        {
+            ResultModel<string> res = new ResultModel<string>();
+            bool present = false;
+            IActionResult actionResult = null;
+
+            string temp = Base64Decode(AdvanceId);
+
+            try
+            {
+                present = isAdvanceDataPresent(temp);
+
+                if (present)
+                {
+                    res.Data = AdvanceId;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = AdvanceId;
+                    res.isSuccess = false;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Success Fetch - Procedure Not Found";
+
+                    actionResult = Ok(res);
+                    //throw new Exception($"{}")
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = "";
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("createID/{docType}")]
+        public async Task<IActionResult> createID(string docType)
+        {
+            ResultModel<string> res = new ResultModel<string>();
+            string code = string.Empty;
+            DataTable dtIdentity = new DataTable("Identity");
+            IActionResult actionResult = null;
+
+            try
+            {
+
+                dtIdentity = createIDData(docType);
+
+                if (dtIdentity.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtIdentity.Rows)
+                    {
+                        string zero = string.Empty;
+
+                        for (int i = 0; i < (7 - Convert.ToInt32(dt["IDLength"])); i++)
+                        {
+                            zero = zero + "0";
+                        }
+
+                        code = dt["Code"].ToString() + DateTime.Now.Year.ToString() + DateTime.Now.ToString("MM") + DateTime.Now.ToString("dd") + zero + dt["DocNumber"].ToString() + dt["Parity"].ToString();
+
+                    }
+
+                    res.Data = code;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        // create
+
+        [HttpPost("createAdvanceData")]
+        public async Task<IActionResult> createAdvanceDataTable(QueryModel<Advance> data)
+        {
+            ResultModel<QueryModel<Advance>> res = new ResultModel<QueryModel<Advance>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                createAdvanceData(data);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createAdvanceLineData")]
+        public async Task<IActionResult> createAdvanceLineDataTable(QueryModel<List<AdvanceLine>> data)
+        {
+            ResultModel<QueryModel<List<AdvanceLine>>> res = new ResultModel<QueryModel<List<AdvanceLine>>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                foreach (var dt in data.Data)
+                {
+                    QueryModel<AdvanceLine> line = new QueryModel<AdvanceLine>();
+                    line.Data = new AdvanceLine();
+
+                    line.Data = dt;
+                    line.userEmail = data.userEmail;
+                    line.userAction = data.userAction;
+                    line.userActionDate = data.userActionDate;
+
+                    createAdvanceLine(line);
+                }
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createExpenseData")]
+        public async Task<IActionResult> createExpenseDataTable(QueryModel<Expense> data)
+        {
+            ResultModel<QueryModel<Expense>> res = new ResultModel<QueryModel<Expense>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                createExpenseData(data);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createExpenseLineData")]
+        public async Task<IActionResult> createExpenseLineDataTable(QueryModel<List<ExpenseLine>> data)
+        {
+            ResultModel<QueryModel<List<ExpenseLine>>> res = new ResultModel<QueryModel<List<ExpenseLine>>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                foreach (var dt in data.Data)
+                {
+                    QueryModel<ExpenseLine> line = new QueryModel<ExpenseLine>();
+                    line.Data = new ExpenseLine();
+
+                    line.Data = dt;
+                    line.userEmail = data.userEmail;
+                    line.userAction = data.userAction;
+                    line.userActionDate = data.userActionDate;
+
+                    createExpenseLine(line);
+                    //createExpenseAttachLine(line);
+                }
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createExpenseAttachLineData")]
+        public async Task<IActionResult> createExpenseLineDataTable(QueryModel<List<BPIDA.Models.MainModel.Stream.FileStream>> data)
+        {
+            ResultModel<QueryModel<List<BPIDA.Models.MainModel.Stream.FileStream>>> res = new ResultModel<QueryModel<List<BPIDA.Models.MainModel.Stream.FileStream>>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                foreach (var dt in data.Data)
+                {
+                    QueryModel<BPIDA.Models.MainModel.Stream.FileStream> line = new QueryModel<BPIDA.Models.MainModel.Stream.FileStream>();
+                    line.Data = new BPIDA.Models.MainModel.Stream.FileStream();
+
+                    line.Data = dt;
+                    line.userEmail = data.userEmail;
+                    line.userAction = data.userAction;
+                    line.userActionDate = data.userActionDate;
+
+                    createExpenseAttachLine(line);
+                }
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createReimburseData")]
+        public async Task<IActionResult> createReimburseDataTable(QueryModel<Reimburse> data)
+        {
+            ResultModel<QueryModel<Reimburse>> res = new ResultModel<QueryModel<Reimburse>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                createReimburseData(data);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createReimburseLineData")]
+        public async Task<IActionResult> createReimburseLineDataTable(QueryModel<List<ReimburseLine>> data)
+        {
+            ResultModel<QueryModel<List<ReimburseLine>>> res = new ResultModel<QueryModel<List<ReimburseLine>>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                foreach (var dt in data.Data)
+                {
+                    QueryModel<ReimburseLine> line = new QueryModel<ReimburseLine>();
+                    line.Data = new ReimburseLine();
+
+                    line.Data = dt;
+                    line.userEmail = data.userEmail;
+                    line.userAction = data.userAction;
+                    line.userActionDate = data.userActionDate;
+
+                    createReimburseLine(line);
+                    //createExpenseAttachLine(line);
+                }
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createReimburseAttachLineData")]
+        public async Task<IActionResult> createReimburseLineDataTable(QueryModel<List<BPIDA.Models.MainModel.Stream.FileStream>> data)
+        {
+            ResultModel<QueryModel<List<BPIDA.Models.MainModel.Stream.FileStream>>> res = new ResultModel<QueryModel<List<BPIDA.Models.MainModel.Stream.FileStream>>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                foreach (var dt in data.Data)
+                {
+                    QueryModel<BPIDA.Models.MainModel.Stream.FileStream> line = new QueryModel<BPIDA.Models.MainModel.Stream.FileStream>();
+                    line.Data = new BPIDA.Models.MainModel.Stream.FileStream();
+
+                    line.Data = dt;
+                    line.userEmail = data.userEmail;
+                    line.userAction = data.userAction;
+                    line.userActionDate = data.userActionDate;
+
+                    createReimburseAttachLine(line);
+                }
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("AdvanceSettlement")]
+        public async Task<IActionResult> updateAdvanceDataSettlement(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                updateSettleAdvance(data);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+               
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpPost("ExpenseSettlement")]
+        public async Task<IActionResult> updateExpenseDataSettlement(QueryModel<List<string>> data)
+        {
+            ResultModel<QueryModel<List<string>>> res = new ResultModel<QueryModel<List<string>>>();
+            
+            IActionResult actionResult = null;
+
+            try
+            {
+                foreach (var id in data.Data)
+                {
+                    updateSettleExpense(id, data.userEmail, data.userAction, data.userActionDate);
+                }
+                
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpPost("ReimburseSettlement")]
+        public async Task<IActionResult> updateReimburseDataSettlement(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                updateSettleReimburse(data);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpPost("editDocumentStatus")]
+        public async Task<IActionResult> editDocumentStatusData(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                string TbName = data.Data.Split("!_!")[0];
+                string id = data.Data.Split("!_!")[1];
+                string value = data.Data.Split("!_!")[2];
+                string note = data.Data.Split("!_!")[3];
+
+                updateDocumentStatus(TbName, id, value, note, data.userEmail, data.userAction, data.userActionDate);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpPost("editReimburseLine")]
+        public async Task<IActionResult> editReimburseLineData(QueryModel<Reimburse> data)
+        {
+            ResultModel<QueryModel<Reimburse>> res = new ResultModel<QueryModel<Reimburse>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                foreach (var id in data.Data.lines)
+                {
+                    QueryModel<ReimburseLine> temp = new();
+
+                    temp.Data = id;
+                    temp.userEmail = data.userEmail;
+                    temp.userAction = data.userAction;
+                    temp.userActionDate = data.userActionDate;
+
+                    updateReimburseLine(temp);
+                }
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpPost("getLedgerDataEntriesbyDate")]
+        public async Task<IActionResult> getLedgerDataEntriesbyDate(List<ledgerParam> data)
+        {
+            ResultModel<List<PettyCashLedger>> res = new ResultModel<List<PettyCashLedger>>();
+            List<PettyCashLedger> pettyCashLedgers = new List<PettyCashLedger>();
+            DataTable dtPettyCashLedger = new DataTable("PettyCashLedger");
+            bool flag = false;
+            IActionResult actionResult = null;
+
+            try
+            {
+                foreach (var dat in data)
+                {
+                    dtPettyCashLedger = getPettyCashLedgerDatabyDate(dat);
+
+                    if (dtPettyCashLedger.Rows.Count > 0)
+                    {
+                        flag = true;
+
+                        foreach (DataRow dt in dtPettyCashLedger.Rows)
+                        {
+                            PettyCashLedger temp1 = new PettyCashLedger();
+
+                            temp1.TransactionDate = Convert.ToDateTime(dt["TransactionDate"]);
+                            temp1.TransactionType = dt["TransactionType"].ToString();
+                            temp1.DocumentID = dt["DocumentID"].ToString();
+                            temp1.LocationID = dt["LocationID"].ToString();
+                            temp1.Amount = Convert.ToDecimal(dt["Amount"]);
+                            temp1.Actor = dt["Actor"].ToString();
+                            temp1.ExternalDocument = dt.IsNull("ExternalDocument") ? "" : dt["ExternalDocument"].ToString();
+                            temp1.Applicant = dt["Applicant"].ToString();
+                            temp1.DocumentDate = Convert.ToDateTime(dt["DocumentDate"]);
+                            temp1.DepartmentID = dt.IsNull("DepartmentID") ? "" : dt["DepartmentID"].ToString();
+                            temp1.Note = dt.IsNull("Note") ? "" : dt["Note"].ToString();
+                            temp1.NIK = dt.IsNull("NIK") ? "" : dt["NIK"].ToString();
+                            temp1.Type = dt.IsNull("Type") ? "" : dt["Type"].ToString();
+                            temp1.BankAccount = dt.IsNull("BankAccount") ? "" : dt["BankAccount"].ToString();
+                            temp1.Status = dt["Status"].ToString();
+
+                            pettyCashLedgers.Add(temp1);
+                        }
+                    }
+                    else
+                    {
+                        flag = false;
+                    }
+                }
+
+                if (flag)
+                {
+                    res.Data = pettyCashLedgers;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = pettyCashLedgers;
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "At Least 1 Location Have 0 Data";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getAttachmentLines/{Id}")]
+        public async Task<IActionResult> getAttachmentLinesbyID(string Id)
+        {
+            ResultModel<List<AttachmentLine>> res = new ResultModel<List<AttachmentLine>>();
+            List<AttachmentLine> attachmentLines = new List<AttachmentLine>();
+            DataTable dtAttachmentLine = new DataTable("AttachmentLine");
+            IActionResult actionResult = null;
+
+            try
+            {
+                string temp = Base64Decode(Id);
+
+                dtAttachmentLine = getAttachmentLines(temp.Split("!_!")[0], temp.Split("!_!")[1]);
+
+                if (dtAttachmentLine.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtAttachmentLine.Rows)
+                    {
+                        AttachmentLine temp1 = new AttachmentLine();
+
+                        temp1.ExpenseID = dt["ExpenseID"].ToString();
+                        temp1.PathFile = dt["PathFile"].ToString();
+                        //temp.DateModified = Convert.ToDateTime(dt["AuditActionDate"]);
+
+                        attachmentLines.Add(temp1);
+                    }
+
+                    res.Data = attachmentLines;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getAdvanceDatabyLocation/{locPage}")]
+        public async Task<IActionResult> getAdvanceDataTablebyLocation(string locPage)
+        {
+            ResultModel<List<Advance>> res = new ResultModel<List<Advance>>();
+            List<Advance> advance = new List<Advance>();
+            DataTable dtAdvance = new DataTable("AdvanceData");
+            IActionResult actionResult = null;
+
+            try
+            {
+                var temp = Base64Decode(locPage);
+
+                string denom = temp.Split("!_!")[0];
+                string loc = temp.Split("!_!")[1].Equals("") ? "HO" : temp.Split("!_!")[1];
+                string val = temp.Split("!_!")[2];
+                string tp = temp.Split("!_!")[3];
+                string filVal = temp.Split("!_!")[4];
+                int page = Convert.ToInt32(temp.Split("!_!")[5]);
+
+                dtAdvance = getAdvanceDatabyLocation(denom, loc, val, tp, filVal, page, _rowPerPage);
+
+                if (dtAdvance.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtAdvance.Rows)
+                    {
+                        Advance temp1 = new Advance();
+                        temp1.statusDetails = new();
+
+                        temp1.AdvanceID = dt["AdvanceID"].ToString();
+                        temp1.LocationID = dt["LocationID"].ToString();
+                        temp1.AdvanceDate = Convert.ToDateTime(dt["AdvanceDate"]);
+                        temp1.DepartmentID = dt["DepartmentID"].ToString();
+                        temp1.AdvanceNIK = dt["AdvanceNIK"].ToString();
+                        temp1.AdvanceNote = dt["AdvanceNote"].ToString();
+                        temp1.AdvanceType = dt["AdvanceType"].ToString();
+                        temp1.TypeAccount = dt["TypeAccount"].ToString();
+                        temp1.AdvanceStatus = dt["AdvanceStatus"].ToString();
+                        temp1.Applicant = dt["Applicant"].ToString();
+
+                        temp1.statusDetails.submitDate = dt.IsNull("SubmitDate") ? DateTime.MinValue : Convert.ToDateTime(dt["SubmitDate"]);
+                        temp1.statusDetails.submitUser = dt.IsNull("SubmitUser") ? "" : dt["SubmitUser"].ToString();
+                        temp1.statusDetails.confirmDate = dt.IsNull("ConfirmDate") ? DateTime.MinValue : Convert.ToDateTime(dt["ConfirmDate"]);
+                        temp1.statusDetails.confirmUser = dt.IsNull("ConfirmUser") ? "" : dt["ConfirmUser"].ToString();
+                        temp1.statusDetails.rejectDate = dt.IsNull("RejectDate") ? DateTime.MinValue : Convert.ToDateTime(dt["RejectDate"]);
+                        temp1.statusDetails.rejectUser = dt.IsNull("RejectUser") ? "" : dt["RejectUser"].ToString();
+
+                        List<AdvanceLine> advanceLines = new List<AdvanceLine>();
+                        DataTable dtAdvanceLine = new DataTable("AdvanceLine");
+
+                        dtAdvanceLine = getAdvanceLinesbyID(dt["AdvanceID"].ToString(), denom);
+
+                        if (dtAdvanceLine.Rows.Count > 0)
+                        {
+                            foreach (DataRow linedt in dtAdvanceLine.Rows)
+                            {
+                                AdvanceLine temp2 = new AdvanceLine();
+
+                                temp2.AdvanceID = linedt["AdvanceID"].ToString();
+                                temp2.LineNo = Convert.ToInt32(linedt["LineNum"]);
+                                temp2.Details = linedt["Details"].ToString();
+                                temp2.Amount = Convert.ToDecimal(linedt["Amount"]);
+                                temp2.Status = linedt["AStatus"].ToString();
+
+                                advanceLines.Add(temp2);
+                            }
+                        }
+
+                        temp1.lines = new List<AdvanceLine>();
+                        temp1.lines = advanceLines;
+
+                        advance.Add(temp1);
+                    }
+
+                    res.Data = advance;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fetch Empty";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getAdvanceDatabyUser/{user}")]
+        public async Task<IActionResult> getAdvanceDataTablebyUser(string user)
+        {
+            ResultModel<List<Advance>> res = new ResultModel<List<Advance>>();
+            List<Advance> advance = new List<Advance>();
+            DataTable dtAdvance = new DataTable("AdvanceData");
+            IActionResult actionResult = null;
+
+            try
+            {
+                var temp = Base64Decode(user);
+
+                dtAdvance = getAdvanceDatabyUser(temp.Split("!_!")[0]);
+
+                if (dtAdvance.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtAdvance.Rows)
+                    {
+                        Advance temp1 = new Advance();
+                        temp1.statusDetails = new();
+
+                        temp1.AdvanceID = dt["AdvanceID"].ToString();
+                        temp1.LocationID = dt["LocationID"].ToString();
+                        temp1.AdvanceDate = Convert.ToDateTime(dt["AdvanceDate"]);
+                        temp1.DepartmentID = dt["DepartmentID"].ToString();
+                        temp1.AdvanceNIK = dt["AdvanceNIK"].ToString();
+                        temp1.AdvanceNote = dt["AdvanceNote"].ToString();
+                        temp1.AdvanceType = dt["AdvanceType"].ToString();
+                        temp1.TypeAccount = dt["TypeAccount"].ToString();
+                        temp1.AdvanceStatus = dt["AdvanceStatus"].ToString();
+                        temp1.Applicant = dt["Applicant"].ToString();
+
+                        temp1.statusDetails.submitDate = dt.IsNull("SubmitDate") ? DateTime.MinValue : Convert.ToDateTime(dt["SubmitDate"]);
+                        temp1.statusDetails.submitUser = dt.IsNull("SubmitUser") ? "" : dt["SubmitUser"].ToString();
+                        temp1.statusDetails.confirmDate = dt.IsNull("ConfirmDate") ? DateTime.MinValue : Convert.ToDateTime(dt["ConfirmDate"]);
+                        temp1.statusDetails.confirmUser = dt.IsNull("ConfirmUser") ? "" : dt["ConfirmUser"].ToString();
+                        temp1.statusDetails.rejectDate = dt.IsNull("RejectDate") ? DateTime.MinValue : Convert.ToDateTime(dt["RejectDate"]);
+                        temp1.statusDetails.rejectUser = dt.IsNull("RejectUser") ? "" : dt["RejectUser"].ToString();
+
+                        List<AdvanceLine> advanceLines = new List<AdvanceLine>();
+                        DataTable dtAdvanceLine = new DataTable("AdvanceLine");
+
+                        dtAdvanceLine = getAdvanceLinesbyID(dt["AdvanceID"].ToString(), temp.Split("!_!")[1]);
+
+                        if (dtAdvanceLine.Rows.Count > 0)
+                        {
+                            foreach (DataRow linedt in dtAdvanceLine.Rows)
+                            {
+                                AdvanceLine temp2 = new AdvanceLine();
+
+                                temp2.AdvanceID = linedt["AdvanceID"].ToString();
+                                temp2.LineNo = Convert.ToInt32(linedt["LineNum"]);
+                                temp2.Details = linedt["Details"].ToString();
+                                temp2.Amount = Convert.ToDecimal(linedt["Amount"]);
+                                temp2.Status = linedt["AStatus"].ToString();
+
+                                advanceLines.Add(temp2);
+                            }
+                        }
+
+                        temp1.lines = new List<AdvanceLine>();
+                        temp1.lines = advanceLines;
+
+                        advance.Add(temp1);
+                    }
+
+                    res.Data = advance;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fetch Empty";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getExpenseDatabyLocation/{locPage}")]
+        public async Task<IActionResult> getExpenseDataTablebyLocation(string locPage)
+        {
+            ResultModel<List<Expense>> res = new ResultModel<List<Expense>>();
+            List<Expense> expense = new List<Expense>();
+            DataTable dtExpense = new DataTable("ExpenseData");
+            IActionResult actionResult = null;
+
+            try
+            {
+                var temp = Base64Decode(locPage);
+
+                string denom = temp.Split("!_!")[0];
+                string loc = temp.Split("!_!")[1].Equals("") ? "HO" : temp.Split("!_!")[1];
+                string val = temp.Split("!_!")[2];
+                string tp = temp.Split("!_!")[3];
+                string filVal = temp.Split("!_!")[4];
+                int page = Convert.ToInt32(temp.Split("!_!")[5]);
+
+                dtExpense = getExpenseDatabyLocation(denom, loc, val, tp, filVal, page, _rowPerPage);
+
+                if (dtExpense.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtExpense.Rows)
+                    {
+                        Expense temp1 = new Expense();
+                        temp1.statusDetails = new();
+
+                        temp1.ExpenseID = dt["ExpenseID"].ToString();
+                        temp1.AdvanceID = dt["AdvanceID"].ToString();
+                        temp1.LocationID = dt["LocationID"].ToString();
+                        temp1.ExpenseDate = Convert.ToDateTime(dt["ExpenseDate"]);
+                        temp1.DepartmentID = dt["DepartmentID"].ToString();
+                        temp1.ExpenseNIK = dt["ExpenseNIK"].ToString();
+                        temp1.ExpenseNote = dt["ExpenseNote"].ToString();
+                        temp1.ExpenseType = dt["ExpenseType"].ToString();
+                        temp1.TypeAccount = dt["TypeAccount"].ToString();
+                        temp1.ExpenseStatus = dt["ExpenseStatus"].ToString();
+                        temp1.Applicant = dt["Applicant"].ToString();
+
+                        temp1.statusDetails.submitDate = dt.IsNull("SubmitDate") ? DateTime.MinValue : Convert.ToDateTime(dt["SubmitDate"]);
+                        temp1.statusDetails.submitUser = dt.IsNull("SubmitUser") ? "" : dt["SubmitUser"].ToString();
+                        temp1.statusDetails.confirmDate = dt.IsNull("ConfirmDate") ? DateTime.MinValue : Convert.ToDateTime(dt["ConfirmDate"]);
+                        temp1.statusDetails.confirmUser = dt.IsNull("ConfirmUser") ? "" : dt["ConfirmUser"].ToString();
+                        temp1.statusDetails.rejectDate = dt.IsNull("RejectDate") ? DateTime.MinValue : Convert.ToDateTime(dt["RejectDate"]);
+                        temp1.statusDetails.rejectUser = dt.IsNull("RejectUser") ? "" : dt["RejectUser"].ToString();
+
+                        List<ExpenseLine> expenseLines = new List<ExpenseLine>();
+                        DataTable dtExpenseLine = new DataTable("ExpenseLine");
+
+                        dtExpenseLine = getExpenseLinesbyID(dt["ExpenseID"].ToString(), denom);
+
+                        if (dtExpenseLine.Rows.Count > 0)
+                        {
+                            foreach (DataRow linedt in dtExpenseLine.Rows)
+                            {
+                                ExpenseLine temp2 = new ExpenseLine();
+
+                                temp2.ExpenseID = linedt["ExpenseID"].ToString();
+                                temp2.LineNo = Convert.ToInt32(linedt["LineNum"]);
+                                temp2.Details = linedt["Details"].ToString();
+                                temp2.Amount = Convert.ToDecimal(linedt["Amount"]);
+                                temp2.ActualAmount = Convert.ToDecimal(linedt["ActualAmount"]);
+                                //temp2.Attach = linedt["EAttach"].ToString();
+                                temp2.Attach = string.Empty;
+                                temp2.Status = linedt["EStatus"].ToString();
+
+                                expenseLines.Add(temp2);
+                            }
+                        }
+
+                        temp1.lines = new List<ExpenseLine>();
+                        temp1.lines = expenseLines;
+
+                        expense.Add(temp1);
+                    }
+
+                    res.Data = expense;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fetch Empty";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getReimburseDatabyLocation/{locPage}")]
+        public async Task<IActionResult> getReimburseDataTablebyLocation(string locPage)
+        {
+            ResultModel<List<Reimburse>> res = new ResultModel<List<Reimburse>>();
+            List<Reimburse> reimburse = new List<Reimburse>();
+            DataTable dtReimburse = new DataTable("ReimburseData");
+            IActionResult actionResult = null;
+
+            try
+            {
+                var temp = Base64Decode(locPage);
+
+                string denom = temp.Split("!_!")[0];
+                string loc = temp.Split("!_!")[1].Equals("") ? "HO" : temp.Split("!_!")[1];
+                string val = temp.Split("!_!")[2];
+                string tp = temp.Split("!_!")[3];
+                string filVal = temp.Split("!_!")[4];
+                int page = Convert.ToInt32(temp.Split("!_!")[5]);
+
+                dtReimburse = getReimburseDatabyLocation(denom, loc, val, tp, filVal, page, _rowPerPage);
+
+                if (dtReimburse.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtReimburse.Rows)
+                    {
+                        Reimburse temp1 = new Reimburse();
+                        temp1.statusDetails = new();
+
+                        temp1.ReimburseID = dt["ReimburseID"].ToString();
+                        temp1.LocationID = dt["LocationID"].ToString();
+                        temp1.ReimburseNote = dt["ReimburseNote"].ToString();
+                        temp1.ReimburseDate = Convert.ToDateTime(dt["ReimburseDate"]);
+                        temp1.ReimburseStatus = dt["ReimburseStatus"].ToString();
+                        temp1.Applicant = dt["Applicant"].ToString();
+
+                        //temp1.statusDetails.confirmDate = Convert.ToDateTime(dt["ConfirmDate"]);
+                        //temp1.statusDetails.confirmUser = dt["ConfirmUser"].ToString();
+                        //temp1.statusDetails.verifyDate = Convert.ToDateTime(dt["VerifyDate"]);
+                        //temp1.statusDetails.verifyUser = dt["VerifyUser"].ToString();
+                        //temp1.statusDetails.releaseDate = Convert.ToDateTime(dt["ReleaseDate"]);
+                        //temp1.statusDetails.releaseUser = dt["ReleaseUser"].ToString();
+                        //temp1.statusDetails.approveDate = Convert.ToDateTime(dt["ApproveDate"]);
+                        //temp1.statusDetails.approveUser = dt["ApproveUser"].ToString();
+                        //temp1.statusDetails.claimDate = Convert.ToDateTime(dt["ClaimDate"]);
+                        //temp1.statusDetails.claimUser = dt["ClaimUser"].ToString();
+                        //temp1.statusDetails.rejectDate = Convert.ToDateTime(dt["RejectDate"]);
+                        //temp1.statusDetails.rejectUser = dt["RejectUser"].ToString();
+
+                        temp1.statusDetails.confirmDate = dt.IsNull("ConfirmDate") ? DateTime.MinValue : Convert.ToDateTime(dt["ConfirmDate"]);
+                        temp1.statusDetails.confirmUser = dt.IsNull("ConfirmUser") ? "" : dt["ConfirmUser"].ToString();
+                        temp1.statusDetails.verifyDate = dt.IsNull("VerifyDate") ? DateTime.MinValue : Convert.ToDateTime(dt["VerifyDate"]);
+                        temp1.statusDetails.verifyUser = dt.IsNull("VerifyUser") ? "" : dt["VerifyUser"].ToString();
+                        temp1.statusDetails.releaseDate = dt.IsNull("ReleaseDate") ? DateTime.MinValue : Convert.ToDateTime(dt["ReleaseDate"]);
+                        temp1.statusDetails.releaseUser = dt.IsNull("ReleaseUser") ? "" : dt["ReleaseUser"].ToString();
+                        temp1.statusDetails.approveDate = dt.IsNull("ApproveDate") ? DateTime.MinValue : Convert.ToDateTime(dt["ApproveDate"]);
+                        temp1.statusDetails.approveUser = dt.IsNull("ApproveUser") ? "" : dt["ApproveUser"].ToString();
+                        temp1.statusDetails.claimDate = dt.IsNull("ClaimDate") ? DateTime.MinValue : Convert.ToDateTime(dt["ClaimDate"]);
+                        temp1.statusDetails.claimUser = dt.IsNull("ClaimUser") ? "" : dt["ClaimUser"].ToString();
+                        temp1.statusDetails.rejectDate = dt.IsNull("RejectDate") ? DateTime.MinValue : Convert.ToDateTime(dt["RejectDate"]);
+                        temp1.statusDetails.rejectUser = dt.IsNull("RejectUser") ? "" : dt["RejectUser"].ToString();
+
+
+                        List<ReimburseLine> reimburseLines = new List<ReimburseLine>();
+                        DataTable dtReimburseLine = new DataTable("ReimburseLine");
+
+                        dtReimburseLine = getReimburseLinesbyID(dt["ReimburseID"].ToString(), denom);
+
+                        if (dtReimburseLine.Rows.Count > 0)
+                        {
+                            foreach (DataRow linedt in dtReimburseLine.Rows)
+                            {
+                                ReimburseLine temp2 = new ReimburseLine();
+
+                                temp2.ReimburseID = linedt["ReimburseID"].ToString();
+                                temp2.ExpenseID = linedt["ExpenseID"].ToString();
+                                temp2.LineNo = Convert.ToInt32(linedt["LineNum"]);
+                                temp2.AccountNo = linedt["AccountNo"].ToString();
+                                temp2.Details = linedt["Details"].ToString();
+                                temp2.Amount = Convert.ToDecimal(linedt["Amount"]);
+                                temp2.ApprovedAmount = Convert.ToDecimal(linedt["ApprovedAmount"]);
+                                //temp2.Attach = linedt["EAttach"].ToString();
+                                temp2.Attach = string.Empty;
+                                temp2.Status = linedt["RStatus"].ToString();
+
+                                reimburseLines.Add(temp2);
+                            }
+                        }
+
+                        temp1.lines = new List<ReimburseLine>();
+                        temp1.lines = reimburseLines;
+
+                        reimburse.Add(temp1);
+                    }
+
+                    res.Data = reimburse;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fetch Empty";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        //[HttpGet("getAdvanceLinesbyID/{AdvanceId}")]
+        //public async Task<IActionResult> getAdvanceLinesTablebyID(string AdvanceId)
+        //{
+        //    ResultModel<List<AdvanceLine>> res = new ResultModel<List<AdvanceLine>>();
+        //    List<AdvanceLine> advanceLines = new List<AdvanceLine>();
+        //    DataTable dtAdvanceLine = new DataTable("AdvanceLine");
+        //    IActionResult actionResult = null;
+
+        //    try
+        //    {
+        //        dtAdvanceLine = getAdvanceLinesbyID(AdvanceId);
+
+        //        if (dtAdvanceLine.Rows.Count > 0)
+        //        {
+        //            foreach (DataRow dt in dtAdvanceLine.Rows)
+        //            {
+        //                AdvanceLine temp = new AdvanceLine();
+
+        //                temp.AdvanceID = dt["AdvanceID"].ToString();
+        //                temp.LineNo = Convert.ToInt32(dt["LineNum"]);
+        //                temp.Details = dt["Details"].ToString();
+        //                temp.Amount = Convert.ToDecimal(dt["Amount"]);
+        //                temp.Status = dt["AStatus"].ToString();
+
+        //                advanceLines.Add(temp);
+        //            }
+
+        //            res.Data = advanceLines;
+        //            res.isSuccess = true;
+        //            res.ErrorCode = "00";
+        //            res.ErrorMessage = "";
+
+        //            actionResult = Ok(res);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        res.Data = null;
+        //        res.isSuccess = false;
+        //        res.ErrorCode = "99";
+        //        res.ErrorMessage = ex.Message;
+
+        //        actionResult = BadRequest(res);
+        //    }
+
+        //    return actionResult;
+        //}
+
+        [HttpGet("getPettyCashOutstandingAmountandLocBalanceDetails/{loc}")]
+        public async Task<IActionResult> getPettyCashOutstandingAmount(string loc)
+        {
+            ResultModel<LocationBalanceDetails> res = new ResultModel<LocationBalanceDetails>();
+            DataTable dtReimburseOutstanding = new DataTable("ReimburseOutstanding");
+            DataTable dtBalanceDetails = new DataTable("BalanceDetails");
+            IActionResult actionResult = null;
+
+            try
+            {
+                res.Data = new();
+                res.Data.outstandingBalance = new();
+                res.Data.balanceDetails = new();
+
+                // outstanding
+                res.Data.outstandingBalance.locationID = loc;
+                res.Data.outstandingBalance.locationOnhandAmount = getLocationOnhandAmount(loc);
+                res.Data.outstandingBalance.advanceOutstandingAmount = getAdvanceOutstandingAmount(loc);
+                res.Data.outstandingBalance.expenseOutstandingAmount = getExpenseOutstandingAmount(loc);
+
+                dtReimburseOutstanding = getReimburseOutstandingAmount(loc);
+
+                if (dtReimburseOutstanding.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtReimburseOutstanding.Rows)
+                    {
+                        res.Data.outstandingBalance.reimbursementReqOutstandingAmount = Convert.ToDecimal(dt["amtRequest"]);
+                        res.Data.outstandingBalance.reimbursementApvOutstandingAmount = Convert.ToDecimal(dt["amtApv"]);
+                    }
+                }
+
+                res.Data.outstandingBalance.lastFetch = DateTime.Now;
+
+                // location balance details
+                res.Data.balanceDetails.LocationID = loc;
+
+                dtBalanceDetails = getLocationBudgetDetails(loc);
+
+                if (dtBalanceDetails.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtBalanceDetails.Rows)
+                    {
+                        res.Data.balanceDetails.BudgetAmount = Convert.ToDecimal(dt["Budget"]);
+                        res.Data.balanceDetails.LatestAuditUser = dt["AuditUser"].ToString();
+                        res.Data.balanceDetails.AuditDate = Convert.ToDateTime(dt["AuditActionDate"]);
+                    }
+                }
+
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        //[HttpGet("getLocationBudgetDetails/{loc}")]
+        //public async Task<IActionResult> getLocationBudgetDetailsData(string loc)
+        //{
+        //    ResultModel<BalanceDetails> res = new ResultModel<BalanceDetails>();
+        //    DataTable dtBalanceDetails = new DataTable("BalanceDetails");
+        //    IActionResult actionResult = null;
+
+        //    try
+        //    {
+        //        res.Data = new();
+
+        //        res.Data.LocationID = loc;
+
+        //        dtBalanceDetails = getLocationBudgetDetails(loc);
+
+        //        if (dtBalanceDetails.Rows.Count > 0)
+        //        {
+        //            foreach (DataRow dt in dtBalanceDetails.Rows)
+        //            {
+        //                res.Data.BudgetAmount = Convert.ToDecimal(dt["Budget"]);
+        //                res.Data.LatestAuditUser = dt["AuditUser"].ToString();
+        //                res.Data.AuditDate = Convert.ToDateTime(dt["AuditActionDate"]);
+        //            }
+        //        }
+
+        //        res.isSuccess = true;
+        //        res.ErrorCode = "00";
+        //        res.ErrorMessage = "";
+
+        //        actionResult = Ok(res);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        res.Data = null;
+        //        res.isSuccess = false;
+        //        res.ErrorCode = "99";
+        //        res.ErrorMessage = ex.Message;
+
+        //        actionResult = BadRequest(res);
+        //    }
+            
+        //    return actionResult;
+        //}
+
+        [HttpPost("updateLocationBudget")]
+        public async Task<IActionResult> updateLocationBudgetData(QueryModel<BalanceDetails> data)
+        {
+            ResultModel<QueryModel<BalanceDetails>> res = new ResultModel<QueryModel<BalanceDetails>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                updateLocationBudget(data);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getModulePageSize/{Table}")]
+        public async Task<IActionResult> getModulePageSize(string Table)
+        {
+            ResultModel<int> res = new ResultModel<int>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                string tbname = Base64Decode(Table).Split("!_!")[0];
+                string tbcol = Base64Decode(Table).Split("!_!")[1];
+                string value = Base64Decode(Table).Split("!_!")[2];
+                string tp = Base64Decode(Table).Split("!_!")[3];
+                string filVal = Base64Decode(Table).Split("!_!")[4];
+                string loc = Base64Decode(Table).Split("!_!")[5];
+
+                res.Data = getModuleNumberOfPage(_rowPerPage, tbname, tbcol, value, tp, filVal, loc);
+
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+            }
+            catch (Exception ex)
+            {
+                res.Data = 0;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getCoabyModule/{moduleName}")]
+        public async Task<IActionResult> getCoabyModuleData(string moduleName)
+        {
+            ResultModel<List<Account>> res = new ResultModel<List<Account>>();
+            List<Account> accountLines = new List<Account>();
+            DataTable dtAccount = new DataTable("Account");
+            IActionResult actionResult = null;
+
+            try
+            {
+                dtAccount = getCoabyModule(moduleName);
+
+                if (dtAccount.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtAccount.Rows)
+                    {
+                        Account temp = new Account();
+
+                        temp.AccountCode = dt["AccountNo"].ToString();
+                        temp.AccountDescription = dt["AccDescription"].ToString();
+
+                        accountLines.Add(temp);
+                    }
+
+                    res.Data = accountLines;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getMailingDetails/{param}")]
+        public async Task<IActionResult> getMailingDetailsData(string param)
+        {
+            ResultModel<Mailing> res = new ResultModel<Mailing>();
+            DataTable dtMailingList = new DataTable("Mailing");
+            IActionResult actionResult = null;
+
+            try
+            {
+                string temp = Base64Decode(param);
+
+                string mod = temp.Split("!_!")[0];
+                string actName = temp.Split("!_!")[1];
+                string loc = temp.Split("!_!")[2].Equals("") ? "HO" : temp.Split("!_!")[2];
+
+                dtMailingList = getMailingDetails(mod, actName, loc);
+
+                if (dtMailingList.Rows.Count > 0)
+                {
+                    res.Data = new();
+
+                    foreach (DataRow dt in dtMailingList.Rows)
+                    {
+                        res.Data.ModuleName = dt["ModuleName"].ToString();
+                        res.Data.ActionName = dt["ActionName"].ToString();
+                        res.Data.Receiver = dt.IsNull("Receiver") ? "" : dt["Receiver"].ToString();
+                        //res.Data.MailTemplate = dt.IsNull("MailTemplate") ? "" : dt["MailTemplate"].ToString();
+                        res.Data.LocationID = dt.IsNull("LocationID") ? "" : dt["LocationID"].ToString();
+                        res.Data.MailSubject = dt["MailSubject"].ToString();
+                        res.Data.MailBeginningBody = dt.IsNull("BeginningBody") ? "" : dt["BeginningBody"].ToString();
+                        res.Data.MailMainBody = dt.IsNull("MainBody") ? "" : dt["MainBody"].ToString();
+                        res.Data.MailFooter = dt.IsNull("Footer") ? "" : dt["Footer"].ToString();
+                        res.Data.MailNote = dt.IsNull("MailNote") ? "" : dt["MailNote"].ToString();
+                    }
+
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Empty Data";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        //
+    }
 
 }

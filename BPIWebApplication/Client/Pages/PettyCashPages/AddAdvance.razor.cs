@@ -1,17 +1,30 @@
 ﻿using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.MainModel.PettyCash;
+using BPIWebApplication.Shared.DbModel;
 using Microsoft.AspNetCore.Components;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.JSInterop.Implementation;
+using Microsoft.JSInterop;
 
 namespace BPIWebApplication.Client.Pages.PettyCashPages
 {
     public partial class AddAdvance : ComponentBase
     {
         //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        private ActiveUser activeUser = new();
 
         private Advance advance = new Advance();
         private List<AdvanceLine> advanceLines = new List<AdvanceLine>();
 
-        private int n = 1;
+        private bool isTypeTransfer = false;
+        private bool isUserHaventSettled = false;
+
+        private bool alertTrigger = false;
+        private bool successAlert = false;
+        private string alertBody = string.Empty;
+        private string alertMessage = string.Empty;
+
+        private IJSObjectReference _jsModule;
 
         private static string Base64Encode(string plainText)
         {
@@ -32,20 +45,150 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
             //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
 
-            // _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
+            await InitPage();
+            await ManagementService.GetAllDepartment();
+
+            activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+            //LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            string temp = activeUser.userName + "!_!MASTER";
+
+            var res = await PettyCashService.getAdvanceDatabyUser(Base64Encode(temp));
+
+            if (res.isSuccess)
+            {
+                if (res.ErrorCode.Contains("01"))
+                {
+                    isUserHaventSettled = false;
+                }
+                else
+                {
+                    isUserHaventSettled = true;
+                }
+                
+            }
+            else
+            {
+                isUserHaventSettled = true;
+            }
+
+            _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/PettyCashPages/AddAdvance.razor.js");
         }
 
-        private void submitAdvance()
+        private async Task InitPage()
         {
-            advance.AdvanceID = "ADV" + n;
-            advance.AdvanceDate = DateTime.Now;
-            //advance.Applicant = activeUser.UserLogin.userName;
-            advance.LocationID = "Store A";
-            advance.AdvanceStatus = "Created";
+            advance = new Advance();
+            advance.AdvanceType = "CH";
 
-            PettyCashService.addAdvanceTestData(advance, advanceLines);
+            //advance.Applicant = LoginService.activeUser.userName;
+            advance.Applicant = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            advance.LocationID = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1].Equals("") ? "HO" : Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
 
-            n++;
+            //if (ManagementService.locations.FirstOrDefault(loc => loc.locationId.Equals(LoginService.activeUser.location)) != null)
+            //{
+            //    advance.LocationID = ManagementService.locations.SingleOrDefault(loc => loc.locationId.Equals(LoginService.activeUser.location)).locationName;
+            //}
+            //else
+            //{
+            //    if (LoginService.activeUser.location.Equals("") && !LoginService.activeUser.company.IsNullOrEmpty())
+            //    {
+            //        advance.LocationID = "HO";
+            //    }
+            //    else
+            //    {
+            //        advance.LocationID = "Err : Location Not Found";
+            //    }
+            //}
+        }
+
+        private async void submitAdvance()
+        {
+            try
+            {
+                if (!validateInput())
+                {
+                    successAlert = false;
+                    alertTrigger = true;
+                    alertMessage = "Blank Input Field !";
+                    alertBody = "Please Fill the blank Field";
+
+                    StateHasChanged();
+                }
+                else
+                {
+                    var advanceId = await PettyCashService.createDocumentID("Advance");
+
+                    advance.AdvanceID = advanceId.Data;
+                    advance.AdvanceDate = DateTime.Now;
+
+                    QueryModel<Advance> inputData = new();
+                    inputData.Data = new();
+                    inputData.Data.lines = new();
+
+                    inputData.Data = advance;
+
+                    inputData.Data.AdvanceID = advanceId.Data;
+                    inputData.Data.AdvanceStatus = "Open";
+                    inputData.userEmail = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+                    inputData.userAction = "I";
+                    inputData.userActionDate = DateTime.Now;
+
+                    int nLine = 0;
+
+                    foreach (var line in advanceLines)
+                    {
+                        nLine++;
+
+                        AdvanceLine temp = new AdvanceLine
+                        {
+                            AdvanceID = advanceId.Data,
+                            LineNo = nLine,
+                            Details = line.Details,
+                            Amount = line.Amount,
+                            Status = "OP"
+                        };
+
+                        inputData.Data.lines.Add(temp);
+                    }
+
+                    var res = await PettyCashService.createAdvanceData(inputData);
+
+                    if (res.isSuccess)
+                    {
+                        string temp = "PettyCash!_!AddDocument!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advanceId.Data;
+                        var res2 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                        if (res2.isSuccess)
+                        {
+                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success");
+                        }
+                        else
+                        {
+                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed");
+                        }
+
+                        alertTrigger = false;
+                        successAlert = true;
+                        alertMessage = "Create Advance Success !";
+                        alertBody = $"Your Advance ID is {advanceId.Data}";
+
+                        isUserHaventSettled = true;
+                        StateHasChanged();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            
         }
 
         private void addLine()
@@ -56,6 +199,86 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private void deleteLine(AdvanceLine data)
         {
             advanceLines.Remove(data);
+        }
+
+        private void setAdvanceType(string value)
+        {
+            advance.TypeAccount = string.Empty;
+            advance.AdvanceType = value;
+
+            if (value.Equals("TF"))
+            {
+                isTypeTransfer = true;
+            }
+            else
+            {
+                isTypeTransfer = false;
+            }
+
+            StateHasChanged();
+        }
+
+        private void resetTrigger()
+        {
+            alertTrigger = false;
+            this.StateHasChanged();
+        }
+
+        private void resetSuccessAlert()
+        {
+            successAlert = false;
+            this.StateHasChanged();
+        }
+
+        private void resetForm()
+        {
+            isTypeTransfer = false;
+
+            advance.AdvanceID = "";
+            advance.AdvanceDate = DateTime.Now;
+            advance.AdvanceStatus = "";
+            advance.AdvanceNIK = "";
+            advance.AdvanceNote = "";
+            advance.AdvanceType = "CH";
+            advance.TypeAccount = "";
+            advance.DepartmentID = "";
+            advance.lines = new();
+
+            advanceLines.Clear();
+        }
+
+        private bool validateInput()
+        {
+            if (advance.Applicant.IsNullOrEmpty())
+                return false;
+
+            if (advance.AdvanceNote.IsNullOrEmpty())
+                return false;
+
+            if (advance.LocationID.IsNullOrEmpty())
+                return false;
+
+            if (advance.DepartmentID.IsNullOrEmpty())
+                return false;
+
+            if (advance.Applicant.IsNullOrEmpty())
+                return false;
+
+            if (advance.AdvanceType.IsNullOrEmpty())
+            {
+                return false;
+            }
+            else
+            {
+                if (advance.AdvanceType.Equals("TF"))
+                {
+                    if (advance.TypeAccount.IsNullOrEmpty())
+                        return false;
+                }
+                    
+            }
+
+            return true;
         }
 
     }

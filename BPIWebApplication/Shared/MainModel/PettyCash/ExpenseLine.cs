@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BPIWebApplication.Shared.MainModel.PettyCash
+﻿namespace BPIWebApplication.Shared.MainModel.PettyCash
 {
     public class ExpenseLine
     {
-        public Expense Header { get; set; } = new Expense();
+        public string ExpenseID { get; set; } = string.Empty;
         public int LineNo { get; set; } = 0;
         public string Details { get; set; } = string.Empty;
         public decimal Amount { get; set; } = decimal.Zero;

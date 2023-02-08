@@ -1,24 +1,49 @@
-﻿.btn-primary-cus {
-    color: white;
-    font-weight: bold;
-    background-image: linear-gradient( 96.5deg, rgba(39,103,187,1) 10.4%, rgba(16,72,144,1) 87.7% );
-}
-
-    .btn-primary-cus:hover {
-        opacity: 0.9;
-    }
-
-th {
-    font-weight: bold;
+﻿th {
     font-size: 13px;
     text-align: center;
-}
-
-tr {
-    user-select: none;
 }
 
 td {
-    font-size: 13px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#total_amount {
+    text-align: end;
+}
+
+#nominal_amount {
+    font-size: 23px;
+    font-weight: bold;
+}
+
+#selectAdvanceRowStyle {
+    user-select: none;
+    cursor: pointer;
+}
+
+.cus-bg {
+    background: rgb(2,0,36);
+    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,0.41789215686274506) 35%, rgba(27,66,138,0.6643907563025211) 100%);
+}
+
+.separator {
+    display: flex;
+    align-items: center;
     text-align: center;
 }
+
+    .separator::before,
+    .separator::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #000;
+    }
+
+    .separator:not(:empty)::before {
+        margin-right: .25em;
+    }
+
+    .separator:not(:empty)::after {
+        margin-left: .25em;
+    }

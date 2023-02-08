@@ -165,7 +165,7 @@ else
                             <div class="modal-body" style="height: 70vh;">
                                 @* body *@
                                 <div class="iframe-container" oncontextmenu="return false;">
-                                    <iframe src="data:application/pdf;base64, @Convert.ToBase64String(streamdata, 0, streamdata.Length) #toolbar=0&zoom=100%" type="application/pdf" style="width: 100%; height: 100%;">
+                                    <iframe src="data:application/pdf;base64, @Convert.ToBase64String(streamdata, 0, streamdata.Length) #toolbar=0" style="width: 100%; height: 100%;" >
                                         <p>Your browser doesn't support preview document.</p>
                                     </iframe>
                                 </div>

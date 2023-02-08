@@ -10,7 +10,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
 {
     public partial class AccessHistory : ComponentBase
     {
-        //private ActiveUser activeUser = new();
+        private ActiveUser activeUser = new();
 
         private int pageActive, numberofPage;
         private bool filterActive = false;
@@ -47,13 +47,15 @@ namespace BPIWebApplication.Client.Pages.SopPages
             //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
             //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
 
-            //activeUser.token = await sessionStorage.GetItemAsync<string>("token");
-            //activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            //activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
-            //activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
-            //activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
-            //activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+            activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
             filterActive = false;
             filterData = new AccessHistoryFilter();

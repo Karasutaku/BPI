@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Net;
 using Microsoft.IdentityModel.Tokens;
+using BPIWebApplication.Shared.MainModel;
 
 namespace BPIWebApplication.Client.Pages.LoginPages
 {
@@ -15,9 +16,12 @@ namespace BPIWebApplication.Client.Pages.LoginPages
 		//private ResultModel<ActiveUser<LoginUser>> data = new ResultModel<ActiveUser<LoginUser>>();
 
         private FacadeLogin loginData = new FacadeLogin();
+        private Location location = new();
+
         //private FacadeUserModule moduleData = new();
 
         private bool isLoginProgress = false;
+        private bool isFetchLocationProgress = false;
         private string loginMessage = string.Empty;
 
         private IJSObjectReference _jsModule;
@@ -44,7 +48,7 @@ namespace BPIWebApplication.Client.Pages.LoginPages
             loginData.password = user.password;
             loginData.companyId = user.companyId;
             loginData.locationId = user.locationId;
-            loginData.fromApplicationId = 38;
+            loginData.fromApplicationId = 0;
             loginData.fromApplicationSession = "";
             loginData.ipClient = "";
             loginData.macAddress = "";
@@ -133,10 +137,17 @@ namespace BPIWebApplication.Client.Pages.LoginPages
                     //moduleData.ApplicationId = Convert.ToInt32(appV); //
                     //moduleData.UserName = email;
 
+                    user.userName = "";
+                    user.password = "";
+                    user.companyId = 0;
+                    user.locationId = "99999";
+
                     navigate.NavigateTo("/Index");
 
                     isLoginProgress = false;
                     loginMessage = "Login Success";
+
+                    StateHasChanged();
 
                 }
                 else
@@ -146,11 +157,11 @@ namespace BPIWebApplication.Client.Pages.LoginPages
                     user.userName = "";
                     user.password = "";
                     user.companyId = 0;
-                    user.locationId = "";
+                    user.locationId = "99999";
 
                     StateHasChanged();
 
-                    await _jsModule.InvokeAsync<IJSObjectReference>("showAlert", "Login Failed ! Please relogin");
+                    await _jsModule.InvokeAsync<IJSObjectReference>("showAlert", "Login Failed ! Please Refresh your Page and Relogin");
                 }
 
             }
@@ -162,12 +173,39 @@ namespace BPIWebApplication.Client.Pages.LoginPages
             
         }
 
+        private async void getLocationsByCompany(ChangeEventArgs e)
+        {
+            isFetchLocationProgress = true;
+
+            user.companyId = Convert.ToInt32(e.Value);
+
+            location.Condition = $"a.CompanyId={e.Value}";
+            location.PageIndex = 1;
+            location.PageSize = 100;
+            location.FieldOrder = "a.CompanyId";
+            location.MethodOrder = "ASC";
+
+            var res = await ManagementService.GetCompanyLocations(location);
+
+            if (res.isSuccess)
+            {
+               isFetchLocationProgress = false;
+            }
+            else
+            {
+                await _jsModule.InvokeAsync<IJSObjectReference>("showAlert", "Fetch Data Location Failed ! Please Refresh your page and Relogin");
+                isFetchLocationProgress = false;
+            }
+
+            StateHasChanged();
+        }
+
         private void formClear()
         {
             user.userName = "";
             user.password = "";
             user.companyId = 0;
-            user.locationId = "";
+            user.locationId = "99999";
         }
 
 	}

@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BPIWebApplication.Shared.MainModel.PettyCash
+﻿namespace BPIWebApplication.Shared.MainModel.PettyCash
 {
     public class ReimburseLine
     {
-        public Reimburse Header { get; set; } = new Reimburse();
+        public string ReimburseID { get; set; } = string.Empty;
         public string ExpenseID { get; set; } = string.Empty;
         public int LineNo { get; set; } = 0;
         public string AccountNo { get; set; } = string.Empty;

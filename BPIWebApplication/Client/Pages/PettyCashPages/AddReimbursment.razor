@@ -1,6 +1,10 @@
-﻿@*@page "/pettycash/request"*@
+﻿@page "/pettycash/addreimburse"
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject ILoginService LoginService
 @inject IPettyCashService PettyCashService
+@inject IJSRuntime JS
+
+<PageTitle>Petty Cash - Reimbursement</PageTitle>
 
 @*
 @if (!(activeUser.role.Contains("admin") || activeUser.role.Contains("guest")))
@@ -9,42 +13,53 @@
 }
 else
 {
-    
+    *@
     <h3>Petty Cash</h3>
     <small><i>Request Reimbursment</i></small>
+
+    @if (alertTrigger)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>@alertMessage</strong> @alertBody
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+
+    @if (successAlert)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>@alertMessage</strong> @alertBody
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
 
     <div class="row">
         <div class="d-flex flex-column align-items-center">
 
-            <EditForm Model="reimbursment" OnValidSubmit="submitReimbursment">
+            <EditForm Model="reimbursement">
                 <div class="row">
-                    <div class="col">
-                        <label for="reimburs_id">PCR Number :</label>
-                        <InputText id="reimburs_id" @bind-Value="reimbursment.ReimbursID" class="form-control"></InputText>
-                    </div>
 
                     <div class="col">
-                        <label for="reimburs_loc">Location :</label>
-                        <InputText id="reimburs_loc" @bind-Value="reimbursment.Location.LocationName" class="form-control"></InputText>
+                        <label for="reimburs_id">Reimburse ID :</label>
+                        <InputText id="reimburs_id" @bind-Value="reimbursement.ReimburseID" class="form-control" readonly></InputText>
                     </div>
+
                 </div>
 
-                <div class="row">
+                <div class="row my-3">
                     <div class="col">
-                        <label for="reimburs_date">PCR Date :</label>
-                        <InputDate id="reimburs_date" @bind-Value="reimbursment.ReimbursDate" class="form-control"></InputDate>
+                        <label for="reimburs_date">Location :</label>
+                        <InputText id="reimburs_date" @bind-Value="reimbursement.LocationID" class="form-control" readonly></InputText>
                     </div>
 
                     <div class="col">
-                        <label for="reimburs_file">PCR Document :</label>
-                        <InputFile id="reimburs_file" @bind-Value="reimbursment.ReimbursAttach" class="form-control"></InputFile>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col">
-                        <label for="reimburs_status">Status :</label>
-                        <InputText id="reimburs_status" @bind-Value="reimbursment.ReimbursStatus" class="form-control" disabled></InputText>
+                        <label for="reimburs_file">User :</label>
+                        <InputText id="reimburs_file" @bind-Value="reimbursement.Applicant" class="form-control" readonly></InputText>
                     </div>
                 </div>
 
@@ -52,9 +67,9 @@ else
 
                 <button type="button" class="btn btn-sm btn-warning my-2" @onclick="showModal"><b>Apply</b></button>
 
-                @if (expense.Any())
+                @if (expenses.Any())
                 {
-                    <table class="table table-sm table-bordered" style="width: 100%">
+                    @*<table class="table table-sm table-bordered" style="width: 100%">
                         <thead>
                             <tr>
                                 <th style="width: 2%;">Action</th>
@@ -65,7 +80,7 @@ else
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var exp in expense)
+                            @foreach (var exp in expenses)
                             {
                                 <tr>
                                     <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" @onclick="(() => removeExpense(exp))">Remove</button></td>
@@ -81,17 +96,172 @@ else
                                 <td id="total_amount" colspan="2">Rp <span id="nominal_amount"> @expense.Sum(amount => amount.ExpenseAmount).ToString("N0") </span> ,- </td>
                             </tr>
                         </tbody>
-                    </table>
+                    </table>*@
+
+                    <div id="accordion">
+
+                        @foreach(var exp in expenses)
+                        {
+                            <div class="card">
+                                <div class="card-header" id="header_@exp.expense.ExpenseID">
+                                    <div class="input-group border border-1">
+                                        <button id="AccordionDeleteCard" class="btn btn-danger" @onclick="(() => removeExpense(exp))">
+                                            <i class="oi oi-delete"></i>
+                                        </button>
+                                        <button id="AccordionTitleCard" class="btn" data-toggle="collapse" data-target="#@exp.expense.ExpenseID" aria-expanded="true" aria-controls="@exp.expense.ExpenseID">
+                                        <b>@exp.expense.ExpenseID</b>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="@exp.expense.ExpenseID" class="collapse show" aria-labelledby="@exp.expense.ExpenseID" data-parent="#accordion">
+                                    <div class="card-body">
+                                        <div class="border border-2 p-2">
+
+                                            @* Header *@
+                                            <div class="row">
+                                                <div class="col col-sm-3 col-md-6"><p class="fw-bold">Expense ID </p></div>
+                                                <div class="col col-sm-9 col-md-6"><p>: @exp.expense.ExpenseID </p></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-sm-3 col-md-6"><p class="fw-bold">Advance ID </p></div>
+                                                <div class="col col-sm-9 col-md-6"><p>: @exp.expense.AdvanceID </p></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-sm-3 col-md-6"><p class="fw-bold">Expense Date </p></div>
+                                                <div class="col col-sm-9 col-md-6"><p>: @exp.expense.ExpenseDate.ToString("dd / MM / yyyy") </p></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-sm-3 col-md-6"><p class="fw-bold">Location </p></div>
+                                                <div class="col col-sm-9 col-md-6"><p>: @exp.expense.LocationID </p></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-sm-3 col-md-6"><p class="fw-bold">User </p></div>
+                                                <div class="col col-sm-9 col-md-6"><p>: @exp.expense.Applicant </p></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-sm-3 col-md-6"><p class="fw-bold">Expense Note </p></div>
+                                                <div class="col col-sm-9 col-md-6"><p>: @exp.expense.ExpenseNote </p></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-sm-3 col-md-6"><p class="fw-bold">Type </p></div>
+                                                <div class="col col-sm-9 col-md-6"><p>: @exp.expense.ExpenseType </p></div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-sm-3 col-md-6"><p class="fw-bold">Account </p></div>
+                                                <div class="col col-sm-9 col-md-6"><p>: @exp.expense.TypeAccount </p></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="separator my-3">Expense Line(s)</div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered" style="width: 100%;">
+                                                <thead>
+
+                                                    <tr>
+                                                        <th style="width: 5%;">#</th>
+                                                        <th style="width: 45%;">Description</th>
+                                                        <th style="width: 25%;">Amount</th>
+                                                        <th style="width: 25%; background-color:aquamarine;">Account No</th>
+                                                    </tr>
+                                                    
+                                                </thead>
+                                                <tbody>
+
+                                                    @foreach (var lines in reimbursement.lines)
+                                                    {
+                                                        @if (lines.ExpenseID.Equals(exp.expense.ExpenseID)) {
+                                                            
+                                                            <tr>
+                                                                <td class="text-center">@lines.LineNo</td>
+                                                                <td>@lines.Details</td>
+                                                                <td><input type="text" class="form-control" value="@lines.Amount.ToString("N0")" readonly /></td>
+                                                                <td>
+                                                                    <input type="text" class="form-control" @bind-value="lines.AccountNo" placeholder="Input Coa" list="accountList" />
+
+                                                                    <datalist id="accountList">
+                                                                        @foreach (var coa in PettyCashService.coas)
+                                                                        {
+                                                                            <option value="@coa.AccountCode">@coa.AccountDescription</option>
+                                                                        }
+                                                                    </datalist>
+
+                                                                </td>
+                                                            </tr>
+
+                                                        }
+                                                    }
+
+                                                    <tr>
+                                                        <td colspan="2" class="text-left align-middle fw-bold px-4" style="font-size: 20px;">Total Amount</td>
+                                                        <td colspan="2" class="align-middle">Rp <span id="nominal_amount">  @reimbursement.lines.Where(x => x.ExpenseID.Equals(exp.expense.ExpenseID)).Sum(x => x.Amount).ToString("N0") </span> </td>
+                                                    </tr>
+
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <div class="separator my-2">Expense Attachment(s)</div>
+
+                                        @if (PettyCashService.fileStreams.Any())
+                                        {
+                                            <div class="card-deck">
+
+                                                @foreach (var f in PettyCashService.fileStreams)
+                                                {
+                                                    @if (!f.type.Equals(exp.expense.ExpenseID))
+                                                        continue;
+
+                                                    <div id="attachCard" class="card border-dark my-1" @onclick=@(() => HandleViewDocument(f.content))>
+                                                        <div class="card-body">
+                                                            <h6 class="card-title"><b>@f.fileName.Split("!_!")[1]</b></h6>
+                                                            <small><i>Click To View</i></small>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <p class="fw-bold text-center">Loading . . .</p>
+                                        }
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered" style="width: 100%;">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-left align-middle fw-bold px-4" style="font-size: 20px; width: 35%;">Grand Total</td>
+                                        <td id="total_amount" class="align-middle" style="width: 65%;">Rp <span id="nominal_amount">  @reimbursement.lines.Sum(x => x.Amount).ToString("N0") </span> </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                    </div>
                 }
                 else
                 {
-                    <p>Select Expense Above</p>
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <strong>Select Expense(s) !</strong> Click Apply Button Above
+                    </div>
                 }
                 
 
-                <div class="row">
+                <div class="row my-2">
                     <div class="col">
-                        <button type="submit" title="Please Recheck the Total Amount" class="btn btn-sm btn-primary">Submit Request</button>
+                        <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" @onclick="resetForm"><b>Reset</b></button>
+                        <button type="button" title="Please Recheck the Total Amount" class="btn btn-sm btn-primary" @onclick="submitReimbursement"> Submit Request
+                            @if (isLoading)
+                            {
+                                <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                            }
+                        </button>
                     </div>
                 </div>
             </EditForm>
@@ -102,59 +272,103 @@ else
     @if (triggerModal)
     {
         <div class="modal fade show" id="selectExpenseModal" tabindex="-1" role="dialog" aria-labelledby="selectExpenseModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
-            <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-dialog modal-xl" role="document">
                 <div class="modal-content">
-                    @ header @
-                    <div class="modal-header">
-                        <p class="modal-title"><b>Select Expense</b></p>
-                        <button type="button" class="close" @onclick="hideModal">
+
+                <div class="modal-header cus-bg">
+                        <p class="modal-title text-white"><b>Select Expense(s)</b></p>
+                        <button type="button" class="close border-0" @onclick="hideModal">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
 
                     <div class="modal-body">
-                        @ body @
-                        @if (PettyCashService.expenses.Any())
+
+                        @if (checkExpenseDataPresent())
                         {
                             <table class="table table-sm table-bordered" style="width: 100%">
                                 <thead>
                                     <tr>
                                         <th style="width: 5%;">Select</th>
-                                        <th style="width: 20%;">ID</th>
-                                        <th style="width: 35%;">Description</th>
-                                        <th style="width: 20%;">Amount</th>
-                                        <th style="width: 20%;">Applicant</th>
+                                        <th style="width: 14%;">Expense ID</th>
+                                        <th style="width: 14%;" scope="col" class="d-none d-sm-table-cell">Advance ID</th>
+                                        <th style="width: 6%;" scope="col" class="d-none d-sm-table-cell">Type</th>
+                                        <th style="width: 25%;">Description</th>
+                                        <th style="width: 10%;" scope="col" class="d-none d-sm-table-cell">Department</th>
+                                        <th style="width: 10%;" scope="col" class="d-none d-sm-table-cell">Date</th>
+                                        <th style="width: 16%;" scope="col" class="d-none d-sm-table-cell">Applicant</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var exp in PettyCashService.expenses)
                                     {
-                                        <tr>
-                                            <td>
-                                                <input class="form-check-input" type="checkbox" id="@exp.ExpenseID" value="@exp.ExpenseID" checked="@(expense.SingleOrDefault(a => a.ExpenseID == exp.ExpenseID) == null ? null : "checked")" @onclick="(() => appendExpenseSelected(exp))" />
+                                        <tr id="selectExpenseRowStyle" @onclick="(() => appendExpenseSelected(exp))">
+                                            <td style="text-align: center;">
+                                                <input class="form-check-input" type="checkbox" id="@exp.ExpenseID" value="@exp.ExpenseID" checked="@((expenses.SingleOrDefault(a => a.expense.ExpenseID == exp.ExpenseID) != null) || ((selectedExpense.SingleOrDefault(a => a.ExpenseID == exp.ExpenseID) != null)) ? "checked" : null)" />
                                             </td>
-                                            <td>@exp.ExpenseID</td>
-                                            <td>@exp.ExpenseDetail</td>
-                                            <td>@exp.ExpenseAmount.ToString("N0")</td>
-                                            <td>@exp.Applicant</td>
+
+                                            <td style="font-size: 13px; text-align: center;">@exp.ExpenseID</td>
+                                            <td class="d-none d-sm-table-cell" style="font-size: 13px; text-align: center;">@exp.AdvanceID</td>
+                                            <td class="d-none d-sm-table-cell" style="font-size: 13px; text-align: center;">@exp.ExpenseType</td>
+                                            <td class="text-truncate" style="font-size: 13px; text-align: center;">@exp.ExpenseNote</td>
+                                            <td class="d-none d-sm-table-cell" style="font-size: 13px; text-align: center;">@exp.DepartmentID</td>
+                                            <td class="d-none d-sm-table-cell" style="font-size: 13px; text-align: center;">@exp.ExpenseDate.ToString("dd/MM/yyyy")</td>
+                                            <td class="d-none d-sm-table-cell" style="font-size: 13px; text-align: center;">@exp.Applicant</td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
+
+                            <ul class="pagination pagination-sm justify-content-center my-2">
+
+                                @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                                @if ((expensePageActive - 1) > 0)
+                                {
+                                    <li class="page-item px-1 paging-style" @onclick="(() => expensePageSelect((expensePageActive - 1)))"><span class="page-link">Previous</span></li>
+                                    <li class="page-item paging-style" @onclick="(() => expensePageSelect((expensePageActive - 1)))"><span class="page-link">@(expensePageActive - 1)</span></li>
+                                }
+                                else
+                                {
+                                    <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                    <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                }
+
+                                <li class="page-item active paging-style" @onclick="(() => expensePageSelect(expensePageActive))"><span class="page-link">@expensePageActive</span></li>
+
+                                @if (expensePageActive < expenseNumberofPage)
+                                {
+                                    <li class="page-item paging-style" @onclick="(() => expensePageSelect((expensePageActive + 1)))"><span class="page-link">@(expensePageActive + 1)</span></li>
+                                    <li class="page-item px-1 paging-style" @onclick="(() => expensePageSelect((expensePageActive + 1)))"><span class="page-link">Next</span></li>
+                                }
+                                else
+                                {
+                                    <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                    <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                                }
+
+
+                                @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                            </ul>
                         }
                         else
                         {
-                            <p>There is no Outstanding Expense</p>
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <strong>There is no Outstanding Expense(s) !</strong> Have a great day !
+                            </div>
                         }
 
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-danger" @onclick="hideModal">Close</button>
-                        <button type="button" class="btn btn-primary" @onclick="applySelectedExpense">Select</button>
+                    <div class="modal-footer cus-bg">
+                        <button type="button" class="btn btn-sm btn-primary" @onclick="applySelectedExpense">Select
+                            @if (isLoading)
+                            {
+                                <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                            }
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     }
     
-}*@
+@*}*@
