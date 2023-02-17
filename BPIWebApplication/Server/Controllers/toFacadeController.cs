@@ -13,6 +13,8 @@ using BPIWebApplication.Shared.MainModel.Procedure;
 using BPIWebApplication.Shared.MainModel.PettyCash;
 using BPIWebApplication.Shared.MainModel.Company;
 using BPIFacade.Models.MainModel.Mailing;
+using BPIWebApplication.Shared.MainModel.CashierLogbook;
+using BPIWebApplication.Shared.PagesModel.CashierLogbook;
 
 namespace BPIWebApplication.Server.Controllers
 {
@@ -2523,6 +2525,52 @@ namespace BPIWebApplication.Server.Controllers
             return actionResult;
         }
 
+        [HttpPost("updateLocationCutoffDate")]
+        public async Task<IActionResult> updateLocationCutoffDate(QueryModel<CutoffDetails> data)
+        {
+            ResultModel<QueryModel<CutoffDetails>> res = new ResultModel<QueryModel<CutoffDetails>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<CutoffDetails>>($"api/Facade/PettyCash/updateLocationCutoffDate", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CutoffDetails>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fail edit from updateLocationCutoffDate Facade";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
         [HttpGet("getModulePageSize/{Table}")]
         public async Task<IActionResult> getModulePageSize(string Table)
         {
@@ -2645,6 +2693,247 @@ namespace BPIWebApplication.Server.Controllers
             catch (Exception ex)
             {
                 res.Data = false;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        //
+    }
+
+    [Route("api/endUser/CashierLogbook")]
+    [ApiController]
+    public class CashierLogbookController : ControllerBase
+    {
+        private readonly HttpClient _http;
+        private readonly IConfiguration _configuration;
+
+        public CashierLogbookController(HttpClient http, IConfiguration config)
+        {
+            _http = http;
+            _configuration = config;
+            _http.BaseAddress = new Uri(_configuration.GetValue<string>("ConnectionStrings:BpiFacade"));
+        }
+
+        [HttpPost("createLogData")]
+        public async Task<IActionResult> createLogData(QueryModel<CashierLogbook> data)
+        {
+            ResultModel<QueryModel<CashierLogbook>> res = new ResultModel<QueryModel<CashierLogbook>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogbook>>($"api/Facade/CashierLogbook/createLogData", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogbook>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fail settle from createLogData BR";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("editLogData")]
+        public async Task<IActionResult> editLogData(QueryModel<CashierLogbook> data)
+        {
+            ResultModel<QueryModel<CashierLogbook>> res = new ResultModel<QueryModel<CashierLogbook>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogbook>>($"api/Facade/CashierLogbook/editLogData", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogbook>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fail settle from editLogData DA";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpGet("getLogData/{locPage}")]
+        public async Task<IActionResult> getLogDataTable(string locPage)
+        {
+            ResultModel<List<CashierLogData>> res = new ResultModel<List<CashierLogData>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<List<CashierLogData>>>($"api/Facade/CashierLogbook/getLogData/{locPage}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getShiftbyModule/{moduleName}")]
+        public async Task<IActionResult> getShiftbyModuleData(string moduleName)
+        {
+            ResultModel<List<Shift>> res = new ResultModel<List<Shift>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Shift>>>($"api/Facade/CashierLogbook/getShiftbyModule/{moduleName}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getCashierLogbookCategories")]
+        public async Task<IActionResult> getCashierLogbookCategories()
+        {
+            ResultModel<CashierLogbookCategories> res = new ResultModel<CashierLogbookCategories>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<CashierLogbookCategories>>($"api/Facade/CashierLogbook/getCashierLogbookCategories");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
                 res.isSuccess = false;
                 res.ErrorCode = "99";
                 res.ErrorMessage = ex.Message;

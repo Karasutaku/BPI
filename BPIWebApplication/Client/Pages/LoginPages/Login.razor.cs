@@ -30,6 +30,7 @@ namespace BPIWebApplication.Client.Pages.LoginPages
         {
             isLoginProgress = false;
 
+
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/LoginPages/Login.razor.js");
         }
         private static string Base64Encode(string plainText)

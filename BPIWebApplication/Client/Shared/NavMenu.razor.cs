@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
+using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace BPIWebApplication.Client.Shared
@@ -13,10 +14,13 @@ namespace BPIWebApplication.Client.Shared
 
         private FacadeUserModule moduleData = new();
 
+        List<ChildApplication> childApplications = new();
+        List<ModuleCategory> userModuleCategories = new();
+
         //private bool showModalTrigger = false;
 
-        private int clickedMainMenuId = 0;
-        private int prevClickedMainMenuId = 0;
+        private int? clickedMainMenuId = 0;
+        private int? prevClickedMainMenuId = 0;
         private bool hasPageName = false;
         private bool expandMainMenu = false;
 
@@ -87,24 +91,82 @@ namespace BPIWebApplication.Client.Shared
 
                 var moduleResp = await LoginService.frameworkApiFacadeModule(moduleData, tkn);
 
-                if (moduleResp.Data.Any())
+                module = moduleResp.Data;
+                //if (moduleResp.Data.Any())
+                //{
+                //    module = moduleResp.Data;
+
+                //    foreach (var modId in module)
+                //    {
+                //        ModuleCategory temp = new();
+
+                //        temp.moduleCategoryId = modId.moduleCategoryId;
+                //        temp.moduleCategoryName = modId.moduleCategoryName;
+
+                //        if (mainModule.FirstOrDefault(x => x.moduleCategoryId.Equals(temp.moduleCategoryId)) == null)
+                //        {
+                //            mainModule.Add(temp);
+                //        }
+
+                //    }
+                //}
+
+                //var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).OrderBy(x => x.childApplicationId).ToList();
+
+                //foreach (var b in mChild)
+                //{
+                //    childApplications.Add(new ChildApplication
+                //    {
+                //        ChildApplicationId = b.childApplicationId,
+                //        ChildApplicationName = b.childApplicationName,
+                //        moduleId = b.moduleId,
+                //        moduleName = b.moduleName,
+                //        url = b.url,
+                //        icon = b.icon
+                //    });
+                //}
+
+                //var mCat = moduleResp.Data.GroupBy(x => x.moduleId).Select(x => x.FirstOrDefault()).OrderBy(x => x.childApplicationId).ThenBy(x => x.moduleCategoryId).ToList();
+
+                //foreach (var a in mCat)
+                //{
+                //    userModuleCategories.Add(new UserModuleCategory
+                //    {
+                //        UserModuleCategoryId = a.moduleCategoryId,
+                //        UserModuleCategoryName = a.moduleCategoryName,
+                //        ApplicationId = a.applicationId,
+                //        ChildApplicationId = a.childApplicationId
+                //    });
+                //}
+
+                var mCat = moduleResp.Data.GroupBy(x => x.moduleCategoryId).Select(x => x.FirstOrDefault()).ToList();
+
+                foreach (var a in mCat)
                 {
-                    module = moduleResp.Data;
-
-                    foreach (var modId in module)
+                    userModuleCategories.Add(new ModuleCategory
                     {
-                        ModuleCategory temp = new();
-
-                        temp.moduleCategoryId = modId.moduleCategoryId;
-                        temp.moduleCategoryName = modId.moduleCategoryName;
-
-                        if (mainModule.FirstOrDefault(x => x.moduleCategoryId.Equals(temp.moduleCategoryId)) == null)
-                        {
-                            mainModule.Add(temp);
-                        }
-
-                    }
+                        moduleCategoryId = a.moduleCategoryId,
+                        moduleCategoryName = a.moduleCategoryName,
+                        ApplicationId = a.applicationId,
+                        ChildApplicationId = a.childApplicationId
+                    });
                 }
+
+                var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).ToList();
+
+                foreach (var b in mChild)
+                {
+                    childApplications.Add(new ChildApplication
+                    {
+                        ChildApplicationId = b.childApplicationId,
+                        ChildApplicationName = b.childApplicationName,
+                        moduleId = b.moduleId,
+                        moduleName = b.moduleName,
+                        url = b.url,
+                        icon = b.icon
+                    });
+                }
+
             }
             else
             {
@@ -131,23 +193,77 @@ namespace BPIWebApplication.Client.Shared
 
                 var moduleResp = await LoginService.frameworkApiFacadeModule(moduleData, LoginService.activeUser.token);
 
-                if (moduleResp.Data.Any())
+                module = moduleResp.Data;
+                //if (moduleResp.Data.Any())
+                //{
+                //    module = moduleResp.Data;
+
+                //    foreach (var modId in module)
+                //    {
+                //        ModuleCategory temp = new();
+
+                //        temp.moduleCategoryId = modId.moduleCategoryId;
+                //        temp.moduleCategoryName = modId.moduleCategoryName;
+
+                //        if (mainModule.FirstOrDefault(x => x.moduleCategoryId.Equals(temp.moduleCategoryId)) == null)
+                //        {
+                //            mainModule.Add(temp);
+                //        }
+
+                //    }
+                //}
+
+
+                //var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).OrderBy(x => x.childApplicationId).ToList();
+
+                //foreach (var b in mChild)
+                //{
+                //    childApplications.Add(new ChildApplication
+                //    {
+                //        ChildApplicationId = b.childApplicationId,
+                //        ChildApplicationName = b.childApplicationName
+                //    });
+                //}
+
+                //var mCat = moduleResp.Data.GroupBy(x => x.moduleId).Select(x => x.FirstOrDefault()).OrderBy(x => x.childApplicationId).ThenBy(x => x.moduleCategoryId).ToList();
+
+                //foreach (var a in mCat)
+                //{
+                //    userModuleCategories.Add(new UserModuleCategory
+                //    {
+                //        UserModuleCategoryId = a.moduleCategoryId,
+                //        UserModuleCategoryName = a.moduleCategoryName,
+                //        ApplicationId = a.applicationId,
+                //        ChildApplicationId = a.childApplicationId
+                //    });
+                //}
+
+                var mCat = moduleResp.Data.GroupBy(x => x.moduleCategoryId).Select(x => x.FirstOrDefault()).ToList();
+
+                foreach (var a in mCat)
                 {
-                    module = moduleResp.Data;
-
-                    foreach (var modId in module)
+                    userModuleCategories.Add(new ModuleCategory
                     {
-                        ModuleCategory temp = new();
+                        moduleCategoryId = a.moduleCategoryId,
+                        moduleCategoryName = a.moduleCategoryName,
+                        ApplicationId = a.applicationId,
+                        ChildApplicationId = a.childApplicationId
+                    });
+                }
 
-                        temp.moduleCategoryId = modId.moduleCategoryId;
-                        temp.moduleCategoryName = modId.moduleCategoryName;
+                var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).ToList();
 
-                        if (mainModule.FirstOrDefault(x => x.moduleCategoryId.Equals(temp.moduleCategoryId)) == null)
-                        {
-                            mainModule.Add(temp);
-                        }
-
-                    }
+                foreach (var b in mChild)
+                {
+                    childApplications.Add(new ChildApplication
+                    {
+                        ChildApplicationId = b.childApplicationId,
+                        ChildApplicationName = b.childApplicationName,
+                        moduleId = b.moduleId,
+                        moduleName = b.moduleName,
+                        url = b.url,
+                        icon = b.icon
+                    });
                 }
 
             }
@@ -226,7 +342,7 @@ namespace BPIWebApplication.Client.Shared
                 if (!menu.moduleCategoryName.IsNullOrEmpty())
                 {
                     hasPageName = true;
-                    expandMainMenu = !expandMainMenu;
+                    expandMainMenu = true;
                 }
                 else
                 {

@@ -27,22 +27,25 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private Expense expense = new Expense();
         private Reimburse reimburse = new Reimburse();
 
-        List<string> exp = new List<string>();
-        List<ReimburseLine> selectedReimburseLines = new();
-        List<string> coaSummary = new();
+        private List<string> exp = new List<string>();
+        private List<ReimburseLine> selectedReimburseLines = new();
+        private List<string> coaSummary = new();
 
-        OutstandingBalance outstandingBalance = new();
-        BalanceDetails locBalanceDetails = new();
+        private OutstandingBalance outstandingBalance = new();
+        private BalanceDetails locBalanceDetails = new();
+        private DateTime locationCutoffDate = DateTime.MinValue;
+
         List<ledgerParam> ledgerParam = new();
-
         private Location location = new();
 
         private decimal editedBudgetAmount = decimal.Zero;
+        private DateTime editedCutoffDate = DateTime.MinValue;
 
         private bool isLoading = false;
         private bool showModal = false;
         private bool showBalanceModal = false;
         private bool showUpdateBudgetModal = false;
+        private bool showUpdateCutoffModal = false;
         private bool showExportModal = false;
         private string transacType = string.Empty;
         private bool reimburseCheckAllisChecked = false;
@@ -113,9 +116,9 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
             activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
             activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
-            //LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
             isAdvanceFilterActive = false;
             isExpenseFilterActive = false;
@@ -239,6 +242,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private void hideBalanceDetails() => showBalanceModal = false;
         private void hideBudgetDetails() => showUpdateBudgetModal = false;
+        private void hideCutoffDetails() => showUpdateCutoffModal = false;
 
         private void hideExportModal()
         {
@@ -251,6 +255,13 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             showUpdateBudgetModal = true;
             locBalanceDetails.LocationID = loc;
         }
+
+        private void triggerCutoffUpdateModal(string loc)
+        {
+            showUpdateCutoffModal = true;
+            locBalanceDetails.LocationID = loc;
+        }
+
         private void triggerExportModal(string loc)
         {
             string tempLoc = loc;
@@ -328,6 +339,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     showBalanceModal = true;
                     outstandingBalance = res.Data.outstandingBalance;
                     locBalanceDetails = res.Data.balanceDetails;
+                    locationCutoffDate = res.Data.CutOffDate;
 
                     isFetchBalanceActive = false;
                 }
@@ -360,6 +372,9 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 updateData.Data.BudgetAmount = editedBudgetAmount;
                 updateData.Data.LatestAuditUser = activeUser.userName;
                 updateData.Data.AuditDate = DateTime.Now;
+                updateData.userEmail = activeUser.userName;
+                updateData.userAction = "U";
+                updateData.userActionDate = DateTime.Now;
 
                 var res = await PettyCashService.updateLocationBudgetDetails(updateData);
 
@@ -370,6 +385,46 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     locBalanceDetails.BudgetAmount = res.Data.Data.BudgetAmount;
                     locBalanceDetails.LatestAuditUser = res.Data.Data.LatestAuditUser;
                     locBalanceDetails.AuditDate = res.Data.Data.AuditDate;
+
+                    await _jsModule.InvokeVoidAsync("showAlert", "Update Success, Please Refresh Your Page !");
+                }
+                else
+                {
+                    isLoading = false;
+                    await _jsModule.InvokeVoidAsync("showAlert", "Update Failed, Please Check Your Connection !");
+                }
+            }
+            catch (Exception ex)
+            {
+                isLoading = false;
+                await _jsModule.InvokeVoidAsync("showAlert", $"Error, {ex.Message} !");
+                throw new Exception(ex.Message);
+            }
+        }
+
+        private async void updateCutoffDate(string loc)
+        {
+            isLoading = true;
+
+            try
+            {
+                QueryModel<CutoffDetails> updateData = new();
+                updateData.Data = new();
+
+                updateData.Data.LocationID = loc;
+                updateData.Data.ModuleLedgerName = "PettyCashLedger";
+                updateData.Data.CutoffDate = editedCutoffDate;
+                updateData.userEmail = activeUser.userName;
+                updateData.userAction = "U";
+                updateData.userActionDate = DateTime.Now;
+
+                var res = await PettyCashService.updateLocationCutoffDate(updateData);
+
+                if (res.isSuccess)
+                {
+                    isLoading = false;
+
+                    locationCutoffDate = res.Data.Data.CutoffDate;
 
                     await _jsModule.InvokeVoidAsync("showAlert", "Update Success, Please Refresh Your Page !");
                 }
@@ -642,6 +697,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                     await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
                                 }
                             }
+                            else if (action.Contains("Claimed"))
+                            {
+                                await _jsModule.InvokeVoidAsync("showAlert", "Reimburse Amount Claimed, Please Reload Your Page !");
+                            }
                             //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
                         }
                     }
@@ -794,6 +853,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     foreach (var line in selectedReimburseLines)
                     {
                         reimburse.lines.SingleOrDefault(a => (a.ExpenseID == line.ExpenseID) && (a.ReimburseID == line.ReimburseID) && (a.LineNo == line.LineNo)).Status = "CL";
+                        reimburse.lines.SingleOrDefault(a => (a.ExpenseID == line.ExpenseID) && (a.ReimburseID == line.ReimburseID) && (a.LineNo == line.LineNo)).ApprovedAmount = 0;
                     }
                 }
                 else if (action.Equals("approve"))
@@ -801,6 +861,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     foreach (var line in selectedReimburseLines)
                     {
                         reimburse.lines.SingleOrDefault(a => (a.ExpenseID == line.ExpenseID) && (a.ReimburseID == line.ReimburseID) && (a.LineNo == line.LineNo)).Status = "AP";
+                        reimburse.lines.SingleOrDefault(a => (a.ExpenseID == line.ExpenseID) && (a.ReimburseID == line.ReimburseID) && (a.LineNo == line.LineNo)).ApprovedAmount = reimburse.lines.SingleOrDefault(a => (a.ExpenseID == line.ExpenseID) && (a.ReimburseID == line.ReimburseID) && (a.LineNo == line.LineNo)).Amount;
                     }
                 }
                 else if (action.Equals("revert"))
@@ -808,6 +869,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     foreach (var line in selectedReimburseLines)
                     {
                         reimburse.lines.SingleOrDefault(a => (a.ExpenseID == line.ExpenseID) && (a.ReimburseID == line.ReimburseID) && (a.LineNo == line.LineNo)).Status = "OP";
+                        reimburse.lines.SingleOrDefault(a => (a.ExpenseID == line.ExpenseID) && (a.ReimburseID == line.ReimburseID) && (a.LineNo == line.LineNo)).ApprovedAmount = 0;
                     }
                 }
             }

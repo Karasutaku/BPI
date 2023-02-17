@@ -8,170 +8,181 @@
 
 <PageTitle>Petty Cash - Advance</PageTitle>
 
-@*@if (!(activeUser.role.Contains("admin") || activeUser.role.Contains("guest")))
+@if (LoginService.activeUser == null)
 {
-    <h3>User Require Elevation</h3>
+    <p>Loading...</p>
 }
 else
-{*@
-    <h3>Petty Cash</h3>
-    <small><i>Advance Submision</i></small>
-
-    @if (alertTrigger)
+{
+    @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
     {
-        <div class="alert alert-warning alert-dismissible fade show my-3" role="alert">
-            <strong>@alertMessage</strong> @alertBody
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-
-    @if (successAlert)
-    {
-        <div class="alert alert-success alert-dismissible fade show my-3" role="alert">
-            <strong>@alertMessage</strong> @alertBody
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    }
-
-    @if (isUserHaventSettled)
-    {
-        <div class="alert alert-warning alert-dismissible fade show my-3" role="alert">
-            <strong>Please Settle Your Previous Advance !</strong>
+        <div class="container-fluid">
+            <div class="d-flex align-items-center">
+                <h3>User Require Elevation</h3>
+            </div>
         </div>
     }
     else
     {
-        <div class="container-fluid">
-            <div class="d-flex flex-column align-items-center">
+        <h3>Petty Cash</h3>
+        <small><i>Advance Submision</i></small>
 
-                <EditForm Model="advance" OnValidSubmit="submitAdvance">
+        @if (alertTrigger)
+        {
+            <div class="alert alert-warning alert-dismissible fade show my-3" role="alert">
+                <strong>@alertMessage</strong> @alertBody
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
 
-                    <div class="row my-3">
-                        <div class="col">
-                            <label for="advance_id">Advance ID :</label>
-                            <InputText id="advance_id" @bind-Value="advance.AdvanceID" class="form-control" readonly></InputText>
+
+        @if (successAlert)
+        {
+            <div class="alert alert-success alert-dismissible fade show my-3" role="alert">
+                <strong>@alertMessage</strong> @alertBody
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        @if (isUserHaventSettled)
+        {
+            <div class="alert alert-warning alert-dismissible fade show my-3" role="alert">
+                <strong>Please Settle Your Previous Advance !</strong>
+            </div>
+        }
+        else
+        {
+            <div class="container-fluid">
+                <div class="d-flex flex-column align-items-center">
+
+                    <EditForm Model="advance" OnValidSubmit="submitAdvance">
+
+                        <div class="row my-3">
+                            <div class="col">
+                                <label for="advance_id">Advance ID :</label>
+                                <InputText id="advance_id" @bind-Value="advance.AdvanceID" class="form-control" readonly></InputText>
+                            </div>
+                            <div class="col">
+                                <label for="user_id">User :</label>
+                                <InputText id="user_id" @bind-Value="advance.Applicant" class="form-control" readonly></InputText>
+                            </div>
                         </div>
-                        <div class="col">
-                            <label for="user_id">User :</label>
-                            <InputText id="user_id" @bind-Value="advance.Applicant" class="form-control" readonly></InputText>
-                        </div>
-                    </div>
 
-                    <div class="row my-3">
-                        <div class="col">
-                            <label for="user_note">Applicant :</label>
-                            <InputText id="user_note" @bind-Value="advance.AdvanceNote" class="form-control"></InputText>
+                        <div class="row my-3">
+                            <div class="col">
+                                <label for="user_note">Applicant :</label>
+                                <InputText id="user_note" @bind-Value="advance.AdvanceNote" class="form-control"></InputText>
+                            </div>
+                            <div class="col">
+                                <label for="user_detail">Applicant NIK :</label>
+                                <InputText id="user_detail" @bind-Value="advance.AdvanceNIK" class="form-control"></InputText>
+                            </div>
                         </div>
-                        <div class="col">
-                            <label for="user_detail">Applicant NIK :</label>
-                            <InputText id="user_detail" @bind-Value="advance.AdvanceNIK" class="form-control"></InputText>
-                        </div>
-                    </div>
 
-                    <div class="row my-3">
-                        <div class="col">
-                            <label for="type_radio">Type :</label>
+                        <div class="row my-3">
+                            <div class="col">
+                                <label for="type_radio">Type :</label>
 
-                            <div id="type_radio" class="w-100">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="Radio1" name="Radios" @onclick="@(() => setAdvanceType("CH"))" checked="@(isTypeTransfer.Equals(false) ? "checked" : null)">
-                                    <label class="form-check-label" for="Radio1">
-                                        Cash
-                                    </label>
+                                <div id="type_radio" class="w-100">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="Radio1" name="Radios" @onclick="@(() => setAdvanceType("CH"))" checked="@(isTypeTransfer.Equals(false) ? "checked" : null)">
+                                        <label class="form-check-label" for="Radio1">
+                                            Cash
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="Radio2" name="Radios" @onclick="@(() => setAdvanceType("TF"))" checked="@(isTypeTransfer.Equals(true) ? "checked" : null)">
+                                        <label class="form-check-label" for="Radio2">
+                                            Transfer
+                                        </label>
+                                    </div>
                                 </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="Radio2" name="Radios" @onclick="@(() => setAdvanceType("TF"))" checked="@(isTypeTransfer.Equals(true) ? "checked" : null)">
-                                    <label class="form-check-label" for="Radio2">
-                                        Transfer
-                                    </label>
-                                </div>
+
                             </div>
 
+                            @if (isTypeTransfer)
+                            {
+                                <div class="col">
+                                    <label for="account_no">Account No :</label>
+                                    <InputText id="account_no" @bind-Value="advance.TypeAccount" class="form-control"></InputText>
+                                </div>
+                            }
+
                         </div>
 
-                        @if (isTypeTransfer)
-                        {
+                        <div class="row my-3">
                             <div class="col">
-                                <label for="account_no">Account No :</label>
-                                <InputText id="account_no" @bind-Value="advance.TypeAccount" class="form-control"></InputText>
+                                <label for="location_id">Location :</label>
+                                <InputText id="location_id" @bind-Value="advance.LocationID" class="form-control" readonly></InputText>
+                            </div>
+                            <div class="col">
+                                <label for="dept_id">Department :</label>
+                                <InputSelect id="dept_id" @bind-Value="advance.DepartmentID" class="form-select">
+                                    <option hidden value="0">Select Department</option>
+
+                                    @foreach (var dept in ManagementService.departments)
+                                    {
+                                        <option value="@dept.DepartmentID">@dept.DepartmentName</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="separator">Advance Details</div>
+
+                        <button type="button" class="btn btn-sm btn-warning my-2" @onclick="addLine"><b>Add</b></button>
+
+                        @if (advanceLines.Any())
+                        {
+                            <table class="table table-sm table-bordered" style="width: 100%">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">Action</th>
+                                        <th style="width: 70%;">Description</th>
+                                        <th style="width: 25%;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var line in advanceLines)
+                                    {
+                                        <tr>
+                                            <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" @onclick="(() => deleteLine(line))"><i class="oi oi-delete"></i></button></td>
+
+                                            <td><input type="text" class="form-control" @bind-value="line.Details" /></td>
+                                            <td><input type="number" class="form-control" @bind-value="line.Amount" /></td>
+                                        </tr>
+                                    }
+                                    <tr>
+                                        <td colspan="3" id="total_amount">Rp <span id="nominal_amount"> @advanceLines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning fade show" role="alert">
+                                <strong>Add New Expense !</strong>
                             </div>
                         }
 
-                    </div>
-
-                    <div class="row my-3">
-                        <div class="col">
-                            <label for="location_id">Location :</label>
-                            <InputText id="location_id" @bind-Value="advance.LocationID" class="form-control" readonly></InputText>
+                        <div class="row my-3">
+                            <div class="col">
+                                <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" @onclick="resetForm"><b>Reset</b></button>
+                                <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary">Create Advance</button>
+                            </div>
                         </div>
-                        <div class="col">
-                            <label for="dept_id">Department :</label>
-                            <InputSelect id="dept_id" @bind-Value="advance.DepartmentID" class="form-select">
-                                <option hidden value="0">Select Department</option>
 
-                                @foreach (var dept in ManagementService.departments)
-                                {
-                                    <option value="@dept.DepartmentID">@dept.DepartmentName</option>
-                                }
-                            </InputSelect>
-                        </div>
-                    </div>
+                    </EditForm>
 
-                    <div class="separator">Advance Details</div>
-
-                    <button type="button" class="btn btn-sm btn-warning my-2" @onclick="addLine"><b>Add</b></button>
-
-                    @if (advanceLines.Any())
-                    {
-                        <table class="table table-sm table-bordered" style="width: 100%">
-                            <thead>
-                                <tr>
-                                    <th style="width: 5%;">Action</th>
-                                    <th style="width: 70%;">Description</th>
-                                    <th style="width: 25%;">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var line in advanceLines)
-                                {
-                                    <tr>
-                                        <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" @onclick="(() => deleteLine(line))"><i class="oi oi-delete"></i></button></td>
-
-                                        <td><input type="text" class="form-control" @bind-value="line.Details" /></td>
-                                        <td><input type="number" class="form-control" @bind-value="line.Amount" /></td>
-                                    </tr>
-                                }
-                                <tr>
-                                    <td colspan="3" id="total_amount">Rp <span id="nominal_amount"> @advanceLines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning fade show" role="alert">
-                            <strong>Add New Expense !</strong>
-                        </div>
-                    }
-
-                    <div class="row my-3">
-                        <div class="col">
-                            <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" @onclick="resetForm"><b>Reset</b></button>
-                            <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary">Create Advance</button>
-                        </div>
-                    </div>
-
-                </EditForm>
+                </div>
 
             </div>
-
-        </div>
-    }
+        }
 
     
-@*}*@
+    }
+}

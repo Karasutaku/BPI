@@ -24,5 +24,12 @@
     {
         public OutstandingBalance outstandingBalance { get; set; } = new();
         public BalanceDetails balanceDetails { get; set; } = new();
+        public DateTime CutOffDate { get; set; } = DateTime.Now;
+    }
+    public class CutoffDetails
+    {
+        public string LocationID { get; set; } = string.Empty;
+        public string ModuleLedgerName { get; set; } = string.Empty;
+        public DateTime CutoffDate { get; set; } = DateTime.Now;
     }
 }

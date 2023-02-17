@@ -42,6 +42,7 @@ namespace BPIWebApplication.Client.Services.PettyCashServices
 
         // update
         Task<ResultModel<QueryModel<BalanceDetails>>> updateLocationBudgetDetails(QueryModel<BalanceDetails> data);
+        Task<ResultModel<QueryModel<CutoffDetails>>> updateLocationCutoffDate(QueryModel<CutoffDetails> data);
         Task<ResultModel<QueryModel<string>>> updateAdvanceDataSettlement(QueryModel<string> data);
         Task<ResultModel<QueryModel<List<string>>>> updateExpenseDataSettlement(QueryModel<List<string>> data);
         Task<ResultModel<QueryModel<string>>> updateReimburseDataSettlement(QueryModel<string> data);

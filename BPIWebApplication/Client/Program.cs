@@ -3,6 +3,7 @@ global using BPIWebApplication.Client.Services.ProcedureServices;
 global using BPIWebApplication.Shared;
 using Blazored.SessionStorage;
 using BPIWebApplication.Client;
+using BPIWebApplication.Client.Services.CashierLogbookServices;
 using BPIWebApplication.Client.Services.ManagementServices;
 using BPIWebApplication.Client.Services.PettyCashServices;
 using Microsoft.AspNetCore.Components.Web;
@@ -19,6 +20,7 @@ builder.Services.AddScoped<ILoginService, LoginService>();
 builder.Services.AddScoped<IProcedureService, ProcedureService>();
 builder.Services.AddScoped<IManagementService, ManagementService>();
 builder.Services.AddScoped<IPettyCashService, PettyCashService>();
+builder.Services.AddScoped<ICashierLogbookService, CashierLogbookService>();
 
 builder.Services.AddBlazoredSessionStorage();
 

@@ -43,9 +43,9 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
             activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
             activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
-            //LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
             reimbursePageActive = 1;
 

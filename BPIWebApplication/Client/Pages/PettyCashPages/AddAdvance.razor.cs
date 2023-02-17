@@ -54,9 +54,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
             activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
             activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
-            //LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+
             string temp = activeUser.userName + "!_!MASTER";
 
             var res = await PettyCashService.getAdvanceDatabyUser(Base64Encode(temp));
@@ -122,66 +123,78 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 }
                 else
                 {
-                    var advanceId = await PettyCashService.createDocumentID("Advance");
-
-                    advance.AdvanceID = advanceId.Data;
-                    advance.AdvanceDate = DateTime.Now;
-
-                    QueryModel<Advance> inputData = new();
-                    inputData.Data = new();
-                    inputData.Data.lines = new();
-
-                    inputData.Data = advance;
-
-                    inputData.Data.AdvanceID = advanceId.Data;
-                    inputData.Data.AdvanceStatus = "Open";
-                    inputData.userEmail = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-                    inputData.userAction = "I";
-                    inputData.userActionDate = DateTime.Now;
-
-                    int nLine = 0;
-
-                    foreach (var line in advanceLines)
+                    if (LoginService.activeUser.userPrivileges.Contains("CR"))
                     {
-                        nLine++;
+                        var advanceId = await PettyCashService.createDocumentID("Advance");
 
-                        AdvanceLine temp = new AdvanceLine
+                        advance.AdvanceID = advanceId.Data;
+                        advance.AdvanceDate = DateTime.Now;
+
+                        QueryModel<Advance> inputData = new();
+                        inputData.Data = new();
+                        inputData.Data.lines = new();
+
+                        inputData.Data = advance;
+
+                        inputData.Data.AdvanceID = advanceId.Data;
+                        inputData.Data.AdvanceStatus = "Open";
+                        inputData.userEmail = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+                        inputData.userAction = "I";
+                        inputData.userActionDate = DateTime.Now;
+
+                        int nLine = 0;
+
+                        foreach (var line in advanceLines)
                         {
-                            AdvanceID = advanceId.Data,
-                            LineNo = nLine,
-                            Details = line.Details,
-                            Amount = line.Amount,
-                            Status = "OP"
-                        };
+                            nLine++;
 
-                        inputData.Data.lines.Add(temp);
+                            AdvanceLine temp = new AdvanceLine
+                            {
+                                AdvanceID = advanceId.Data,
+                                LineNo = nLine,
+                                Details = line.Details,
+                                Amount = line.Amount,
+                                Status = "OP"
+                            };
+
+                            inputData.Data.lines.Add(temp);
+                        }
+
+                        var res = await PettyCashService.createAdvanceData(inputData);
+
+                        if (res.isSuccess)
+                        {
+                            string temp = "PettyCash!_!AddDocument!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advanceId.Data;
+                            var res2 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                            if (res2.isSuccess)
+                            {
+                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success");
+                            }
+                            else
+                            {
+                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed");
+                            }
+
+                            alertTrigger = false;
+                            successAlert = true;
+                            alertMessage = "Create Advance Success !";
+                            alertBody = $"Your Advance ID is {advanceId.Data}";
+
+                            isUserHaventSettled = true;
+                            StateHasChanged();
+                        }
                     }
-
-                    var res = await PettyCashService.createAdvanceData(inputData);
-
-                    if (res.isSuccess)
+                    else
                     {
-                        string temp = "PettyCash!_!AddDocument!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advanceId.Data;
-                        var res2 = await PettyCashService.autoEmail(Base64Encode(temp));
+                        successAlert = false;
+                        alertTrigger = true;
+                        alertMessage = "You Have no Authority to Create Document !";
+                        alertBody = "Please try again or Contact the Administrator";
 
-                        if (res2.isSuccess)
-                        {
-                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success");
-                        }
-                        else
-                        {
-                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed");
-                        }
-
-                        alertTrigger = false;
-                        successAlert = true;
-                        alertMessage = "Create Advance Success !";
-                        alertBody = $"Your Advance ID is {advanceId.Data}";
-
-                        isUserHaventSettled = true;
                         StateHasChanged();
                     }
-
+                    
                 }
             }
             catch (Exception ex)

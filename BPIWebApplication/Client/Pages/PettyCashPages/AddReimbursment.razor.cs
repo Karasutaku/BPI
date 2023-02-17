@@ -53,9 +53,9 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
             activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
             activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
-            //LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
             reimbursement = new Reimburse();
             resetForm();
@@ -76,85 +76,97 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             try
             {
-                ReimburseStream uploadData = new ReimburseStream();
-
-                uploadData.reimburseDetails = new();
-                uploadData.reimburseDetails.Data = new();
-                uploadData.files = new();
-
-                var reimburseId = await PettyCashService.createDocumentID("Reimburse");
-
-                reimbursement.ReimburseID = reimburseId.Data;
-                reimbursement.ReimburseDate = DateTime.Now;
-                reimbursement.ReimburseStatus = "Open";
-                reimbursement.ReimburseNote = "";
-
-                int nLine = 0;
-
-                foreach (var lines in reimbursement.lines)
+                if (LoginService.activeUser.userPrivileges.Contains("CR"))
                 {
-                    nLine++;
+                    ReimburseStream uploadData = new ReimburseStream();
 
-                    lines.ReimburseID = reimburseId.Data;
-                    lines.LineNo = nLine;
-                }
+                    uploadData.reimburseDetails = new();
+                    uploadData.reimburseDetails.Data = new();
+                    uploadData.files = new();
 
-                uploadData.reimburseDetails.Data = reimbursement;
-                uploadData.reimburseDetails.userEmail = activeUser.userName;
-                uploadData.reimburseDetails.userAction = "I";
-                uploadData.reimburseDetails.userActionDate = DateTime.Now;
+                    var reimburseId = await PettyCashService.createDocumentID("Reimburse");
 
-                foreach (var f in PettyCashService.fileStreams)
-                {
-                    f.type = f.type + "!_!" + reimburseId.Data;
-                    f.content = Array.Empty<byte>();
-                }
+                    reimbursement.ReimburseID = reimburseId.Data;
+                    reimbursement.ReimburseDate = DateTime.Now;
+                    reimbursement.ReimburseStatus = "Open";
+                    reimbursement.ReimburseNote = "";
 
-                uploadData.files = PettyCashService.fileStreams;
+                    int nLine = 0;
 
-                QueryModel<List<string>> settleExpenseData = new();
-                settleExpenseData.Data = new();
-
-                settleExpenseData.Data = settlingExpense;
-                settleExpenseData.userEmail = activeUser.userName;
-                settleExpenseData.userAction = "D";
-                settleExpenseData.userActionDate = DateTime.Now;
-
-                var res = await PettyCashService.updateExpenseDataSettlement(settleExpenseData); 
-
-                if (res.isSuccess)
-                {
-                    var res2 = await PettyCashService.createReimburseData(uploadData);
-
-                    if (res2.isSuccess)
+                    foreach (var lines in reimbursement.lines)
                     {
-                        string temp = "PettyCash!_!AddDocument!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburseId.Data;
-                        var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+                        nLine++;
 
-                        if (res3.isSuccess)
+                        lines.ReimburseID = reimburseId.Data;
+                        lines.LineNo = nLine;
+                    }
+
+                    uploadData.reimburseDetails.Data = reimbursement;
+                    uploadData.reimburseDetails.userEmail = activeUser.userName;
+                    uploadData.reimburseDetails.userAction = "I";
+                    uploadData.reimburseDetails.userActionDate = DateTime.Now;
+
+                    foreach (var f in PettyCashService.fileStreams)
+                    {
+                        f.type = f.type + "!_!" + reimburseId.Data;
+                        f.content = Array.Empty<byte>();
+                    }
+
+                    uploadData.files = PettyCashService.fileStreams;
+
+                    QueryModel<List<string>> settleExpenseData = new();
+                    settleExpenseData.Data = new();
+
+                    settleExpenseData.Data = settlingExpense;
+                    settleExpenseData.userEmail = activeUser.userName;
+                    settleExpenseData.userAction = "D";
+                    settleExpenseData.userActionDate = DateTime.Now;
+
+                    var res = await PettyCashService.updateExpenseDataSettlement(settleExpenseData);
+
+                    if (res.isSuccess)
+                    {
+                        var res2 = await PettyCashService.createReimburseData(uploadData);
+
+                        if (res2.isSuccess)
                         {
-                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success");
-                        }
-                        else
-                        {
-                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed");
+                            string temp = "PettyCash!_!AddDocument!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburseId.Data;
+                            var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                            if (res3.isSuccess)
+                            {
+                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success");
+                            }
+                            else
+                            {
+                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed");
+                            }
+
+                            isLoading = false;
+                            successAlert = true;
+                            alertMessage = "Create Reimbursement Success !";
+                            alertBody = $"Your Reimburse ID is {reimburseId.Data}";
+
+                            StateHasChanged();
                         }
 
+                    }
+                    else
+                    {
                         isLoading = false;
-                        successAlert = true;
-                        alertMessage = "Create Reimbursement Success !";
-                        alertBody = $"Your Reimburse ID is {reimburseId.Data}";
+                        alertTrigger = true;
+                        alertMessage = "Create Reimbursement Failed !";
+                        alertBody = "Please Recheck Your Input Field";
 
                         StateHasChanged();
                     }
-                    
                 }
                 else
                 {
                     isLoading = false;
                     alertTrigger = true;
-                    alertMessage = "Create Reimbursement Failed !";
-                    alertBody = "Please Recheck Your Input Field";
+                    alertMessage = "You Have no Authority to Create Document !";
+                    alertBody = "Please try again or Contact the Administrator";
 
                     StateHasChanged();
                 }

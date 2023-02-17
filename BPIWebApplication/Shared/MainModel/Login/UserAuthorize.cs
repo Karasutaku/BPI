@@ -90,6 +90,18 @@ namespace BPIWebApplication.Shared.MainModel.Login
     {
         public int moduleCategoryId { get; set; } = 0;
         public string moduleCategoryName { get; set; } = string.Empty;
+        public int? ApplicationId { get; set; } = 0;
+        public int? ChildApplicationId { get; set; } = 0;
+    }
+
+    public class ChildApplication
+    {
+        public int? ChildApplicationId { get; set; } = 0;
+        public string ChildApplicationName { get; set;} = string.Empty;
+        public int? moduleId { get; set; } = 0;
+        public string moduleName { get; set; } = string.Empty;
+        public string url { get; set; } = string.Empty;
+        public string icon { get; set; } = string.Empty;
     }
 
     public class userLocationParam

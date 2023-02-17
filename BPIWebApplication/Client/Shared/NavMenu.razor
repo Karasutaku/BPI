@@ -24,174 +24,51 @@
 
         <div class="sidebarContentWrap">
 
-            @*
-            <div class="nav-item px-2 trigger-button">
-                <NavLink class="nav-link dropdown-toggle" @onclick="toggleSopMenu">
-                    <span class="oi oi-document" aria-hidden="true"></span> SOP
-                </NavLink>
-            </div>
-
-
-            @if (showSopMenu)
+            @if (childApplications != null)
             {
-                <div class="nav-item px-4" @onclick="ToggleNavMenu">
-                    <NavLink class="nav-link" href="procedure/dashboard">
-                        <span class="oi oi-list" aria-hidden="true"></span> Dashboard
-                    </NavLink>
-                </div>
-
-                @if (activeUser.role.Contains("admin"))
+                @foreach (var ca in childApplications)
                 {
-                    <div class="nav-item px-4" @onclick="ToggleNavMenu">
-                        <NavLink class="nav-link" href="procedure/accesshistory">
-                            <span class="oi oi-timer" aria-hidden="true"></span> History
+                    <li class="nav-header text-white my-2">@ca.ChildApplicationName</li>
+                    @*<div class="nav-item px-2 trigger-button">
+                        <NavLink class="nav-link dropdown-toggle">
+                            <span class="@ca.icon" aria-hidden="true"></span> @ca.ChildApplicationName
                         </NavLink>
-                    </div>
-                    <div class="nav-item px-4" @onclick="ToggleNavMenu">
-                        <NavLink class="nav-link" href="procedure/addsop">
-                            <span class="oi oi-plus" aria-hidden="true"></span> Add Procedure
-                        </NavLink>
-                    </div>
-                    <div class="nav-item px-4" @onclick="ToggleNavMenu">
-                        <NavLink class="nav-link" href="procedure/applyprocedure">
-                            <span class="oi oi-map" aria-hidden="true"></span> Apply Procedure
-                        </NavLink>
-                    </div>
-                }
-            }
-
-            @if (activeUser.role.Contains("admin"))
-            {   
-                <div class="nav-item px-2 trigger-button">
-                    <NavLink class="nav-link dropdown-toggle" @onclick="toggleDigitalizationMenu">
-                        <span class="oi oi-script" aria-hidden="true"></span> Digitalization
-                    </NavLink>
-                </div>
-
-                if (showDigitalizationMenu)
-                {
-                    <div class="nav-item px-3 trigger-button">
-                        <NavLink class="nav-link dropdown-toggle" @onclick="togglePettyCashMenu">
-                            <span class="oi oi-dollar" aria-hidden="true"></span> Petty Cash
-                        </NavLink>
-                    </div>
-
-                    if (showPettyCashMenu)
+                    </div>*@
+                    @if (userModuleCategories != null)
                     {
-                        <div class="nav-item px-4" @onclick="ToggleNavMenu">
-                            <NavLink class="nav-link" href="pettycash/dashboard">
-                                <span class="oi oi-list-rich" aria-hidden="true"></span> Dashboard
-                            </NavLink>
-                        </div>
-                    }
-                }
+                        @* Mod *@
+                        var mCatID = userModuleCategories.Where(x => x.ChildApplicationId == ca.ChildApplicationId).GroupBy(x => x.moduleCategoryId).Select(x => x.FirstOrDefault()).OrderBy(x => x.moduleCategoryId).ToList();
 
-                <div class="nav-item px-2 trigger-button">
-                    <NavLink class="nav-link dropdown-toggle" @onclick="toggleManagementMenu">
-                        <span class="oi oi-cog" aria-hidden="true"></span> Management
-                    </NavLink>
-                </div>
-
-                if (showManagementMenu)
-                {
-                    <div class="nav-item px-4" @onclick="ToggleNavMenu">
-                        <NavLink class="nav-link" href="management/department">
-                            <span class="oi oi-flag" aria-hidden="true"></span> Manage Department
-                        </NavLink>
-                    </div>
-                    <div class="nav-item px-4" @onclick="ToggleNavMenu">
-                        <NavLink class="nav-link" href="management/user">
-                            <span class="oi oi-people" aria-hidden="true"></span> Manage User
-                        </NavLink>
-                    </div>
-                    <div class="nav-item px-4" @onclick="ToggleNavMenu">
-                        <NavLink class="nav-link" href="management/project">
-                            <span class="oi oi-project aria-hidden="true"></span> Manage Project
-                        </NavLink>
-                    </div>
-                    <div class="nav-item px-4" @onclick="ToggleNavMenu">
-                        <NavLink class="nav-link" href="management/store">
-                            <span class="oi oi-globe" aria-hidden="true"></span> Manage Store
-                        </NavLink>
-                    </div>
-                }
-
-            }
-
-            *@
-
-            
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="pettycash/addadvance">
-                    <span class="oi oi-list-rich" aria-hidden="true"></span> advance
-                </NavLink>
-            </div>
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="pettycash/addexpense">
-                    <span class="oi oi-list-rich" aria-hidden="true"></span> expense
-                </NavLink>
-            </div>
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="pettycash/addreimburse">
-                    <span class="oi oi-list-rich" aria-hidden="true"></span> reimburse
-                </NavLink>
-            </div>
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="pettycash/generatesi">
-                    <span class="oi oi-list-rich" aria-hidden="true"></span> generate SI
-                </NavLink>
-            </div>
-            <div class="nav-item px-4">
-                <NavLink class="nav-link" href="pettycash/dashboard">
-                    <span class="oi oi-list-rich" aria-hidden="true"></span> dashboard
-                </NavLink>
-            </div>
-
-            @if (mainModule.Any())
-            {
-                foreach (var modCat in mainModule)
-                {
-                    <div class="nav-item px-2 trigger-button">
-                        <NavLink class="nav-link dropdown-toggle" @onclick="(() => toggleMainMenu(modCat))">
-                            <span class="oi oi-file" aria-hidden="true"></span> @modCat.moduleCategoryName
-                        </NavLink>
-                    </div>
-
-                    @foreach (var modId in module)
-                    {
-                        if (expandMainMenu && modId.moduleCategoryId == clickedMainMenuId)
+                        @if (mCatID != null)
                         {
-                            if (modId.moduleCategoryId.Equals(modCat.moduleCategoryId))
+                            @foreach (var mc in mCatID)
                             {
-                                <div class="nav-item px-4" @onclick="(() => ToggleNavMenu(modId))">
-                                    <NavLink class="nav-link" href="@modId.url">
-                                        <span class="oi oi-list" aria-hidden="true"></span> @modId.moduleName
+                                var mID = module.Where(x => x.childApplicationId == ca.ChildApplicationId && x.moduleCategoryId == mc.moduleCategoryId).OrderBy(x => x.moduleId).ToList();
+
+                                <div class="nav-item px-2 trigger-button">
+                                    <NavLink class="nav-link dropdown-toggle" @onclick="(() => toggleMainMenu(mc))">
+                                        <span class="oi oi-file" aria-hidden="true"></span> @mc.moduleCategoryName
                                     </NavLink>
                                 </div>
+
+                                if (expandMainMenu && mc.moduleCategoryId == clickedMainMenuId)
+                                {
+                                    @foreach (var um in mID)
+                                    {
+                                        <div class="nav-item px-4" @onclick="(() => ToggleNavMenu(um))">
+                                            <NavLink class="nav-link" href="@um.url">
+                                                <span class="@um.icon" aria-hidden="true"></span> @um.moduleName
+                                            </NavLink>
+                                        </div>
+                                    }
+                                }
                             }
                         }
-                        
                     }
                 }
             }
-            else
-            {
-                <div class="nav-item px-2 trigger-button">
-                    <NavLink class="nav-link dropdown-toggle" >
-                        <span class="oi oi-list" aria-hidden="true"></span> Loading..
-                    </NavLink>
-                </div>
-                <div class="nav-item px-2 trigger-button">
-                    <NavLink class="nav-link dropdown-toggle" >
-                        <span class="oi oi-list" aria-hidden="true"></span> Loading..
-                    </NavLink>
-                </div>
-            }
-            
             
         </div>
-
-        
 
         <hr class="w-100" />
 
@@ -202,31 +79,3 @@
         </div>
     </nav>
 </div>
-
-@*
-@if (showModalTrigger) {
-    <div class="modal fade show" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="departmentApplyModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div class="nav">
-                        <p>Logout Confirmation</p>
-                    </div>
-
-                    <button type="button" class="close" @onclick="hideModal">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-
-                <div class="modal-body">
-                    <p>Are you sure ?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @onclick="hideModal">Cancel</button>
-                    <button type="button" class="btn btn-danger" @onclick="confirmLogout">Logout</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-*@

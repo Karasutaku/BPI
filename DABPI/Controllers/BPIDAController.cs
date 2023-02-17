@@ -13,6 +13,7 @@ using System.Security.Principal;
 using System;
 using BPIDA.Models.MainModel.Mailing;
 using Microsoft.IdentityModel.Tokens;
+using BPIDA.Models.MainModel.CashierLogbook;
 
 namespace BPIDA.Controllers
 {
@@ -3209,6 +3210,42 @@ namespace BPIDA.Controllers
             }
         }
 
+        internal void updateLocationCutoffDate(QueryModel<CutoffDetails> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editTableCutoffDate]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", data.Data.LocationID);
+                    command.Parameters.AddWithValue("@ModuleLedgerName", data.Data.ModuleLedgerName);
+                    command.Parameters.AddWithValue("@CutoffDate", data.Data.CutoffDate);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
         // get
 
         internal DataTable getPettyCashLedgerDatabyDate(ledgerParam data)
@@ -3775,6 +3812,54 @@ namespace BPIDA.Controllers
             }
 
             return conInt;
+        }
+
+        internal DateTime getCutoffDate(string loc)
+        {
+            DateTime temp;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getTableCutoffDate]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    var data = command.ExecuteScalar();
+                    temp = Convert.ToDateTime(data);
+
+                    /*
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                    if (dt.Rows.Count > 0)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                    */
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return temp;
         }
 
         internal DataTable getCoabyModule(string moduleName)
@@ -5051,6 +5136,7 @@ namespace BPIDA.Controllers
                 res.Data.outstandingBalance.locationOnhandAmount = getLocationOnhandAmount(loc);
                 res.Data.outstandingBalance.advanceOutstandingAmount = getAdvanceOutstandingAmount(loc);
                 res.Data.outstandingBalance.expenseOutstandingAmount = getExpenseOutstandingAmount(loc);
+                res.Data.CutOffDate = getCutoffDate(loc);
 
                 dtReimburseOutstanding = getReimburseOutstandingAmount(loc);
 
@@ -5152,6 +5238,37 @@ namespace BPIDA.Controllers
             try
             {
                 updateLocationBudget(data);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpPost("updateLocationCutoffDate")]
+        public async Task<IActionResult> updateLocationCutoffDateData(QueryModel<CutoffDetails> data)
+        {
+            ResultModel<QueryModel<CutoffDetails>> res = new ResultModel<QueryModel<CutoffDetails>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                updateLocationCutoffDate(data);
 
                 res.Data = data;
                 res.isSuccess = true;
@@ -5304,6 +5421,851 @@ namespace BPIDA.Controllers
 
                     actionResult = Ok(res);
                 }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        //
+    }
+
+    [Route("api/DA/CashierLogbook")]
+    [ApiController]
+    public class CashierLogbookController : ControllerBase
+    {
+        private readonly IConfiguration _configuration;
+        private readonly string _conString;
+        private readonly int _rowPerPage;
+
+        public CashierLogbookController(IConfiguration config)
+        {
+            _configuration = config;
+            _conString = _configuration.GetValue<string>("ConnectionStrings:Bpi");
+            _rowPerPage = _configuration.GetValue<int>("Paging:CashierLogbook:RowPerPage");
+        }
+
+        private static string Base64Decode(string base64EncodedData)
+        {
+            var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
+            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
+        private static string Base64Encode(string plainText)
+        {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return Convert.ToBase64String(plainTextBytes);
+        }
+
+        internal DataTable getShiftbyModule(string moduleName)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getShiftbyModule]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ModuleName", moduleName);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getAmountCategories()
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getBrankasAmountCategoriesData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getAmountSubCategories()
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getBrankasAmountSubCategoriesData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getAmountType()
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getBrankasAmountTypeData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal void createLogData(QueryModel<CashierLogData> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createBrankasLogbookData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LogType", data.Data.LogType);
+                    command.Parameters.AddWithValue("@LogID", data.Data.LogID);
+                    command.Parameters.AddWithValue("@LocationID", data.Data.LocationID);
+                    command.Parameters.AddWithValue("@Applicant", data.Data.Applicant);
+                    command.Parameters.AddWithValue("@LogDate", data.Data.LogDate);
+                    command.Parameters.AddWithValue("@LogStatus", data.Data.LogStatus);
+                    command.Parameters.AddWithValue("@LogStatusDate", data.Data.LogStatusDate);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void createLogHeaderData(QueryModel<CashierLogCategoryDetail> data, string loc)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createBrankasCategoryDetails]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LogID", data.Data.LogID);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@BrankasCategoryID", data.Data.BrankasCategoryID);
+                    command.Parameters.AddWithValue("@AmountCategoryID", data.Data.AmountCategoryID);
+                    command.Parameters.AddWithValue("@HeaderAmount", data.Data.HeaderAmount);
+                    command.Parameters.AddWithValue("@ActualAmount", data.Data.ActualAmount);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void createLogLineData(QueryModel<CashierLogLineDetail> data, string loc)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createBrankasCategoryLine]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LineAction", "ACT");
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@BrankasCategoryID", data.Data.BrankasCategoryID);
+                    command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
+                    command.Parameters.AddWithValue("@AmountSubCategoryID", data.Data.AmountSubCategoryID);
+                    command.Parameters.AddWithValue("@AmountType", data.Data.AmountType);
+                    command.Parameters.AddWithValue("@ShiftID", data.Data.ShiftID);
+                    command.Parameters.AddWithValue("@LineAmount", data.Data.LineAmount);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal void deleteLogLineData(QueryModel<string> data)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createBrankasCategoryLine]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LineAction", "DEL");
+                    command.Parameters.AddWithValue("@LocationID", data.Data);
+                    command.Parameters.AddWithValue("@BrankasCategoryID", "");
+                    command.Parameters.AddWithValue("@LineNum", 0);
+                    command.Parameters.AddWithValue("@AmountSubCategoryID", "");
+                    command.Parameters.AddWithValue("@AmountType", "");
+                    command.Parameters.AddWithValue("@ShiftID", 0);
+                    command.Parameters.AddWithValue("@LineAmount", 0);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal DataTable getLogData(string logType, string loc, string statValue, string filterType, string filterVal, int pageNo, int rowPerPage)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getBrankasLogData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LogType", logType);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@StatusValue", statValue);
+                    command.Parameters.AddWithValue("@FilterType", filterType);
+                    command.Parameters.AddWithValue("@FilterValue", filterVal);
+                    command.Parameters.AddWithValue("@PageNo", pageNo);
+                    command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getLogHeaderData(string logID, string loc)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getBrankasLogHeaderDetailbyLogID]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LogID", logID);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal DataTable getLogLineData(string logCatID, string loc)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getBrankasHeaderLineDetailbyCategoryID]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@BrankasCategoryID", logCatID);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        // http
+
+        [HttpPost("createLogData")]
+        public async Task<IActionResult> createLogDataTable(QueryModel<CashierLogData> data)
+        {
+            ResultModel<QueryModel<CashierLogData>> res = new ResultModel<QueryModel<CashierLogData>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                QueryModel<CashierLogData> temp1 = new();
+                temp1.Data = new();
+
+                temp1.Data = data.Data;
+                temp1.userEmail = data.userEmail;
+                temp1.userAction = data.userAction;
+                temp1.userActionDate = data.userActionDate;
+
+                createLogData(temp1);
+
+                foreach (var dt in data.Data.header)
+                {
+                    QueryModel<CashierLogCategoryDetail> temp2 = new();
+                    temp2.Data = new();
+
+                    temp2.Data = dt;
+                    temp2.userEmail = data.userEmail;
+                    temp2.userAction = data.userAction;
+                    temp2.userActionDate = data.userActionDate;
+
+                    createLogHeaderData(temp2, data.Data.LocationID);
+
+                    foreach (var dtLine in dt.lines)
+                    {
+                        QueryModel<CashierLogLineDetail> temp3 = new();
+                        temp3.Data = new();
+
+                        temp3.Data = dtLine;
+                        temp3.userEmail = data.userEmail;
+                        temp3.userAction = data.userAction;
+                        temp3.userActionDate = data.userActionDate;
+
+                        createLogLineData(temp3, data.Data.LocationID);
+                    }
+                }
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("editLogData")]
+        public async Task<IActionResult> editLogData(QueryModel<CashierLogData> data)
+        {
+            ResultModel<QueryModel<CashierLogData>> res = new ResultModel<QueryModel<CashierLogData>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                QueryModel<CashierLogData> temp1 = new();
+                temp1.Data = new();
+
+                temp1.Data = data.Data;
+                temp1.userEmail = data.userEmail;
+                temp1.userAction = data.userAction;
+                temp1.userActionDate = data.userActionDate;
+
+                createLogData(temp1);
+
+                foreach (var dt in data.Data.header)
+                {
+                    QueryModel<CashierLogCategoryDetail> temp2 = new();
+                    temp2.Data = new();
+
+                    temp2.Data = dt;
+                    temp2.userEmail = data.userEmail;
+                    temp2.userAction = data.userAction;
+                    temp2.userActionDate = data.userActionDate;
+
+                    createLogHeaderData(temp2, data.Data.LocationID);
+
+                    if (dt.isLineDeleted)
+                    {
+                        QueryModel<string> temp3 = new();
+
+                        temp3.Data = data.Data.LocationID;
+                        temp3.userEmail = data.userEmail;
+                        temp3.userAction = data.userAction;
+                        temp3.userActionDate = data.userActionDate;
+
+                        deleteLogLineData(temp3);
+                    }
+
+                    foreach (var dtLine in dt.lines)
+                    {
+                        QueryModel<CashierLogLineDetail> temp4 = new();
+                        temp4.Data = new();
+
+                        temp4.Data = dtLine;
+                        temp4.userEmail = data.userEmail;
+                        temp4.userAction = data.userAction;
+                        temp4.userActionDate = data.userActionDate;
+
+                        createLogLineData(temp4, data.Data.LocationID);
+                    }
+                }
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpGet("getLogData/{locPage}")]
+        public async Task<IActionResult> getLogDataTable(string locPage)
+        {
+            ResultModel<List<CashierLogData>> res = new ResultModel<List<CashierLogData>>();
+            List<CashierLogData> cashierLogbooks = new List<CashierLogData>();
+            DataTable dtCashierLogbook = new DataTable("CashierLogbook");
+            bool flag = true;
+            IActionResult actionResult = null;
+            
+            try
+            {
+                string temp = Base64Decode(locPage);
+
+                string type = temp.Split("!_!")[0];
+                string loc = temp.Split("!_!")[1].Equals("") ? "HO" : temp.Split("!_!")[1];
+                string status = temp.Split("!_!")[2];
+                string filType = temp.Split("!_!")[3];
+                string filVal = temp.Split("!_!")[4];
+                int page = Convert.ToInt32(temp.Split("!_!")[5]);
+
+                dtCashierLogbook = getLogData(type, loc, status, filType, filVal, page, _rowPerPage);
+
+                if (dtCashierLogbook.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtCashierLogbook.Rows)
+                    {
+                        CashierLogData temp1 = new();
+
+                        temp1.LogID = dt["LogID"].ToString();
+                        temp1.LocationID = dt["LocationID"].ToString();
+                        temp1.Applicant = dt["Applicant"].ToString();
+                        temp1.LogDate = Convert.ToDateTime(dt["LogDate"]);
+                        temp1.LogStatus = dt["LogStatus"].ToString();
+                        temp1.LogStatusDate = dt.IsNull("LogStatusDate") ? DateTime.MinValue : Convert.ToDateTime(dt["LogStatusDate"]);
+                        
+                        DataTable dtHeader = new DataTable("Header");
+                        List<CashierLogCategoryDetail> cashierLogCategoryDetail = new();
+
+                        dtHeader = getLogHeaderData(dt["LogID"].ToString(), loc);
+                        temp1.header = new();
+
+                        if (dtCashierLogbook.Rows.Count > 0)
+                        {
+                            foreach (DataRow rHeader in dtHeader.Rows)
+                            {
+                                CashierLogCategoryDetail temp2 = new();
+
+                                temp2.LogID = rHeader["LogID"].ToString();
+                                temp2.BrankasCategoryID = rHeader["BrankasCategoryID"].ToString();
+                                temp2.AmountCategoryID = rHeader["AmountCategoryID"].ToString();
+                                temp2.AmountCategoryName = rHeader["CategoryName"].ToString();
+                                temp2.HeaderAmount = Convert.ToDecimal(rHeader["HeaderAmount"]);
+                                temp2.ActualAmount = Convert.ToDecimal(rHeader["ActualAmount"]);
+
+                                DataTable dtLines = new DataTable("Lines");
+                                List<CashierLogLineDetail> cashierLogLineDetail = new();
+                                dtLines = getLogLineData(rHeader["BrankasCategoryID"].ToString(), loc);
+                                temp2.lines = new();
+
+                                if (dtLines.Rows.Count > 0)
+                                {
+                                    foreach (DataRow rLine in dtLines.Rows)
+                                    {
+                                        CashierLogLineDetail temp3 = new();
+
+                                        temp3.BrankasCategoryID = rLine["BrankasCategoryID"].ToString();
+                                        temp3.LineNo = Convert.ToInt32(rLine["LineNum"]);
+                                        temp3.AmountSubCategoryID = rLine["AmountSubCategoryID"].ToString();
+                                        temp3.AmountSubCategoryName = rLine["CategoryName"].ToString();
+                                        temp3.AmountType = rLine["AmountType"].ToString();
+                                        temp3.AmountDesc = rLine["AmountDesc"].ToString();
+                                        temp3.ShiftID = Convert.ToInt32(rLine["ShiftID"]);
+                                        temp3.ShiftDesc = rLine["ShiftDesc"].ToString();
+                                        temp3.LineAmount = Convert.ToDecimal(rLine["LineAmount"]);
+
+                                        cashierLogLineDetail.Add(temp3);
+                                    }
+
+                                    temp2.lines = cashierLogLineDetail;
+                                }
+                                else
+                                {
+                                    flag = false;
+                                }
+
+                                cashierLogCategoryDetail.Add(temp2);
+                            }
+
+                            temp1.header = cashierLogCategoryDetail;
+                        }
+                        else
+                        {
+                            flag = false;
+                        }
+
+                        cashierLogbooks.Add(temp1);
+                    }
+                }
+                else
+                {
+                    flag = false;
+                }
+
+                if (flag)
+                {
+                    res.Data = cashierLogbooks;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = cashierLogbooks;
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fail Fetch Data";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getShiftbyModule/{moduleName}")]
+        public async Task<IActionResult> getShiftbyModuleData(string moduleName)
+        {
+            ResultModel<List<Shift>> res = new ResultModel<List<Shift>>();
+            List<Shift> shiftLines = new List<Shift>();
+            DataTable dtShift = new DataTable("Shift");
+            IActionResult actionResult = null;
+
+            try
+            {
+                dtShift = getShiftbyModule(moduleName);
+
+                if (dtShift.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtShift.Rows)
+                    {
+                        Shift temp = new Shift();
+
+                        temp.ShiftID = Convert.ToInt32(dt["ShiftID"]);
+                        temp.ShiftDesc = dt["ShiftDesc"].ToString();
+
+                        shiftLines.Add(temp);
+                    }
+
+                    res.Data = shiftLines;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getCashierLogbookCategories")]
+        public async Task<IActionResult> getCashierLogbookCategories()
+        {
+            ResultModel<CashierLogbookCategories> res = new ResultModel<CashierLogbookCategories>();
+            List<AmountCategories> categoryLines = new List<AmountCategories>();
+            List<AmountSubCategories> subCategoryLines = new List<AmountSubCategories>();
+            List<AmountTypes> typeLines = new List<AmountTypes>();
+            DataTable dtCategory = new DataTable("Category");
+            DataTable dtSubCategory = new DataTable("SubCategory");
+            DataTable dtType = new DataTable("Type");
+            IActionResult actionResult = null;
+
+            try
+            {
+                dtCategory = getAmountCategories();
+                dtSubCategory = getAmountSubCategories();
+                dtType = getAmountType();
+
+                if (dtCategory.Rows.Count > 0 && dtSubCategory.Rows.Count > 0 && dtType.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtCategory.Rows)
+                    {
+                        AmountCategories temp1 = new AmountCategories();
+
+                        temp1.AmountCategoryID = dt["AmountCategoryID"].ToString();
+                        temp1.AmountCategoryName = dt["CategoryName"].ToString();
+
+                        categoryLines.Add(temp1);
+                    }
+
+                    foreach (DataRow dt in dtSubCategory.Rows)
+                    {
+                        AmountSubCategories temp2 = new AmountSubCategories();
+
+                        temp2.AmountSubCategoryID = dt["AmountSubCategoryID"].ToString();
+                        temp2.AmountSubCategoryName = dt["CategoryName"].ToString();
+                        temp2.AmountType = "";
+
+                        subCategoryLines.Add(temp2);
+                    }
+
+                    foreach (DataRow dt in dtType.Rows)
+                    {
+                        AmountTypes temp3 = new AmountTypes();
+
+                        temp3.AmountType = dt["AmountType"].ToString();
+                        temp3.AmountDesc = dt["AmountDesc"].ToString();
+
+                        typeLines.Add(temp3);
+                    }
+
+                    res.Data = new();
+                    res.Data.categories = new();
+                    res.Data.subCategories = new();
+                    res.Data.types = new();
+
+                    res.Data.categories = categoryLines;
+                    res.Data.subCategories = subCategoryLines;
+                    res.Data.types = typeLines;
+
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+
+                
             }
             catch (Exception ex)
             {

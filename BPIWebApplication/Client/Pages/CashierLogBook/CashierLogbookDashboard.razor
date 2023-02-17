@@ -1,0 +1,394 @@
+﻿@page "/cashierlogbook/dashboard"
+@inject ICashierLogbookService CashierLogbookService
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+<PageTitle>Cashier Logbook - Dashboard</PageTitle>
+
+
+<div class="container-fluid">
+
+    <h3>Cashier Logbook</h3>
+    <small><i>Dashboard</i></small>
+
+    <div class="border border-2 p-2">
+        <h5 class="float-lg-end"><b>Latest Log Action</b></h5>
+
+        @*Table*@
+    </div>
+
+    <div class="row">
+        <button type="button" class="btn btn-sm btn-primary">New Logbook</button>
+    </div>
+
+    <div class="border border-2 p-2">
+        <h5 class="float-lg-end"><b>Ongoing Logbook Document</b></h5>
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active fw-bold link-muted" id="utama-tab" data-toggle="tab" href="#utama" role="tab" aria-controls="logUtama" aria-selected="true">Utama</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link fw-bold link-muted" id="transit-tab" data-toggle="tab" href="#transit" role="tab" aria-controls="logTransit" aria-selected="false">Transit</a>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="utama" role="tabpanel" aria-labelledby="list-tab">
+                @if (checkMainLogPresent())
+                {
+                    <div class="mb-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover" style="width: 100%">
+                                <thead>
+                                    <tr title="Click to view">
+                                        <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Log ID</th>
+                                        <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Log Date</th>
+                                        <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Applicant</th>
+                                        <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Status</th>
+                                        @*<th scope="col" style="width: 20%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Request Date</th>
+                                        <th scope="col" style="width: 10%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Status</th>*@
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyDashboard">
+                                    @foreach (var mlog in CashierLogbookService.mainLogs)
+                                    {
+                                        <tr @onclick="(() => showMainModal(mlog))" id="previewRow">
+                                            <td class="text-center align-middle" style="font-size:14px;">@mlog.LogID</td>
+                                            <td class="text-center align-middle" style="font-size:14px;">@mlog.LogDate.ToString("dd MMMM yyyy HH:mm:ss")</td>
+                                            <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.Applicant</td>
+                                            <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.LogStatus</td>
+                                            @*<td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
+                                            <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceStatus</td>*@
+                                        </tr>
+                                    }
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                }
+                else
+                {
+                    <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                }
+            </div>
+            <div class="tab-pane fade" id="transit" role="tabpanel" aria-labelledby="list-tab">
+                @if (checkTransitLogPresent())
+                {
+                    <div class="mb-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover" style="width: 100%">
+                                <thead>
+                                    <tr title="Click to view">
+                                        <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Log ID</th>
+                                        <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Log Date</th>
+                                        <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Applicant</th>
+                                        <th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Status</th>
+                                        @*<th scope="col" style="width: 20%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Request Date</th>
+                                        <th scope="col" style="width: 10%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Status</th>*@
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyDashboard">
+                                    @foreach (var mlog in CashierLogbookService.transitLogs)
+                                    {
+                                        <tr @onclick="(() => showMainModal(mlog))" id="previewRow">
+                                            <td class="text-center align-middle" style="font-size:14px;">@mlog.LogID</td>
+                                            <td class="text-center align-middle" style="font-size:14px;">@mlog.LogDate</td>
+                                            <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.Applicant</td>
+                                            <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.LogStatus</td>
+                                            @*<td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
+                                            <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceStatus</td>*@
+                                        </tr>
+                                    }
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                }
+                else
+                {
+                    <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="border border-2 p-2">
+        <h5 class="float-lg-end"><b>Logbook Document History</b></h5>
+
+        <ul class="nav nav-tabs" id="mypTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active fw-bold link-muted" id="putama-tab" data-toggle="tab" href="#putama" role="tab" aria-controls="plogUtama" aria-selected="true">Utama</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link fw-bold link-muted" id="ptransit-tab" data-toggle="tab" href="#ptransit" role="tab" aria-controls="plogTransit" aria-selected="false">Transit</a>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="mypTabContent">
+            <div class="tab-pane fade show active" id="putama" role="tabpanel" aria-labelledby="list-tab">
+            </div>
+            <div class="tab-pane fade" id="ptransit" role="tabpanel" aria-labelledby="list-tab">
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@if (showModal)
+{
+    <div class="modal fade show" id="mainModal" tabindex="-2" role="dialog" aria-labelledby="mainModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+            <div class="modal-content">
+                @* header *@
+                <div class="modal-header cus-bg">
+                    <h5 class="modal-title fw-bolder text-white">Log @activeLog.LogID Details</h5>
+
+                    <button type="button" class="close border-0" aria-label="Close" @onclick="hideModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    <EditForm Model="activeLog">
+
+                        <div class="row my-1">
+                            <div class="col">
+                                <label class="fw-bold" for="log_type">Log Type :</label>
+                                <InputText id="log_type" @bind-Value="activeLog.LogType" class="form-control-sm w-100 border-1" readonly></InputText>
+                            </div>
+                            <div class="col">
+                                <label class="fw-bold" for="log_id">Log ID :</label>
+                                <InputText id="log_id" @bind-Value="activeLog.LogID" class="form-control-sm w-100 border-1" readonly></InputText>
+                            </div>
+                            <div class="col">
+                                <label class="fw-bold" for="log_date">Log Date :</label>
+                                <InputDate id="log_date" @bind-Value="activeLog.LogDate" class="form-control-sm w-100 border-1" readonly></InputDate>
+                            </div>
+                        </div>
+
+                        <div class="row my-1">
+                            <div class="col">
+                                <label class="fw-bold" for="log_loc">Location :</label>
+                                <InputText id="log_loc" @bind-Value="activeLog.LocationID" class="form-control-sm w-100 border-1" readonly></InputText>
+                            </div>
+                            <div class="col">
+                                <label class="fw-bold" for="log_apl">Log Applicant :</label>
+                                <InputText id="log_apl" @bind-Value="activeLog.Applicant" class="form-control-sm w-100 border-1" readonly></InputText>
+                            </div>
+                        </div>
+
+                        <div class="row my-1">
+                            <div class="col">
+                                <label class="fw-bold" for="log_stat">Log Status :</label>
+                                <InputText id="log_stat" @bind-Value="activeLog.LogStatus" class="form-control-sm w-100 border-1" readonly></InputText>
+                            </div>
+                            <div class="col">
+                                <label class="fw-bold" for="log_statdate">Log Status Date :</label>
+                                <InputDate id="log_statdate" @bind-Value="activeLog.LogStatusDate" class="form-control-sm w-100 border-1" readonly></InputDate>
+                            </div>
+                        </div>
+
+                        <div class="separator my-2">Details</div>
+                        
+                        <ul class="nav nav-tabs" id="shift" role="tablist">
+                            @foreach (var shift in activeShift)
+                            {
+                                <li class="nav-item" @onclick="(() => shiftSelect(shift))">
+                                    <a class="nav-link @(shift.isActive ? "active" : null) fw-bold link-muted" id="@shift.ShiftDesc-tab" data-toggle="tab" href="#@shift.ShiftDesc" role="tab" aria-controls="@shift.ShiftDesc-log" aria-selected="true">@shift.ShiftDesc</a>
+                                </li>
+                            }
+                        </ul>
+
+                        <div class="tab-content" id="mypTabContent">
+                            @foreach (var shift in activeShift)
+                            {
+                                <div class="tab-pane fade @(shift.isActive ? "show active" : null)" id="@shift.ShiftDesc" role="tabpanel" aria-labelledby="list-tab">
+
+                                    <div class="table-responsive mt-3">
+
+                                        @foreach (var amtType in activeAmountType.OrderByDescending(x => x.AmountType))
+                                        {
+                                            @*<h6 class="fw-bold">@amtType.AmountDesc</h6>*@
+                                            <table class="table table-sm table-hover table-bordered mt-1">
+
+                                                <thead>
+                                                    <tr>
+                                                        <td class="text-center align-middle" style="width: 25%; font-size: 18px;"><b>@amtType.AmountDesc</b></td>
+                                                        @foreach (var head in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                        {
+                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>@head.AmountCategoryName</b></td>
+                                                        }
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+                                                    @foreach (var row in activeSubCategories)
+                                                    {
+                                                        if (row.AmountType.Equals(amtType.AmountType))
+                                                        {
+                                                            <tr>
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>@row.AmountSubCategoryName</b></td>
+                                                                @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                                {
+                                                                    bool isbreak = false;
+
+                                                                    @foreach (var dt in activeLog.header)
+                                                                    {
+                                                                        @foreach (var dta in dt.lines)
+                                                                        {
+                                                                            @if (dta.ShiftID.Equals(shift.ShiftID) && dta.AmountType.Equals(amtType.AmountType) && dta.AmountSubCategoryID.Equals(row.AmountSubCategoryID) && dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                                            {
+                                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @dta.LineAmount.ToString("N0") ,-</td>
+
+                                                                                isbreak = true;
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    @if (!isbreak)
+                                                                    {
+                                                                        <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                                    }
+                                                                
+                                                                }
+                                                            </tr>
+                                                        }
+                                                    }
+                                                </tbody>
+                                                
+                                                <tfoot>
+                                                    <tr>
+                                                        <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Sub Total</td>
+                                                        @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                        {
+                                                            var isbreak = false;
+
+                                                            @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                            {
+                                                                @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                                {
+                                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @dt.lines.Where(y => y.AmountType.Equals(amtType.AmountType)).Sum(x => x.LineAmount).ToString("N0") ,-</td>
+
+                                                                    isbreak = true;
+                                                                }
+                                                            }
+
+                                                            @if (!isbreak)
+                                                            {
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                            }
+                                                        }
+                                                    </tr>
+                                                </tfoot>
+                                                
+                                            </table>
+                                        }
+                                        
+                                        @*<h6 class="fw-bold">Recap</h6>*@
+                                        <table class="table table-sm table-hover table-bordered mt-1">
+
+                                            <thead>
+                                                <tr>
+                                                    <td class="text-center align-middle" style="width: 25%; font-size: 18px;"><b>Recap</b></td>
+                                                    @foreach (var head in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                    {
+                                                        <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>@head.AmountCategoryName</b></td>
+                                                    }
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Total</td>
+                                                    @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                    {
+                                                        var isbreak = false;
+
+                                                        @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                        {
+                                                            @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                            {
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @dt.HeaderAmount.ToString("N0") ,-</td>
+
+                                                                isbreak = true;
+                                                            }
+                                                        }
+
+                                                        @if (!isbreak)
+                                                        {
+                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                        }
+                                                    }
+                                                </tr>
+
+                                                <tr>
+                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Expected Amount</td>
+                                                    @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                    {
+                                                        var isbreak = false;
+
+                                                        @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                        {
+                                                            @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                            {
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @dt.ActualAmount.ToString("N0") ,-</td>
+
+                                                                isbreak = true;
+                                                            }
+                                                        }
+
+                                                        @if (!isbreak)
+                                                        {
+                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                        }
+                                                    }
+                                                </tr>
+
+                                                <tr>
+                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Difference</td>
+                                                    @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                    {
+                                                        var isbreak = false;
+
+                                                        @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                        {
+                                                            @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                            {
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @((dt.ActualAmount - dt.HeaderAmount).ToString("N0")) ,-</td>
+
+                                                                isbreak = true;
+                                                            }
+                                                        }
+
+                                                        @if (!isbreak)
+                                                        {
+                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                        }
+                                                    }
+                                                </tr>
+                                            </tbody>
+
+                                        </table>
+                                    </div>
+
+                                </div>
+                            }
+                        </div>
+
+                    </EditForm>
+
+                </div>
+
+
+                <div class="modal-footer cus-bg">
+                    <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="hideModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

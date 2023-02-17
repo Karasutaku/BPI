@@ -1,0 +1,198 @@
+﻿@page "/cashierlogbook/addlogbook"
+@inject ICashierLogbookService CashierLogbookService
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@using System.Text.Json
+
+
+<PageTitle>Cashier Logbook - Dashboard</PageTitle>
+
+
+<div class="container-fluid">
+
+    <h3>Cashier Logbook</h3>
+    <small><i>Dashboard</i></small>
+
+    @if (alertTrigger)
+    {
+        <div class="alert alert-warning alert-dismissible fade show my-3" role="alert">
+            <strong>@alertMessage</strong> @alertBody
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+
+    @if (successAlert)
+    {
+        <div class="alert alert-success alert-dismissible fade show my-3" role="alert">
+            <strong>@alertMessage</strong> @alertBody
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <div class="d-flex flex-column align-items-center">
+
+        <EditForm Model="logbook">
+
+            <div class="row my-2">
+                <div class="col">
+                    <label for="log_type">Log Type :</label>
+                    <InputSelect id="log_type" @bind-Value="logbook.LogType" class="form-select">
+                        <option value="MAIN">UTAMA</option>
+                        <option value="TRANSIT">TRANSIT</option>
+                    </InputSelect>
+                </div>
+            </div>
+
+            <div class="row my-2">
+                <div class="col">
+                    <label for="log_id">Log ID :</label>
+                    <InputText id="log_id" @bind-Value="logbook.LogID" class="form-control" readonly></InputText>
+                </div>
+                <div class="col">
+                    <label for="log_date">Log Date :</label>
+                    <InputDate id="log_date" @bind-Value="logbook.LogDate" class="form-control" readonly></InputDate>
+                </div>
+            </div>
+
+            <div class="row my-2">
+                <div class="col">
+                    <label for="log_apl">Applicant :</label>
+                    <InputText id="log_apl" @bind-Value="logbook.Applicant" class="form-control" readonly></InputText>
+                </div>
+                <div class="col">
+                    <label for="log_loc">Location :</label>
+                    <InputText id="log_loc" @bind-Value="logbook.LocationID" class="form-control" readonly></InputText>
+                </div>
+            </div>
+
+            <div class="row my-2">
+                <div class="col">
+                    <label for="log_stat">Log Status :</label>
+                    <InputText id="log_stat" @bind-Value="logbook.LogStatus" class="form-control" readonly></InputText>
+                </div>
+                <div class="col">
+                    <label for="log_statdate">Log Status Date :</label>
+                    <InputDate id="log_statdate" @bind-Value="logbook.LogStatusDate" class="form-control" readonly></InputDate>
+                </div>
+            </div>
+
+            <div class="separator">Details</div>
+
+            <div class="row my-2">
+                <div class="col">
+                    <label for="shft">Shift :</label>
+                    <select id="shft" class="form-select" @bind="selectedShiftID">
+                        @foreach (var shift in CashierLogbookService.Shifts)
+                        {
+                            <option value="@shift.ShiftID">@shift.ShiftDesc</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            @*@JsonSerializer.Serialize(logbook)*@
+
+            @if (checkCategoriesPresent())
+            {
+                @foreach (var amtCat in CashierLogbookService.categories.OrderBy(x => x.AmountCategoryName))
+                {
+                    @if (!amtCat.AmountCategoryID.Equals(selectedCategoryID))
+                        continue;
+
+                    <div class="row mt-3 mb-1">
+                        <div class="col">
+                            <div class="d-flex justify-content-between align-middle">
+                                <button type="submit" title="Previous Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.First().AmountCategoryID) ? "disabled" : null)" @onclick="(() => selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) - 1].AmountCategoryID)"><span class="oi oi-chevron-left"></span> Prev</button>
+                                <p><span>&lt; <b>@(CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) + 1)</b> of @CashierLogbookService.categories.Count() &gt;</span></p>
+                                <button type="submit" title="Next Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.Last().AmountCategoryID) ? "disabled" : null)" @onclick="(() => selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) + 1].AmountCategoryID)">Next <span class="oi oi-chevron-right"></span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border border-2 my-2 p-3">
+                        <h6 class="fw-bold">@amtCat.AmountCategoryName</h6>
+
+                        <div class="row my-3">
+                            <div class="col">
+                                <button type="button" title="Add New Line" class="btn btn-sm btn-warning" @onclick="(() => addLine(selectedShiftID, selectedCategoryID))"><b>Add</b></button>
+                            </div>
+                        </div>
+
+                        @if (logbook.header.Where(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).SelectMany(ln => ln.lines).Any())
+                        {
+                            <table class="table table-sm table-bordered" style="width: 100%">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center align-middle" style="width: 10%;">Action</th>
+                                        <th class="text-center align-middle" style="width: 30%;">Amount Type</th>
+                                        <th class="text-center align-middle" style="width: 30%;">Sub Category</th>
+                                        <th class="text-center align-middle" style="width: 30%;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var line in logbook.header.Where(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).SelectMany(ln => ln.lines))
+                                    {
+                                        <tr>
+                                            <td class="text-center align-middle">
+                                                <button type="button" class="btn btn-sm btn-danger h-100 w-100" @onclick="(() => deleteLine(line, amtCat.AmountCategoryID))"><i class="oi oi-delete"></i></button>
+                                            </td>
+                                            <td>
+                                                <InputSelect id="sub_cat" @bind-Value="line.AmountType" class="form-select h-100 w-100">
+                                                    @foreach (var tp in CashierLogbookService.types)
+                                                    {
+                                                        <option value="@tp.AmountType">@tp.AmountDesc</option>
+                                                    }
+                                                </InputSelect>
+                                            </td>
+                                            <td>
+                                                <InputSelect id="sub_cat" @bind-Value="line.AmountSubCategoryID" class="form-select h-100 w-100">
+                                                    @foreach (var subCat in CashierLogbookService.subCategories)
+                                                    {
+                                                        <option value="@subCat.AmountSubCategoryID">@subCat.AmountSubCategoryName</option>
+                                                    }
+                                                </InputSelect>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control" @bind-value="line.LineAmount" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" style="font-size: 17px;" class="fw-bold pl-2">Sub Total :</td>
+                                        <td id="total_amount">Rp <span id="nominal_amount"> @logbook.header.Where(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).SelectMany(ln => ln.lines).Sum(sm => sm.LineAmount).ToString("N0") </span> ,- </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning alert-dismissible fade show my-3" role="alert">
+                                <strong>Data Empty !</strong> Add New Data with button Above
+                            </div>
+                        }
+                        
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-center"><span class="spinner-border spinner-border-sm"></span></p>
+            }
+
+            <div class="row my-3">
+                <div class="col">
+                    <button type="button" title="Reset" class="btn btn-sm btn-outline-dark"><b>Reset</b></button>
+                </div>
+            </div>
+
+        </EditForm>
+
+    </div>
+
+</div>

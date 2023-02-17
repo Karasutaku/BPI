@@ -443,6 +443,38 @@ namespace BPIWebApplication.Client.Services.PettyCashServices
             return resData;
         }
 
+        public async Task<ResultModel<QueryModel<CutoffDetails>>> updateLocationCutoffDate(QueryModel<CutoffDetails> data)
+        {
+            ResultModel<QueryModel<CutoffDetails>> resData = new ResultModel<QueryModel<CutoffDetails>>();
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<CutoffDetails>>("api/endUser/PettyCash/updateLocationCutoffDate", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CutoffDetails>>>();
+
+                    if (respBody.isSuccess)
+                    {
+                        resData.Data = respBody.Data;
+                        resData.isSuccess = respBody.isSuccess;
+                        resData.ErrorCode = respBody.ErrorCode;
+                        resData.ErrorMessage = respBody.ErrorMessage;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = null;
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
+
+            return resData;
+        }
+
         public async Task<ResultModel<List<Advance>>> getAdvanceDatabyLocation(string locPage)
         {
             ResultModel<List<Advance>> resData = new ResultModel<List<Advance>>();
