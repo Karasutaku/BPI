@@ -39,15 +39,6 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         protected override async Task OnInitializedAsync()
         {
-
-            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            //activeUser.UserLogin = new LoginUser();
-            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
-
-            await InitPage();
-            await ManagementService.GetAllDepartment();
-
             activeUser.token = await sessionStorage.GetItemAsync<string>("token");
             activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
@@ -57,6 +48,14 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
             LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+
+            await InitPage();
+            await ManagementService.GetAllDepartment();
 
             string temp = activeUser.userName + "!_!MASTER";
 
@@ -72,7 +71,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 {
                     isUserHaventSettled = true;
                 }
-                
+
             }
             else
             {
@@ -81,6 +80,25 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/PettyCashPages/AddAdvance.razor.js");
         }
+
+        //private bool checkUserPrivilegeViewable()
+        //{
+        //    try
+        //    {
+        //        if (LoginService.activeUser.userPrivileges.Contains("VW"))
+        //        {
+        //            return true;
+        //        }
+        //        else
+        //        {
+        //            return false;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return false;
+        //    }
+        //}
 
         private async Task InitPage()
         {
@@ -194,14 +212,14 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                         StateHasChanged();
                     }
-                    
+
                 }
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
-            
+
         }
 
         private void addLine()
@@ -288,8 +306,14 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     if (advance.TypeAccount.IsNullOrEmpty())
                         return false;
                 }
-                    
+
             }
+
+            if (!advanceLines.Any())
+                return false;
+
+            if (advanceLines.Any(x => x.Details.IsNullOrEmpty()) || advanceLines.Any(x => x.Amount.Equals(Decimal.Zero)))
+                return false;
 
             return true;
         }

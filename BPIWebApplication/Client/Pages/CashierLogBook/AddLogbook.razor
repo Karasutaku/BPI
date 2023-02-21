@@ -142,17 +142,31 @@
                                             </td>
                                             <td>
                                                 <InputSelect id="sub_cat" @bind-Value="line.AmountType" class="form-select h-100 w-100">
-                                                    @foreach (var tp in CashierLogbookService.types)
+                                                    @if (checkTypePresent())
                                                     {
-                                                        <option value="@tp.AmountType">@tp.AmountDesc</option>
+                                                        @foreach (var tp in CashierLogbookService.types)
+                                                        {
+                                                            <option value="@tp.AmountType">@tp.AmountDesc</option>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="" disabled>No Type Found</option>
                                                     }
                                                 </InputSelect>
                                             </td>
                                             <td>
                                                 <InputSelect id="sub_cat" @bind-Value="line.AmountSubCategoryID" class="form-select h-100 w-100">
-                                                    @foreach (var subCat in CashierLogbookService.subCategories)
+                                                    @if (checkSubCategoriesPresent())
                                                     {
-                                                        <option value="@subCat.AmountSubCategoryID">@subCat.AmountSubCategoryName</option>
+                                                        @foreach (var subCat in CashierLogbookService.subCategories)
+                                                        {
+                                                            <option value="@subCat.AmountSubCategoryID">@subCat.AmountSubCategoryName</option>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="" disabled>No Sub Category Found</option>
                                                     }
                                                 </InputSelect>
                                             </td>
@@ -188,6 +202,7 @@
             <div class="row my-3">
                 <div class="col">
                     <button type="button" title="Reset" class="btn btn-sm btn-outline-dark"><b>Reset</b></button>
+                    <button type="button" title="Create" class="btn btn-sm btn-primary"><b>Create</b></button>
                 </div>
             </div>
 

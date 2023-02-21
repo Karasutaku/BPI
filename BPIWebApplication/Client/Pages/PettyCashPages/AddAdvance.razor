@@ -5,7 +5,6 @@
 @inject ILoginService LoginService
 @inject IJSRuntime JS
 
-
 <PageTitle>Petty Cash - Advance</PageTitle>
 
 @if (LoginService.activeUser == null)
@@ -59,7 +58,7 @@ else
             <div class="container-fluid">
                 <div class="d-flex flex-column align-items-center">
 
-                    <EditForm Model="advance" OnValidSubmit="submitAdvance">
+                    <EditForm Model="advance">
 
                         <div class="row my-3">
                             <div class="col">
@@ -172,7 +171,7 @@ else
                         <div class="row my-3">
                             <div class="col">
                                 <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" @onclick="resetForm"><b>Reset</b></button>
-                                <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary">Create Advance</button>
+                                <button type="button" title="Please Recheck the Amount" class="btn btn-sm btn-primary" @onclick="submitAdvance">Create Advance</button>
                             </div>
                         </div>
 

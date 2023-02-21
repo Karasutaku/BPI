@@ -51,7 +51,7 @@ else
         <div class="container-fluid">
             <div class="d-flex flex-column align-items-center">
 
-                <EditForm Model="expense" OnValidSubmit="submitExpense">
+                <EditForm Model="expense">
 
                     <div class="row my-3">
                         <div class="col">
@@ -275,13 +275,13 @@ else
                         
                                 @if (isSettlement)
                                 {
-                                    <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)">
+                                    <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
                                         Settle
                                     </button>
                                 }
                                 else
                                 {
-                                    <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2">
+                                    <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
                                         Create Expense(s)
                                     </button>
                                 }

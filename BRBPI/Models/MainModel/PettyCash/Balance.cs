@@ -6,6 +6,8 @@
         public decimal locationOnhandAmount { get; set; } = decimal.Zero;
         public decimal advanceOutstandingAmount { get; set; } = decimal.Zero;
         public decimal expenseOutstandingAmount { get; set; } = decimal.Zero;
+        public decimal advanceApprovedAmount { get; set; } = decimal.Zero;
+        public decimal expenseApprovedAmount { get; set; } = decimal.Zero;
         public decimal reimbursementReqOutstandingAmount { get; set; } = decimal.Zero;
         public decimal reimbursementApvOutstandingAmount { get; set; } = decimal.Zero;
         public DateTime lastFetch { get; set; } = DateTime.Now;

@@ -43,13 +43,52 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
             activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
             activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = new();
             activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
             LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
             reimbursePageActive = 1;
 
+            StateHasChanged();
+
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/PettyCashPages/GenerateSI.razor.js");
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+                activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+                activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+                activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+                activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+                activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+                activeUser.userPrivileges = new();
+                activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+                LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            }
+        }
+
+        private bool checkUserPrivilegeViewable()
+        {
+            try
+            {
+                if (LoginService.activeUser.userPrivileges.Contains("VW"))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
 
         private Stream GetFileStream(byte[] data)
@@ -190,7 +229,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 worksheet.Cell($"C{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 worksheet.Cell($"C{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
 
-                worksheet.Cell($"D{rowFooterEnd}").Value = "KADIV / WAKADIV KASIR";
+                worksheet.Cell($"D{rowFooterEnd}").Value = "TL KASIR / MOD";
                 worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetBold(true);
                 worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetFontSize(headerFontSize);
                 worksheet.Cell($"D{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -293,7 +332,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         {
             reimbursePageActive = currPage;
 
-            string temp = "MASTER!_!" + activeUser.location + "!_!Verified!_!!_!!_!" + reimbursePageActive.ToString();
+            string temp = "MASTER!_!" + activeUser.location + "!_!!_!!_!!_!" + reimbursePageActive.ToString();
 
             await PettyCashService.getReimburseDatabyLocation(Base64Encode(temp));
 
@@ -371,10 +410,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             PettyCashService.reimburses = new();
 
-            string rbspz = "Reimburse!_!ReimburseID!_!Verified!_!!_!!_!" + activeUser.location;
+            string rbspz = "Reimburse!_!ReimburseID!_!!_!!_!!_!" + activeUser.location;
             reimburseNumberofPage = await PettyCashService.getModulePageSize(Base64Encode(rbspz));
 
-            string rbslocPage = "MASTER!_!" + activeUser.location + "!_!Verified!_!!_!!_!" + reimbursePageActive.ToString();
+            string rbslocPage = "MASTER!_!" + activeUser.location + "!_!!_!!_!!_!" + reimbursePageActive.ToString();
             await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
         }
 

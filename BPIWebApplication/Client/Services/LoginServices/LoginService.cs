@@ -11,17 +11,17 @@ namespace BPIWebApplication.Client.Services.LoginServices
 	{
         private readonly HttpClient _http;
 
-        public ActiveUser activeUser { get; set; } = new();
-
         public LoginService(HttpClient http)
         {
             _http = http;
         }
 
+        public ActiveUser activeUser { get; set; } = new();
+
         //public async Task<ResultModel<ActiveUser<LoginUser>>> GetUserAuthentication(LoginUser data)
         //{
         //    ResultModel<ActiveUser<LoginUser>> resData = new ResultModel<ActiveUser<LoginUser>>();
-            
+
         //    try
         //    {
         //        // check login api user Windows
@@ -49,7 +49,7 @@ namespace BPIWebApplication.Client.Services.LoginServices
         //        resData.ErrorCode = "99";
         //        resData.ErrorMessage = ex.Message;
         //    }
-            
+
         //    return resData;
         //}
 

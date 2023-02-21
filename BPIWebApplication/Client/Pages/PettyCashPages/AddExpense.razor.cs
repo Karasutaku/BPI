@@ -59,6 +59,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
             activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
             activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = new();
             activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
             LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
@@ -73,7 +74,45 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             await ManagementService.GetAllDepartment();
 
+            StateHasChanged();
+
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/PettyCashPages/AddExpense.razor.js");
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+                activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+                activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+                activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+                activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+                activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+                activeUser.userPrivileges = new();
+                activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+                LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            }
+        }
+
+        private bool checkUserPrivilegeViewable()
+        {
+            try
+            {
+                if (LoginService.activeUser.userPrivileges.Contains("VW"))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
 
         IReadOnlyList<IBrowserFile> listFileUpload;
@@ -90,18 +129,30 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     FileInfo fi = new FileInfo(file.Name);
                     string ext = fi.Extension;
 
-                    Stream stream = file.OpenReadStream(file.Size);
-                    MemoryStream ms = new MemoryStream();
-                    await stream.CopyToAsync(ms);
+                    if (!ext.Contains("pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        successUpload = false;
+                        successAlert = false;
+                        alertTrigger = true;
+                        alertMessage = "File Selection Failed !";
+                        alertBody = "File Extention is not PDF";
 
-                    stream.Close();
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        Stream stream = file.OpenReadStream(file.Size);
+                        MemoryStream ms = new MemoryStream();
+                        await stream.CopyToAsync(ms);
 
-                    line.type = "Expense";
-                    line.fileName = Path.GetRandomFileName() + "!_!" + fi.Name;
-                    line.fileType = ext;
-                    line.fileSize = Convert.ToInt32(file.Size);
-                    line.content = ms.ToArray();
-                    
+                        stream.Close();
+
+                        line.type = "Expense";
+                        line.fileName = Path.GetRandomFileName() + "!_!" + fi.Name;
+                        line.fileType = ext;
+                        line.fileSize = Convert.ToInt32(file.Size);
+                        line.content = ms.ToArray();
+                    }
                 }
             }
 
@@ -154,7 +205,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                 Details = line.Details,
                                 Amount = line.Amount,
                                 ActualAmount = line.ActualAmount,
-                                Attach = line.Attach,
+                                //Attach = "",
                                 Status = "OP"
                             };
 
@@ -397,10 +448,13 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             if (!expenseLines.Any())
                 return false;
 
+            if (expenseLines.Any(x => x.Details.IsNullOrEmpty()))
+                return false;
+
             if (!fileLines.Any())
                 return false;
 
-            if (fileLines.First().fileSize < 1)
+            if (fileLines.Any(x => x.fileSize < 1))
                 return false;
 
             return true;
@@ -419,7 +473,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             PettyCashService.advances = new();
 
-            string status = "Confirmed";
+            string status = "Submited";
             string filType = "USER";
             string filValue = activeUser.userName;
 
@@ -471,7 +525,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     Details = line.Details,
                     Amount = line.Amount,
                     ActualAmount = decimal.Zero,
-                    Attach = "",
+                    //Attach = "",
                     Status = "OP"
                 });
             }

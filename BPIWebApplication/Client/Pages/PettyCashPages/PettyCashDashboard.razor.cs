@@ -116,9 +116,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
             activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
             activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = new();
             activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
-            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            LoginService.activeUser = activeUser;
 
             isAdvanceFilterActive = false;
             isExpenseFilterActive = false;
@@ -178,7 +179,6 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             string prbslocPage = "POSTED!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + preimbursePageActive.ToString();
             await PettyCashService.getReimburseDatabyLocation(Base64Encode(prbslocPage));
 
-
             await ManagementService.GetAllDepartment();
 
             location.Condition = $"a.CompanyId={Convert.ToInt32(activeUser.company)}";
@@ -201,6 +201,42 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/PettyCashPages/PettyCashDashboard.razor.js");
 
             StateHasChanged();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+                activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+                activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+                activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+                activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+                activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+                activeUser.userPrivileges = new();
+                activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+                LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            }
+        }
+
+        private bool checkUserPrivilegeViewable()
+        {
+            try
+            {
+                if (LoginService.activeUser.userPrivileges.Contains("VW"))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
 
         private Stream GetFileStream(byte[] data)
@@ -462,7 +498,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     advance.AdvanceStatus = action;
                     PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).AdvanceStatus = action;
 
-                    if (res.isSuccess)
+                    if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
                     {
                         if (action.Contains("Rejected"))
                         {
@@ -587,48 +623,56 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                     if (action.Contains("Verified"))
                     {
-                        var res = await PettyCashService.updateDocumentStatus(statData);
-
-                        reimburse.ReimburseStatus = action;
-                        PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).ReimburseStatus = action;
-
-                        if (res.isSuccess)
+                        if (!reimburse.lines.Any(x => x.Status.Contains("OP")))
                         {
-                            // update data to db
-                            try
+                            var res = await PettyCashService.updateDocumentStatus(statData);
+
+                            reimburse.ReimburseStatus = action;
+                            PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).ReimburseStatus = action;
+
+                            if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
                             {
-                                QueryModel<Reimburse> updateData = new();
-                                updateData.Data = new();
-
-                                updateData.Data = reimburse;
-                                updateData.userEmail = activeUser.userName;
-                                updateData.userAction = "U";
-                                updateData.userActionDate = DateTime.Now;
-
-                                var res2 = await PettyCashService.updateReimburseLineData(updateData);
-
-                                if (res.isSuccess)
+                                // update data to db
+                                try
                                 {
-                                    string temp = "PettyCash!_!StatusVerify!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID;
-                                    var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
 
-                                    if (res3.isSuccess)
-                                    {
-                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
-                                    }
-                                    else
-                                    {
-                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
-                                    }
+                                    QueryModel<Reimburse> updateData = new();
+                                    updateData.Data = new();
 
-                                    //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
+                                    updateData.Data = reimburse;
+                                    updateData.userEmail = activeUser.userName;
+                                    updateData.userAction = "U";
+                                    updateData.userActionDate = DateTime.Now;
+
+                                    var res2 = await PettyCashService.updateReimburseLineData(updateData);
+
+                                    if (res.isSuccess)
+                                    {
+                                        string temp = "PettyCash!_!StatusVerify!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID;
+                                        var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                        if (res3.isSuccess)
+                                        {
+                                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                        }
+                                        else
+                                        {
+                                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                        }
+
+                                        //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
+                                    }
+                                
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw new Exception(ex.Message);
                                 }
                             }
-                            catch (Exception ex)
-                            {
-                                throw new Exception(ex.Message);
-                            }
-
+                        }
+                        else
+                        {
+                            await _jsModule.InvokeVoidAsync("showAlert", "Please Process all Lines !");
                         }
                     }
                     else
@@ -766,6 +810,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 isReimburseActive = true;
 
                 exp.Clear();
+                coaSummary.Clear();
                 PettyCashService.fileStreams.Clear();
 
                 foreach (var line in reimData.lines)

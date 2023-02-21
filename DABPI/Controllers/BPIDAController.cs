@@ -14,6 +14,7 @@ using System;
 using BPIDA.Models.MainModel.Mailing;
 using Microsoft.IdentityModel.Tokens;
 using BPIDA.Models.MainModel.CashierLogbook;
+using System.Reflection;
 
 namespace BPIDA.Controllers
 {
@@ -2612,6 +2613,36 @@ namespace BPIDA.Controllers
             return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
+        public static DataTable ListToDataTable<T>(List<T> list, string auditUser, string auditAction, DateTime auditDate, string _tableName)
+        {
+            DataTable dt = new DataTable(_tableName);
+
+            foreach (PropertyInfo info in typeof(T).GetProperties())
+            {
+                dt.Columns.Add(new DataColumn(info.Name, Nullable.GetUnderlyingType(info.PropertyType) ?? info.PropertyType));
+            }
+
+            dt.Columns.Add(new DataColumn("AuditUser", Nullable.GetUnderlyingType(auditUser.GetType()) ?? auditUser.GetType()));
+            dt.Columns.Add(new DataColumn("AuditAction", Nullable.GetUnderlyingType(auditAction.GetType()) ?? auditAction.GetType()));
+            dt.Columns.Add(new DataColumn("AuditActionDate", Nullable.GetUnderlyingType(auditDate.GetType()) ?? auditDate.GetType()));
+
+            foreach (T t in list)
+            {
+                DataRow row = dt.NewRow();
+
+                foreach (PropertyInfo info in typeof(T).GetProperties())
+                {
+                    row[info.Name] = info.GetValue(t, null) ?? DBNull.Value;
+                }
+                row["AuditUser"] = auditUser;
+                row["AuditAction"] = auditAction;
+                row["AuditActionDate"] = auditDate;
+
+                dt.Rows.Add(row);
+            }
+            return dt;
+        }
+
         // is
 
         internal bool isAdvanceDataPresent(string AdvanceId)
@@ -2727,7 +2758,44 @@ namespace BPIDA.Controllers
             }
         }
 
-        internal void createAdvanceLine(QueryModel<AdvanceLine> data)
+        //internal void createAdvanceLine(QueryModel<AdvanceLine> data)
+        //{
+        //    using (SqlConnection con = new SqlConnection(_conString))
+        //    {
+        //        con.Open();
+        //        SqlCommand command = new SqlCommand();
+
+        //        try
+        //        {
+        //            command.Connection = con;
+        //            command.CommandType = CommandType.StoredProcedure;
+        //            command.CommandText = "[createAdvanceLines]";
+        //            command.CommandTimeout = 1000;
+
+        //            command.Parameters.Clear();
+        //            command.Parameters.AddWithValue("@AdvanceID", data.Data.AdvanceID);
+        //            command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
+        //            command.Parameters.AddWithValue("@Details", data.Data.Details);
+        //            command.Parameters.AddWithValue("@Amount", data.Data.Amount);
+        //            command.Parameters.AddWithValue("@AStatus", data.Data.Status);
+        //            command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+        //            command.Parameters.AddWithValue("@AuditAction", data.userAction);
+        //            command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+        //            command.ExecuteNonQuery();
+        //        }
+        //        catch (SqlException ex)
+        //        {
+        //            throw ex;
+        //        }
+        //        finally
+        //        {
+        //            con.Close();
+        //        }
+        //    }
+        //}
+
+        internal void createAdvanceLine(DataTable data)
         {
             using (SqlConnection con = new SqlConnection(_conString))
             {
@@ -2742,14 +2810,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@AdvanceID", data.Data.AdvanceID);
-                    command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
-                    command.Parameters.AddWithValue("@Details", data.Data.Details);
-                    command.Parameters.AddWithValue("@Amount", data.Data.Amount);
-                    command.Parameters.AddWithValue("@AStatus", data.Data.Status);
-                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
-                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
-                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+                    command.Parameters.AddWithValue("@AdvanceLinesData", data);
 
                     command.ExecuteNonQuery();
                 }
@@ -2806,7 +2867,45 @@ namespace BPIDA.Controllers
             }
         }
 
-        internal void createExpenseLine(QueryModel<ExpenseLine> data)
+        //internal void createExpenseLine(QueryModel<ExpenseLine> data)
+        //{
+        //    using (SqlConnection con = new SqlConnection(_conString))
+        //    {
+        //        con.Open();
+        //        SqlCommand command = new SqlCommand();
+
+        //        try
+        //        {
+        //            command.Connection = con;
+        //            command.CommandType = CommandType.StoredProcedure;
+        //            command.CommandText = "[createExpenseLines]";
+        //            command.CommandTimeout = 1000;
+
+        //            command.Parameters.Clear();
+        //            command.Parameters.AddWithValue("@ExpenseID", data.Data.ExpenseID);
+        //            command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
+        //            command.Parameters.AddWithValue("@Details", data.Data.Details);
+        //            command.Parameters.AddWithValue("@Amount", data.Data.Amount);
+        //            command.Parameters.AddWithValue("@ActualAmount", data.Data.ActualAmount);
+        //            command.Parameters.AddWithValue("@EStatus", data.Data.Status);
+        //            command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+        //            command.Parameters.AddWithValue("@AuditAction", data.userAction);
+        //            command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+        //            command.ExecuteNonQuery();
+        //        }
+        //        catch (SqlException ex)
+        //        {
+        //            throw ex;
+        //        }
+        //        finally
+        //        {
+        //            con.Close();
+        //        }
+        //    }
+        //}
+
+        internal void createExpenseLine(DataTable data)
         {
             using (SqlConnection con = new SqlConnection(_conString))
             {
@@ -2821,15 +2920,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@ExpenseID", data.Data.ExpenseID);
-                    command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
-                    command.Parameters.AddWithValue("@Details", data.Data.Details);
-                    command.Parameters.AddWithValue("@Amount", data.Data.Amount);
-                    command.Parameters.AddWithValue("@ActualAmount", data.Data.ActualAmount);
-                    command.Parameters.AddWithValue("@EStatus", data.Data.Status);
-                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
-                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
-                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+                    command.Parameters.AddWithValue("@ExpenseLinesData", data);
 
                     command.ExecuteNonQuery();
                 }
@@ -2915,7 +3006,47 @@ namespace BPIDA.Controllers
             }
         }
 
-        internal void createReimburseLine(QueryModel<ReimburseLine> data)
+        //internal void createReimburseLine(QueryModel<ReimburseLine> data)
+        //{
+        //    using (SqlConnection con = new SqlConnection(_conString))
+        //    {
+        //        con.Open();
+        //        SqlCommand command = new SqlCommand();
+
+        //        try
+        //        {
+        //            command.Connection = con;
+        //            command.CommandType = CommandType.StoredProcedure;
+        //            command.CommandText = "[createReimburseLines]";
+        //            command.CommandTimeout = 1000;
+
+        //            command.Parameters.Clear();
+        //            command.Parameters.AddWithValue("@ReimburseID", data.Data.ReimburseID);
+        //            command.Parameters.AddWithValue("@ExpenseID", data.Data.ExpenseID);
+        //            command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
+        //            command.Parameters.AddWithValue("@AccountNo", data.Data.AccountNo);
+        //            command.Parameters.AddWithValue("@Details", data.Data.Details);
+        //            command.Parameters.AddWithValue("@Amount", data.Data.Amount);
+        //            command.Parameters.AddWithValue("@ApprovedAmount", data.Data.ApprovedAmount);
+        //            command.Parameters.AddWithValue("@RStatus", data.Data.Status);
+        //            command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+        //            command.Parameters.AddWithValue("@AuditAction", data.userAction);
+        //            command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+        //            command.ExecuteNonQuery();
+        //        }
+        //        catch (SqlException ex)
+        //        {
+        //            throw ex;
+        //        }
+        //        finally
+        //        {
+        //            con.Close();
+        //        }
+        //    }
+        //}
+
+        internal void createReimburseLine(DataTable data)
         {
             using (SqlConnection con = new SqlConnection(_conString))
             {
@@ -2930,17 +3061,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@ReimburseID", data.Data.ReimburseID);
-                    command.Parameters.AddWithValue("@ExpenseID", data.Data.ExpenseID);
-                    command.Parameters.AddWithValue("@LineNum", data.Data.LineNo);
-                    command.Parameters.AddWithValue("@AccountNo", data.Data.AccountNo);
-                    command.Parameters.AddWithValue("@Details", data.Data.Details);
-                    command.Parameters.AddWithValue("@Amount", data.Data.Amount);
-                    command.Parameters.AddWithValue("@ApprovedAmount", data.Data.ApprovedAmount);
-                    command.Parameters.AddWithValue("@RStatus", data.Data.Status);
-                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
-                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
-                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+                    command.Parameters.AddWithValue("@ReimburseLinesData", data);
 
                     command.ExecuteNonQuery();
                 }
@@ -3708,6 +3829,41 @@ namespace BPIDA.Controllers
             return conInt;
         }
 
+        internal decimal getAdvanceApprovedAmount(string loc)
+        {
+            decimal conInt = decimal.Zero;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getAdvanceApprovedAmount]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    var data = command.ExecuteScalar();
+                    conInt = Convert.ToDecimal(data);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conInt;
+        }
+
         internal decimal getExpenseOutstandingAmount(string loc)
         {
             decimal conInt = decimal.Zero;
@@ -3722,6 +3878,41 @@ namespace BPIDA.Controllers
                     command.Connection = con;
                     command.CommandType = CommandType.StoredProcedure;
                     command.CommandText = "[getExpenseOutstandingAmount]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    var data = command.ExecuteScalar();
+                    conInt = Convert.ToDecimal(data);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conInt;
+        }
+
+        internal decimal getExpenseApprovedAmount(string loc)
+        {
+            decimal conInt = decimal.Zero;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getExpenseApprovedAmount]";
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
@@ -4071,22 +4262,25 @@ namespace BPIDA.Controllers
         public async Task<IActionResult> createAdvanceLineDataTable(QueryModel<List<AdvanceLine>> data)
         {
             ResultModel<QueryModel<List<AdvanceLine>>> res = new ResultModel<QueryModel<List<AdvanceLine>>>();
+            DataTable dtTable = new DataTable("Data");
             IActionResult actionResult = null;
 
             try
             {
-                foreach (var dt in data.Data)
-                {
-                    QueryModel<AdvanceLine> line = new QueryModel<AdvanceLine>();
-                    line.Data = new AdvanceLine();
+                //foreach (var dt in data.Data)
+                //{
+                //    QueryModel<AdvanceLine> line = new QueryModel<AdvanceLine>();
+                //    line.Data = new AdvanceLine();
 
-                    line.Data = dt;
-                    line.userEmail = data.userEmail;
-                    line.userAction = data.userAction;
-                    line.userActionDate = data.userActionDate;
+                //    line.Data = dt;
+                //    line.userEmail = data.userEmail;
+                //    line.userAction = data.userAction;
+                //    line.userActionDate = data.userActionDate;
 
-                    createAdvanceLine(line);
-                }
+                //    createAdvanceLine(line);
+                //}
+
+                createAdvanceLine(ListToDataTable<AdvanceLine>(data.Data, data.userEmail, data.userAction, data.userActionDate, "AdvanceLine"));
 
                 res.Data = data;
                 res.isSuccess = true;
@@ -4146,19 +4340,21 @@ namespace BPIDA.Controllers
 
             try
             {
-                foreach (var dt in data.Data)
-                {
-                    QueryModel<ExpenseLine> line = new QueryModel<ExpenseLine>();
-                    line.Data = new ExpenseLine();
+                //foreach (var dt in data.Data)
+                //{
+                //    QueryModel<ExpenseLine> line = new QueryModel<ExpenseLine>();
+                //    line.Data = new ExpenseLine();
 
-                    line.Data = dt;
-                    line.userEmail = data.userEmail;
-                    line.userAction = data.userAction;
-                    line.userActionDate = data.userActionDate;
+                //    line.Data = dt;
+                //    line.userEmail = data.userEmail;
+                //    line.userAction = data.userAction;
+                //    line.userActionDate = data.userActionDate;
 
-                    createExpenseLine(line);
-                    //createExpenseAttachLine(line);
-                }
+                //    createExpenseLine(line);
+                //    //createExpenseAttachLine(line);
+                //}
+
+                createExpenseLine(ListToDataTable<ExpenseLine>(data.Data, data.userEmail, data.userAction, data.userActionDate, "ExpenseLine"));
 
                 res.Data = data;
                 res.isSuccess = true;
@@ -4259,19 +4455,21 @@ namespace BPIDA.Controllers
 
             try
             {
-                foreach (var dt in data.Data)
-                {
-                    QueryModel<ReimburseLine> line = new QueryModel<ReimburseLine>();
-                    line.Data = new ReimburseLine();
+                //foreach (var dt in data.Data)
+                //{
+                //    QueryModel<ReimburseLine> line = new QueryModel<ReimburseLine>();
+                //    line.Data = new ReimburseLine();
 
-                    line.Data = dt;
-                    line.userEmail = data.userEmail;
-                    line.userAction = data.userAction;
-                    line.userActionDate = data.userActionDate;
+                //    line.Data = dt;
+                //    line.userEmail = data.userEmail;
+                //    line.userAction = data.userAction;
+                //    line.userActionDate = data.userActionDate;
 
-                    createReimburseLine(line);
-                    //createExpenseAttachLine(line);
-                }
+                //    createReimburseLine(line);
+                //    //createExpenseAttachLine(line);
+                //}
+
+                createReimburseLine(ListToDataTable<ReimburseLine>(data.Data, data.userEmail, data.userAction, data.userActionDate, "ReimburseLine"));
 
                 res.Data = data;
                 res.isSuccess = true;
@@ -4900,7 +5098,7 @@ namespace BPIDA.Controllers
                                 temp2.Amount = Convert.ToDecimal(linedt["Amount"]);
                                 temp2.ActualAmount = Convert.ToDecimal(linedt["ActualAmount"]);
                                 //temp2.Attach = linedt["EAttach"].ToString();
-                                temp2.Attach = string.Empty;
+                                //temp2.Attach = string.Empty;
                                 temp2.Status = linedt["EStatus"].ToString();
 
                                 expenseLines.Add(temp2);
@@ -5025,7 +5223,7 @@ namespace BPIDA.Controllers
                                 temp2.Amount = Convert.ToDecimal(linedt["Amount"]);
                                 temp2.ApprovedAmount = Convert.ToDecimal(linedt["ApprovedAmount"]);
                                 //temp2.Attach = linedt["EAttach"].ToString();
-                                temp2.Attach = string.Empty;
+                                //temp2.Attach = string.Empty;
                                 temp2.Status = linedt["RStatus"].ToString();
 
                                 reimburseLines.Add(temp2);
@@ -5136,6 +5334,8 @@ namespace BPIDA.Controllers
                 res.Data.outstandingBalance.locationOnhandAmount = getLocationOnhandAmount(loc);
                 res.Data.outstandingBalance.advanceOutstandingAmount = getAdvanceOutstandingAmount(loc);
                 res.Data.outstandingBalance.expenseOutstandingAmount = getExpenseOutstandingAmount(loc);
+                res.Data.outstandingBalance.advanceApprovedAmount = getAdvanceApprovedAmount(loc);
+                res.Data.outstandingBalance.expenseApprovedAmount = getExpenseApprovedAmount(loc);
                 res.Data.CutOffDate = getCutoffDate(loc);
 
                 dtReimburseOutstanding = getReimburseOutstandingAmount(loc);

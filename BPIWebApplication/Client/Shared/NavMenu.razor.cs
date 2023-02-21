@@ -87,6 +87,8 @@ namespace BPIWebApplication.Client.Shared
                     moduleData.ModuleTypeId = "LOC";
                 }
 
+                //moduleData.ModuleTypeId = "CMP";
+
                 string tkn = await sessionStorage.GetItemAsync<string>("token");
 
                 var moduleResp = await LoginService.frameworkApiFacadeModule(moduleData, tkn);
@@ -188,6 +190,8 @@ namespace BPIWebApplication.Client.Shared
                     moduleData.ModuleTypeId = "LOC";
                 }
 
+                //moduleData.ModuleTypeId = "CMP";
+
                 moduleData.ApplicationId = LoginService.activeUser.appV; //
                 moduleData.UserName = LoginService.activeUser.userName;
 
@@ -274,6 +278,16 @@ namespace BPIWebApplication.Client.Shared
         {
             collapseNavMenu = !collapseNavMenu;
 
+            //if (await sessionStorage.ContainKeyAsync("PagePrivileges"))
+            //{
+            //    await sessionStorage.RemoveItemAsync("PagePrivileges");
+            //}
+
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+            {
+                LoginService.activeUser.userPrivileges.Clear();
+            }
+
             string tkn = await sessionStorage.GetItemAsync<string>("token");
 
             if (await sessionStorage.ContainKeyAsync("userName"))
@@ -326,9 +340,11 @@ namespace BPIWebApplication.Client.Shared
                 //syncSessionStorage.RemoveItem("PagePrivileges");
 
                 await sessionStorage.SetItemAsync("PagePrivileges", userPriv);
+                
                 LoginService.activeUser.userPrivileges = userPriv;
-            }
 
+            }
+            
         }
 
         private void toggleMainMenu(ModuleCategory menu)

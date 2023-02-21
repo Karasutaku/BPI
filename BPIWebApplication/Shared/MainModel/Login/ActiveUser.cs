@@ -14,7 +14,7 @@ namespace BPIWebApplication.Shared.MainModel.Login
         public string location { get; set; } = string.Empty;
         public string sessionId { get; set; } = string.Empty;
         public int appV { get; set; } = 0;
-        public List<string> userPrivileges { get; set; } = new List<string>();
+        public List<string>? userPrivileges { get; set; } = new List<string>() { string.Empty };
     }
 
    
