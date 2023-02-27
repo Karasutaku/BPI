@@ -43,35 +43,137 @@ hr {
     top: -2px;
 }
 
-.nav-item {
-    font-size: 0.8rem;
-    padding-bottom: 0.5rem;
+#OtherMenu {
+    font-size: 0.9rem;
+    padding-bottom: 0.3rem;
     user-select: none;
 }
 
-    .nav-item:first-of-type {
+    #OtherMenu:first-of-type {
         padding-top: 0.5rem;
     }
 
-    .nav-item:last-of-type {
+    #OtherMenu:last-of-type {
         padding-bottom: 0.5rem;
     }
 
-    .nav-item ::deep a {
+    #OtherMenu ::deep a {
         color: #ffffff;
         border-radius: 2px;
-        height: 3rem;
+        height: 2.8rem;
         display: flex;
         align-items: center;
         line-height: 3rem;
     }
 
-        .nav-item ::deep a.active {
+        #OtherMenu ::deep a.active {
             background-color: rgba(255,255,255,0.25);
             color: white;
         }
 
-        .nav-item ::deep a:hover {
+        #OtherMenu ::deep a:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+#MainModuleMenu {
+    font-size: 0.9rem;
+    padding-bottom: 0.3rem;
+    user-select: none;
+    background-color: rgba(0,0,0,0.1);
+}
+
+    #MainModuleMenu:first-of-type {
+    padding-top: 0.5rem;
+}
+
+    #MainModuleMenu:last-of-type {
+        padding-bottom: 0.5rem;
+    }
+
+    #MainModuleMenu ::deep a {
+    color: #ffffff;
+    border-radius: 2px;
+    height: 2.8rem;
+    display: flex;
+    align-items: center;
+    line-height: 3rem;
+}
+
+    #MainModuleMenu ::deep a.active {
+        background-color: rgba(255,255,255,0.25);
+        color: white;
+    }
+
+    #MainModuleMenu ::deep a:hover {
+        background-color: rgba(255,255,255,0.1);
+        color: white;
+    }
+
+#CategoryModuleMenu {
+    font-size: 0.8rem;
+    padding-bottom: 0.1rem;
+    user-select: none;
+    background-color: rgba(0,0,0,0.25);
+}
+
+    #CategoryModuleMenu:first-of-type {
+        padding-top: 0.5rem;
+    }
+
+    #CategoryModuleMenu:last-of-type {
+        padding-bottom: 0.5rem;
+    }
+
+    #CategoryModuleMenu ::deep a {
+        color: #ffffff;
+        border-radius: 2px;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+    }
+
+        #CategoryModuleMenu ::deep a.active {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        #CategoryModuleMenu ::deep a:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+#ModuleItem {
+    font-size: 0.8rem;
+    padding-bottom: 0.1rem;
+    user-select: none;
+    background-color: rgba(0,0,0,0.50);
+}
+
+    #ModuleItem:first-of-type {
+        padding-top: 0.5rem;
+    }
+
+    #ModuleItem:last-of-type {
+        padding-bottom: 0.5rem;
+    }
+
+    #ModuleItem ::deep a {
+        color: #ffffff;
+        border-radius: 2px;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+    }
+
+        #ModuleItem ::deep a.active {
+            /*background-color: rgba(255,255,255,0.25);*/
+            color: white;
+        }
+
+        #ModuleItem ::deep a:hover {
             background-color: rgba(255,255,255,0.1);
             color: white;
         }

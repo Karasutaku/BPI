@@ -1,6 +1,7 @@
 ﻿@page "/cashierlogbook/dashboard"
 @inject ICashierLogbookService CashierLogbookService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject NavigationManager navigate
 
 <PageTitle>Cashier Logbook - Dashboard</PageTitle>
 
@@ -16,9 +17,9 @@
         @*Table*@
     </div>
 
-    <div class="row">
+    @*<div class="row">
         <button type="button" class="btn btn-sm btn-primary">New Logbook</button>
-    </div>
+    </div>*@
 
     <div class="border border-2 p-2">
         <h5 class="float-lg-end"><b>Ongoing Logbook Document</b></h5>
@@ -52,9 +53,9 @@
                                 <tbody id="tbodyDashboard">
                                     @foreach (var mlog in CashierLogbookService.mainLogs)
                                     {
-                                        <tr @onclick="(() => showMainModal(mlog))" id="previewRow">
+                                        <tr @onclick="@(() => showMainModal(mlog, "MAIN"))" id="previewRow">
                                             <td class="text-center align-middle" style="font-size:14px;">@mlog.LogID</td>
-                                            <td class="text-center align-middle" style="font-size:14px;">@mlog.LogDate.ToString("dd MMMM yyyy HH:mm:ss")</td>
+                                            <td class="text-center align-middle" style="font-size:14px;">@mlog.LogDate.ToString("dd MMMM yyyy")</td>
                                             <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.Applicant</td>
                                             <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.LogStatus</td>
                                             @*<td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
@@ -92,9 +93,9 @@
                                 <tbody id="tbodyDashboard">
                                     @foreach (var mlog in CashierLogbookService.transitLogs)
                                     {
-                                        <tr @onclick="(() => showMainModal(mlog))" id="previewRow">
+                                        <tr @onclick="@(() => showMainModal(mlog, "TRANSIT"))" id="previewRow">
                                             <td class="text-center align-middle" style="font-size:14px;">@mlog.LogID</td>
-                                            <td class="text-center align-middle" style="font-size:14px;">@mlog.LogDate</td>
+                                            <td class="text-center align-middle" style="font-size:14px;">@mlog.LogDate.ToString("dd MMMM yyyy")</td>
                                             <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.Applicant</td>
                                             <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.LogStatus</td>
                                             @*<td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
@@ -157,10 +158,10 @@
                     <EditForm Model="activeLog">
 
                         <div class="row my-1">
-                            <div class="col">
+                            @*<div class="col">
                                 <label class="fw-bold" for="log_type">Log Type :</label>
                                 <InputText id="log_type" @bind-Value="activeLog.LogType" class="form-control-sm w-100 border-1" readonly></InputText>
-                            </div>
+                            </div>*@
                             <div class="col">
                                 <label class="fw-bold" for="log_id">Log ID :</label>
                                 <InputText id="log_id" @bind-Value="activeLog.LogID" class="form-control-sm w-100 border-1" readonly></InputText>
@@ -384,10 +385,12 @@
 
                 </div>
 
-
                 <div class="modal-footer cus-bg">
+                    <button type="button" class="btn btn-sm btn-success fw-bold">Confirm</button>
+                    <button type="button" class="btn btn-sm btn-dark fw-bold" @onclick="(() => editDocument(activeLog))">Edit</button>
                     <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="hideModal">Close</button>
                 </div>
+
             </div>
         </div>
     </div>

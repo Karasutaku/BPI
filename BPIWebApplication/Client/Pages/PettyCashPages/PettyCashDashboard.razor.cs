@@ -8,13 +8,14 @@ using BPIWebApplication.Shared.PagesModel.Dashboard;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.ExtendedProperties;
 using DocumentFormat.OpenXml.Office2010.PowerPoint;
+using DocumentFormat.OpenXml.Office2013.Drawing.Chart;
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using DocumentFormat.OpenXml.Office2016.Excel;
 using DocumentFormat.OpenXml.Vml;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
-using System.Net.NetworkInformation;
-using System.Reflection.Metadata.Ecma335;
 
 namespace BPIWebApplication.Client.Pages.PettyCashPages
 {
@@ -149,7 +150,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             pexpensePageActive = 1;
             string pexppz = "PostedExpense!_!ExpenseID!_!" + expStatus + "!_!" + expFilType + "!_!" + expFilValue + "!_!" + activeUser.location;
             pexpenseNumberofPage = await PettyCashService.getModulePageSize(Base64Encode(pexppz));
-                
+
             string remStatus = "";
             string remFilType = "";
             string remFilValue = "";
@@ -219,6 +220,12 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
             }
         }
+
+        private void hideDataModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showModal = false; } }
+        private void hideBalanceModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showBalanceModal = false; } }
+        private void hideUpdateBudgetModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showUpdateBudgetModal = false; } }
+        private void hideCutoffModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showUpdateCutoffModal = false; } }
+        private void hideExportModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showExportModal = false; } }
 
         private bool checkUserPrivilegeViewable()
         {
@@ -495,24 +502,56 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                     var res = await PettyCashService.updateDocumentStatus(statData);
 
-                    advance.AdvanceStatus = action;
-                    PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).AdvanceStatus = action;
-
                     if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
                     {
+
                         if (action.Contains("Rejected"))
                         {
-                            string temp = "PettyCash!_!StatusReject!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advance.AdvanceID + "!_!" + advance.Applicant;
-                            var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+                            if (advance.AdvanceStatus.Equals("Open"))
+                            {
+                                string temp = "PettyCash!_!StatusReject!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advance.AdvanceID + "!_!" + advance.Applicant;
+                                var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
 
-                            if (res3.isSuccess)
-                            {
-                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Reject Status Success Updated, Please Reload Your Page !");
+                                if (res3.isSuccess)
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Reject Status Success Updated, Please Reload Your Page !");
+                                }
+                                else
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Reject Status Success Updated, Please Reload Your Page !");
+                                }
                             }
-                            else
+                            else if (advance.AdvanceStatus.Equals("Confirmed"))
                             {
-                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Reject Status Success Updated, Please Reload Your Page !");
+                                string temp = "PettyCash!_!DirectEmail!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advance.AdvanceID + "!_!" + advance.statusDetails.confirmUser;
+                                var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                if (res3.isSuccess)
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                }
+                                else
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                }
                             }
+
+                            advance.statusDetails.rejectUser = activeUser.userName;
+                            PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).statusDetails.rejectUser = activeUser.userName;
+                            advance.statusDetails.rejectDate = DateTime.Now;
+                            PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).statusDetails.rejectDate = DateTime.Now;
+
+                            //string temp = "PettyCash!_!StatusReject!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advance.AdvanceID + "!_!" + advance.Applicant;
+                            //var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                            //if (res3.isSuccess)
+                            //{
+                            //    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Reject Status Success Updated, Please Reload Your Page !");
+                            //}
+                            //else
+                            //{
+                            //    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Reject Status Success Updated, Please Reload Your Page !");
+                            //}
                         }
                         else if (action.Contains("Submited"))
                         {
@@ -527,22 +566,53 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                             {
                                 await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
                             }
+
+                            advance.statusDetails.submitUser = activeUser.userName;
+                            PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).statusDetails.submitUser = activeUser.userName;
+                            advance.statusDetails.submitDate = DateTime.Now;
+                            PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).statusDetails.submitDate = DateTime.Now;
+
                         }
                         else if (action.Contains("Confirmed"))
                         {
-                            string temp = "PettyCash!_!StatusConfirm!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advance.AdvanceID;
-                            var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
-
-                            if (res3.isSuccess)
+                            if (activeUser.location.IsNullOrEmpty())
                             {
-                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                string temp = "PettyCash!_!DirectEmail!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advance.AdvanceID + "!_!" + advance.Approver.ToLower();
+                                var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                if (res3.isSuccess)
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                }
+                                else
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                }
                             }
                             else
                             {
-                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                string temp = "PettyCash!_!StatusConfirm!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + advance.AdvanceID;
+                                var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                if (res3.isSuccess)
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                }
+                                else
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                }
                             }
+
+                            advance.statusDetails.confirmUser = activeUser.userName;
+                            PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).statusDetails.confirmUser = activeUser.userName;
+                            advance.statusDetails.confirmDate = DateTime.Now;
+                            PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).statusDetails.confirmDate = DateTime.Now;
                         }
 
+                        advance.AdvanceStatus = action;
+                        PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).AdvanceStatus = action;
+                        
                         //await _jsModule.InvokeVoidAsync("showAlert", "");
                     }
                 }
@@ -559,24 +629,45 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                     var res = await PettyCashService.updateDocumentStatus(statData);
 
-                    expense.ExpenseStatus = action;
-                    PettyCashService.expenses.SingleOrDefault(a => a.ExpenseID.Equals(expense.ExpenseID)).ExpenseStatus = action;
-
                     if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
                     {
+
                         if (action.Contains("Rejected"))
                         {
-                            string temp = "PettyCash!_!StatusReject!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + expense.ExpenseID + "!_!" + expense.Applicant;
-                            var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+                            if (expense.ExpenseStatus.Equals("Open"))
+                            {
+                                string temp = "PettyCash!_!StatusReject!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + expense.ExpenseID + "!_!" + expense.Applicant;
+                                var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
 
-                            if (res3.isSuccess)
-                            {
-                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Reject Status Success Updated, Please Reload Your Page !");
+                                if (res3.isSuccess)
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Reject Status Success Updated, Please Reload Your Page !");
+                                }
+                                else
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Reject Status Success Updated, Please Reload Your Page !");
+                                }
                             }
-                            else
+                            else if (expense.ExpenseStatus.Equals("Confirmed"))
                             {
-                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Reject Status Success Updated, Please Reload Your Page !");
+                                string temp = "PettyCash!_!DirectEmail!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + expense.ExpenseID + "!_!" + expense.statusDetails.confirmUser;
+                                var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                if (res3.isSuccess)
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                }
+                                else
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                }
                             }
+
+                            expense.statusDetails.rejectUser = activeUser.userName;
+                            PettyCashService.expenses.SingleOrDefault(a => a.ExpenseID.Equals(expense.ExpenseID)).statusDetails.rejectUser = activeUser.userName;
+                            expense.statusDetails.rejectDate = DateTime.Now;
+                            PettyCashService.expenses.SingleOrDefault(a => a.ExpenseID.Equals(expense.ExpenseID)).statusDetails.rejectDate = DateTime.Now;
+
                         }
                         else if (action.Contains("Submited"))
                         {
@@ -591,21 +682,53 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                             {
                                 await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
                             }
+
+                            expense.statusDetails.submitUser = activeUser.userName;
+                            PettyCashService.expenses.SingleOrDefault(a => a.ExpenseID.Equals(expense.ExpenseID)).statusDetails.submitUser = activeUser.userName;
+                            expense.statusDetails.submitDate = DateTime.Now;
+                            PettyCashService.expenses.SingleOrDefault(a => a.ExpenseID.Equals(expense.ExpenseID)).statusDetails.submitDate = DateTime.Now;
+
                         }
                         else if (action.Contains("Confirmed"))
                         {
-                            string temp = "PettyCash!_!StatusConfirm!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + expense.ExpenseID;
-                            var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
-
-                            if (res3.isSuccess)
+                            if (activeUser.location.IsNullOrEmpty())
                             {
-                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                string temp = "PettyCash!_!DirectEmail!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + expense.ExpenseID + "!_!" + expense.Approver.ToLower();
+                                var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                if (res3.isSuccess)
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                }
+                                else
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                }
                             }
                             else
                             {
-                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                string temp = "PettyCash!_!StatusConfirm!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + expense.ExpenseID;
+                                var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                if (res3.isSuccess)
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                }
+                                else
+                                {
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                }
                             }
+
+                            expense.statusDetails.confirmUser = activeUser.userName;
+                            PettyCashService.expenses.SingleOrDefault(a => a.ExpenseID.Equals(expense.ExpenseID)).statusDetails.confirmUser = activeUser.userName;
+                            expense.statusDetails.confirmDate = DateTime.Now;
+                            PettyCashService.expenses.SingleOrDefault(a => a.ExpenseID.Equals(expense.ExpenseID)).statusDetails.confirmDate = DateTime.Now;
+
                         }
+
+                        expense.ExpenseStatus = action;
+                        PettyCashService.expenses.SingleOrDefault(a => a.ExpenseID.Equals(expense.ExpenseID)).ExpenseStatus = action;
 
                         //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
                     }
@@ -627,15 +750,12 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                         {
                             var res = await PettyCashService.updateDocumentStatus(statData);
 
-                            reimburse.ReimburseStatus = action;
-                            PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).ReimburseStatus = action;
-
                             if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
                             {
                                 // update data to db
+
                                 try
                                 {
-
                                     QueryModel<Reimburse> updateData = new();
                                     updateData.Data = new();
 
@@ -660,6 +780,12 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                             await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
                                         }
 
+                                        reimburse.ReimburseStatus = action;
+                                        PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).ReimburseStatus = action;
+                                        reimburse.statusDetails.verifyUser = activeUser.userName;
+                                        PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.verifyUser = activeUser.userName;
+                                        reimburse.statusDetails.verifyDate = DateTime.Now;
+                                        PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.verifyDate = DateTime.Now;
                                         //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
                                     }
                                 
@@ -679,25 +805,73 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     {
                         var res = await PettyCashService.updateDocumentStatus(statData);
 
-                        reimburse.ReimburseStatus = action;
-                        PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).ReimburseStatus = action;
-
                         if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
                         {
                             // update
                             if (action.Contains("Rejected"))
                             {
-                                string temp = "PettyCash!_!StatusReject!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID + "!_!" + reimburse.Applicant;
-                                var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+                                if (reimburse.ReimburseStatus.Equals("Open"))
+                                {
+                                    string temp = "PettyCash!_!StatusReject!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID + "!_!" + reimburse.Applicant;
+                                    var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
 
-                                if (res3.isSuccess)
-                                {
-                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Reject Status Success Updated, Please Reload Your Page !");
+                                    if (res3.isSuccess)
+                                    {
+                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Reject Status Success Updated, Please Reload Your Page !");
+                                    }
+                                    else
+                                    {
+                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Reject Status Success Updated, Please Reload Your Page !");
+                                    }
                                 }
-                                else
+                                else if (reimburse.ReimburseStatus.Equals("Confirmed"))
                                 {
-                                    await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Reject Status Success Updated, Please Reload Your Page !");
+                                    string temp = "PettyCash!_!DirectEmail!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID + "!_!" + reimburse.statusDetails.confirmUser;
+                                    var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                    if (res3.isSuccess)
+                                    {
+                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                    }
+                                    else
+                                    {
+                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                    }
                                 }
+                                else if (reimburse.ReimburseStatus.Equals("Verified"))
+                                {
+                                    string temp = "PettyCash!_!DirectEmail!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID + "!_!" + reimburse.statusDetails.verifyUser;
+                                    var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                    if (res3.isSuccess)
+                                    {
+                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                    }
+                                    else
+                                    {
+                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                    }
+                                }
+                                else if (reimburse.ReimburseStatus.Equals("Approved"))
+                                {
+                                    string temp = "PettyCash!_!DirectEmail!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID + "!_!" + reimburse.statusDetails.approveUser;
+                                    var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                    if (res3.isSuccess)
+                                    {
+                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                    }
+                                    else
+                                    {
+                                        await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                    }
+                                }
+
+                                reimburse.statusDetails.rejectUser = activeUser.userName;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.rejectUser = activeUser.userName;
+                                reimburse.statusDetails.rejectDate = DateTime.Now;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.rejectDate = DateTime.Now;
+
                             }
                             else if (action.Contains("Confirmed"))
                             {
@@ -712,6 +886,12 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                 {
                                     await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
                                 }
+
+                                reimburse.statusDetails.confirmUser = activeUser.userName;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.confirmUser = activeUser.userName;
+                                reimburse.statusDetails.confirmDate = DateTime.Now;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.confirmDate = DateTime.Now;
+
                             }
                             else if (action.Contains("Released"))
                             {
@@ -726,6 +906,12 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                 {
                                     await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
                                 }
+
+                                reimburse.statusDetails.releaseUser = activeUser.userName;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.releaseUser = activeUser.userName;
+                                reimburse.statusDetails.releaseDate = DateTime.Now;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.releaseDate = DateTime.Now;
+
                             }
                             else if (action.Contains("Approved"))
                             {
@@ -740,11 +926,27 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                 {
                                     await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
                                 }
+
+                                reimburse.statusDetails.approveUser = activeUser.userName;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.approveUser = activeUser.userName;
+                                reimburse.statusDetails.approveDate = DateTime.Now;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.approveDate = DateTime.Now;
+
                             }
                             else if (action.Contains("Claimed"))
                             {
                                 await _jsModule.InvokeVoidAsync("showAlert", "Reimburse Amount Claimed, Please Reload Your Page !");
+
+                                reimburse.statusDetails.claimUser = activeUser.userName;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.claimUser = activeUser.userName;
+                                reimburse.statusDetails.claimDate = DateTime.Now;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.claimDate = DateTime.Now;
+
                             }
+
+                            reimburse.ReimburseStatus = action;
+                            PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).ReimburseStatus = action;
+
                             //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
                         }
                     }

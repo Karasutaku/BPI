@@ -82,6 +82,16 @@ else
                             </div>
                         </div>
 
+                        @if (activeUser.location.Equals(""))
+                        {
+                            <div class="row my-3">
+                                <div class="col">
+                                    <label for="user_aprv">Approver Email :</label>
+                                    <InputText id="user_aprv" @bind-Value="advance.Approver" class="form-control"></InputText>
+                                </div>
+                            </div>
+                        }
+
                         <div class="row my-3">
                             <div class="col">
                                 <label for="type_radio">Type :</label>
@@ -171,7 +181,13 @@ else
                         <div class="row my-3">
                             <div class="col">
                                 <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" @onclick="resetForm"><b>Reset</b></button>
-                                <button type="button" title="Please Recheck the Amount" class="btn btn-sm btn-primary" @onclick="submitAdvance">Create Advance</button>
+                                <button type="button" title="Please Recheck the Amount" class="btn btn-sm btn-primary" @onclick="submitAdvance">
+                                    Create Advance
+                                    @if (isLoading)
+                                    {
+                                    <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                    }
+                                </button>
                             </div>
                         </div>
 

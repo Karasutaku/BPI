@@ -18,6 +18,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private bool isTypeTransfer = false;
         private bool isUserHaventSettled = false;
+        private bool isLoading = false;
 
         private bool alertTrigger = false;
         private bool successAlert = false;
@@ -143,10 +144,13 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 {
                     if (LoginService.activeUser.userPrivileges.Contains("CR"))
                     {
+                        isLoading = true;
+
                         var advanceId = await PettyCashService.createDocumentID("Advance");
 
                         advance.AdvanceID = advanceId.Data;
                         advance.AdvanceDate = DateTime.Now;
+                        advance.Approver = advance.Approver.ToLower();
 
                         QueryModel<Advance> inputData = new();
                         inputData.Data = new();
@@ -200,6 +204,18 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                             alertBody = $"Your Advance ID is {advanceId.Data}";
 
                             isUserHaventSettled = true;
+                            isLoading = false;
+                            StateHasChanged();
+                        }
+                        else
+                        {
+                            alertTrigger = false;
+                            successAlert = true;
+                            alertMessage = "Create Advance Failed !";
+                            alertBody = $"Please Check Your Connection";
+
+                            isUserHaventSettled = false;
+                            isLoading = false;
                             StateHasChanged();
                         }
                     }
@@ -295,6 +311,12 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             if (advance.Applicant.IsNullOrEmpty())
                 return false;
 
+            if (activeUser.location.Equals(""))
+            {
+                if (advance.Approver.IsNullOrEmpty() || !advance.Approver.Contains('@'))
+                    return false;
+            }
+            
             if (advance.AdvanceType.IsNullOrEmpty())
             {
                 return false;

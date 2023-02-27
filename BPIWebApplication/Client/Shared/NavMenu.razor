@@ -14,7 +14,7 @@
 
 <div class="@NavMenuCssClass sidebar main-sidebar">
     <nav class="flex-column wrapper">
-        <div class="nav-item px-2" @onclick="(() => ToggleNavMenu(new()))">
+        <div id="OtherMenu" class="nav-item px-2" @onclick="(() => ToggleNavMenu(new()))">
             <NavLink class="nav-link" href="index">
                 <span class="oi oi-home" aria-hidden="true"></span> Home
             </NavLink>
@@ -28,12 +28,12 @@
             {
                 @foreach (var ca in childApplications)
                 {
-                    <li class="nav-header text-white my-2">@ca.ChildApplicationName</li>
-                    @*<div class="nav-item px-2 trigger-button">
-                        <NavLink class="nav-link dropdown-toggle">
-                            <span class="@ca.icon" aria-hidden="true"></span> @ca.ChildApplicationName
-                        </NavLink>
-                    </div>*@
+                    @*<li class="nav-header text-white my-2">@ca.ChildApplicationName</li>*@
+                    <div id="MainModuleMenu" class="nav-item px-2 trigger-button" @onclick="(() => toggleCaMenu(ca))">
+                        <a class="nav-link @((ca.ChildApplicationId.Equals(clickedCaId) && expandCaMenu) ? "active" : null)">
+                            <span class="oi oi-layers" aria-hidden="true"></span> <b>@ca.ChildApplicationName Menu</b>
+                        </a>
+                    </div>
                     @if (userModuleCategories != null)
                     {
                         @* Mod *@
@@ -41,25 +41,28 @@
 
                         @if (mCatID != null)
                         {
-                            @foreach (var mc in mCatID)
+                            if (expandCaMenu && ca.ChildApplicationId == clickedCaId)
                             {
-                                var mID = module.Where(x => x.childApplicationId == ca.ChildApplicationId && x.moduleCategoryId == mc.moduleCategoryId).OrderBy(x => x.moduleId).ToList();
-
-                                <div class="nav-item px-2 trigger-button">
-                                    <NavLink class="nav-link dropdown-toggle" @onclick="(() => toggleMainMenu(mc))">
-                                        <span class="oi oi-file" aria-hidden="true"></span> @mc.moduleCategoryName
-                                    </NavLink>
-                                </div>
-
-                                if (expandMainMenu && mc.moduleCategoryId == clickedMainMenuId)
+                                @foreach (var mc in mCatID)
                                 {
-                                    @foreach (var um in mID)
+                                    var mID = module.Where(x => x.childApplicationId == ca.ChildApplicationId && x.moduleCategoryId == mc.moduleCategoryId).OrderBy(x => x.moduleId).ToList();
+
+                                    <div id="CategoryModuleMenu" class="nav-item px-2 py-1 trigger-button">
+                                        <a class="nav-link dropdown-toggle @((mc.moduleCategoryId.Equals(clickedMainMenuId) && expandMainMenu) ? "active" : null)" @onclick="(() => toggleMainMenu(mc))">
+                                            <span class="oi oi-file" aria-hidden="true"></span> @mc.moduleCategoryName
+                                        </a>
+                                    </div>
+
+                                    if (expandMainMenu && mc.moduleCategoryId == clickedMainMenuId)
                                     {
-                                        <div class="nav-item px-4" @onclick="(() => ToggleNavMenu(um))">
-                                            <NavLink class="nav-link" href="@um.url">
-                                                <span class="@um.icon" aria-hidden="true"></span> @um.moduleName
-                                            </NavLink>
-                                        </div>
+                                        @foreach (var um in mID)
+                                        {
+                                            <div id="ModuleItem" class="nav-item px-2" @onclick="(() => ToggleNavMenu(um))">
+                                                <NavLink class="nav-link" href="@um.url">
+                                                    <span class="@um.icon" aria-hidden="true"></span> @um.moduleName
+                                                </NavLink>
+                                            </div>
+                                        }
                                     }
                                 }
                             }
@@ -72,7 +75,7 @@
 
         <hr class="w-100" />
 
-        <div class="nav-item px-2 logoutlink trigger-button">
+        <div id="OtherMenu" class="nav-item px-2 logoutlink trigger-button">
             <NavLink class="nav-link" @onclick="confirmLogout">
                 <span class="oi oi-account-logout" aria-hidden="true"></span> Logout
             </NavLink>

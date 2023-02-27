@@ -85,6 +85,16 @@ else
                         </div>
                     </div>
 
+                    @if (activeUser.location.Equals(""))
+                    {
+                        <div class="row my-3">
+                            <div class="col">
+                                <label for="user_aprv">Approver Email :</label>
+                                <InputText id="user_aprv" @bind-Value="expense.Approver" class="form-control"></InputText>
+                            </div>
+                        </div>
+                    }
+
                     <div class="row my-3">
                         <div class="col">
                             <label for="type_radio">Type :</label>
@@ -277,12 +287,20 @@ else
                                 {
                                     <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
                                         Settle
+                                        @if (isLoading)
+                                        {
+                                        <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                        }
                                     </button>
                                 }
                                 else
                                 {
                                     <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
                                         Create Expense(s)
+                                        @if (isLoading)
+                                        {
+                                        <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                        }
                                     </button>
                                 }
 

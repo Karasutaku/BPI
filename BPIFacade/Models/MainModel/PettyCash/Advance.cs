@@ -16,6 +16,7 @@ namespace BPIFacade.Models.MainModel.PettyCash
         public Department Department { get; set; } = new();
 
         public string LocationID { get; set; } = string.Empty;
+        public string Approver { get; set; } = string.Empty;
         public string Applicant { get; set; } = string.Empty; // from audit
 
         public List<AdvanceLine> lines { get; set; } = new();

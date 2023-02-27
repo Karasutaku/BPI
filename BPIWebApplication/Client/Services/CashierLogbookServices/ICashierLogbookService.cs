@@ -21,9 +21,9 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
         public Task<ResultModel<List<CashierLogData>>> getLogData(string locPage);
 
         // create
-        public Task<ResultModel<QueryModel<CashierLogbookService>>> createLogData(QueryModel<CashierLogbookService> data);
+        public Task<ResultModel<QueryModel<CashierLogData>>> createLogData(QueryModel<CashierLogData> data);
 
         // edit
-        public Task<ResultModel<QueryModel<CashierLogbookService>>> editLogData(QueryModel<CashierLogbookService> data);
+        //public Task<ResultModel<QueryModel<CashierLogData>>> editLogData(QueryModel<CashierLogData> data);
     }
 }

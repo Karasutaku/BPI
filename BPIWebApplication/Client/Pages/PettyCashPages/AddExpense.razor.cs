@@ -27,6 +27,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private bool isSettlement = false;
         private bool clearInputFile = false;
         private bool successUpload = false;
+        private bool isLoading = false;
 
         private bool alertTrigger = false;
         private bool successAlert = false;
@@ -177,6 +178,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 {
                     if (LoginService.activeUser.userPrivileges.Contains("CR"))
                     {
+                        isLoading = true;
+
                         ExpenseStream uploadData = new ExpenseStream();
 
                         uploadData.expenseDetails = new();
@@ -189,28 +192,53 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                         uploadData.expenseDetails.Data = expense;
 
                         uploadData.expenseDetails.Data.ExpenseDate = DateTime.Now;
+                        uploadData.expenseDetails.Data.Approver = expense.Approver.ToLower();
                         uploadData.expenseDetails.Data.ExpenseStatus = "Open";
 
                         //uploadData.expenseDetails.Data.lines = expenseLines;
                         int nLine = 0;
 
-                        foreach (var line in expenseLines)
+                        if (isSettlement)
                         {
-                            nLine++;
-
-                            ExpenseLine temp = new ExpenseLine
+                            foreach (var line in expenseLines)
                             {
-                                ExpenseID = expenseId.Data,
-                                LineNo = nLine,
-                                Details = line.Details,
-                                Amount = line.Amount,
-                                ActualAmount = line.ActualAmount,
-                                //Attach = "",
-                                Status = "OP"
-                            };
+                                nLine++;
 
-                            uploadData.expenseDetails.Data.lines.Add(temp);
+                                ExpenseLine temp = new ExpenseLine
+                                {
+                                    ExpenseID = expenseId.Data,
+                                    LineNo = nLine,
+                                    Details = line.Details,
+                                    Amount = line.Amount,
+                                    ActualAmount = line.ActualAmount,
+                                    //Attach = "",
+                                    Status = "OP"
+                                };
+
+                                uploadData.expenseDetails.Data.lines.Add(temp);
+                            }
                         }
+                        else
+                        {
+                            foreach (var line in expenseLines)
+                            {
+                                nLine++;
+
+                                ExpenseLine temp = new ExpenseLine
+                                {
+                                    ExpenseID = expenseId.Data,
+                                    LineNo = nLine,
+                                    Details = line.Details,
+                                    Amount = line.ActualAmount,
+                                    ActualAmount = line.ActualAmount,
+                                    //Attach = "",
+                                    Status = "OP"
+                                };
+
+                                uploadData.expenseDetails.Data.lines.Add(temp);
+                            }
+                        }
+                        
 
                         uploadData.expenseDetails.userEmail = activeUser.userName;
                         uploadData.expenseDetails.userAction = "I";
@@ -259,6 +287,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                     }
 
                                     successUpload = true;
+                                    isLoading = false;
                                     alertTrigger = false;
                                     successAlert = true;
                                     alertMessage = "Create Expense Success !";
@@ -269,6 +298,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                 else
                                 {
                                     successUpload = false;
+                                    isLoading = false;
                                     successAlert = false;
                                     alertTrigger = true;
                                     alertMessage = "Create Expense Failed !";
@@ -302,6 +332,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                 }
 
                                 successUpload = true;
+                                isLoading = false;
                                 alertTrigger = false;
                                 successAlert = true;
                                 alertMessage = "Create Expense Success !";
@@ -312,6 +343,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                             else
                             {
                                 successUpload = false;
+                                isLoading = false;
                                 successAlert = false;
                                 alertTrigger = true;
                                 alertMessage = "Create Expense Failed !";
@@ -422,6 +454,12 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             if (expense.Applicant.IsNullOrEmpty())
                 return false;
 
+            if (activeUser.location.Equals(""))
+            {
+                if (expense.Approver.IsNullOrEmpty() || !expense.Approver.Contains('@'))
+                    return false;
+            }
+
             if (expense.ExpenseNote.IsNullOrEmpty())
                 return false;
 
@@ -442,7 +480,6 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     if (expense.TypeAccount.IsNullOrEmpty())
                         return false;
                 }
-
             }
 
             if (!expenseLines.Any())
@@ -490,51 +527,59 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             selectedAdvance = data;
         }
 
-        private void modalAdvanceSelect()
+        private async void modalAdvanceSelect()
         {
-            expenseLines.Clear();
-
-            expense.ExpenseID = "";
-            expense.AdvanceID = selectedAdvance.AdvanceID;
-            expense.ExpenseDate = selectedAdvance.AdvanceDate;
-            expense.ExpenseStatus = "";
-            expense.ExpenseNIK = selectedAdvance.AdvanceNIK;
-            expense.ExpenseNote = selectedAdvance.AdvanceNote;
-            expense.ExpenseType = selectedAdvance.AdvanceType;
-            //expense.Applicant = selectedAdvance.Applicant;
-
-            if (selectedAdvance.AdvanceType.Equals("CH"))
+            if (!selectedAdvance.AdvanceID.IsNullOrEmpty())
             {
-                isTypeTransfer = false;
-            }
-            else if (selectedAdvance.AdvanceType.Equals("TF"))
-            {
-                isTypeTransfer = true;
-            }
+                expenseLines.Clear();
 
-            expense.TypeAccount = selectedAdvance.TypeAccount;
-            expense.DepartmentID = selectedAdvance.DepartmentID;
-            expense.lines = new();
+                expense.ExpenseID = "";
+                expense.AdvanceID = selectedAdvance.AdvanceID;
+                expense.ExpenseDate = selectedAdvance.AdvanceDate;
+                expense.ExpenseStatus = "";
+                expense.ExpenseNIK = selectedAdvance.AdvanceNIK;
+                expense.ExpenseNote = selectedAdvance.AdvanceNote;
+                expense.ExpenseType = selectedAdvance.AdvanceType;
+                expense.Approver = selectedAdvance.Approver;
+                //expense.Applicant = selectedAdvance.Applicant;
 
-            foreach (var line in selectedAdvance.lines)
-            {
-                expenseLines.Add(new ExpenseLine
+                if (selectedAdvance.AdvanceType.Equals("CH"))
                 {
-                    ExpenseID = "",
-                    LineNo = line.LineNo,
-                    Details = line.Details,
-                    Amount = line.Amount,
-                    ActualAmount = decimal.Zero,
-                    //Attach = "",
-                    Status = "OP"
-                });
+                    isTypeTransfer = false;
+                }
+                else if (selectedAdvance.AdvanceType.Equals("TF"))
+                {
+                    isTypeTransfer = true;
+                }
+
+                expense.TypeAccount = selectedAdvance.TypeAccount;
+                expense.DepartmentID = selectedAdvance.DepartmentID;
+                expense.lines = new();
+
+                foreach (var line in selectedAdvance.lines)
+                {
+                    expenseLines.Add(new ExpenseLine
+                    {
+                        ExpenseID = "",
+                        LineNo = line.LineNo,
+                        Details = line.Details,
+                        Amount = line.Amount,
+                        ActualAmount = decimal.Zero,
+                        //Attach = "",
+                        Status = "OP"
+                    });
+                }
+
+                isSettlement = true;
+                showModal = false;
+                StateHasChanged();
+
+                selectedAdvance = null;
             }
-
-            isSettlement = true;
-            showModal = false;
-            StateHasChanged();
-
-            selectedAdvance = null;
+            else
+            {
+                await _jsModule.InvokeVoidAsync("showAlert", "Please Select Advance Data !");
+            }
         }
 
         private bool checkAdvanceDataPresent()

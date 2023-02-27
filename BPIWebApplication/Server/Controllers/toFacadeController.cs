@@ -15,6 +15,7 @@ using BPIWebApplication.Shared.MainModel.Company;
 using BPIFacade.Models.MainModel.Mailing;
 using BPIWebApplication.Shared.MainModel.CashierLogbook;
 using BPIWebApplication.Shared.PagesModel.CashierLogbook;
+using Microsoft.Extensions.Configuration;
 
 namespace BPIWebApplication.Server.Controllers
 {
@@ -725,11 +726,13 @@ namespace BPIWebApplication.Server.Controllers
     public class endProcedureController : ControllerBase
     {
         private readonly HttpClient _http;
+        private readonly long _maxFileSize;
 
         public endProcedureController(HttpClient http, IConfiguration config)
         {
             _http = http;
             _http.BaseAddress = new Uri(config.GetValue<string>("ConnectionStrings:BpiFacade"));
+            _maxFileSize = config.GetValue<long>("File:Procedure:MaxUpload");
         }
 
         [HttpGet("getAllProcedureData")]
@@ -1564,28 +1567,38 @@ namespace BPIWebApplication.Server.Controllers
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<long>>("api/Facade/Procedure/getProcedureMaxSizeUpload");
+                //var result = await _http.GetFromJsonAsync<ResultModel<long>>("api/Facade/Procedure/getProcedureMaxSizeUpload");
 
-                if (result.isSuccess)
-                {
-                    res.Data = result.Data;
+                res.Data = 1024 * 1024 * _maxFileSize;
 
-                    res.isSuccess = result.isSuccess;
-                    res.ErrorCode = result.ErrorCode;
-                    res.ErrorMessage = result.ErrorMessage;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
 
-                    actionResult = Ok(res);
-                }
-                else
-                {
-                    res.Data = 0;
+                actionResult = Ok(res);
 
-                    res.isSuccess = result.isSuccess;
-                    res.ErrorCode = result.ErrorCode;
-                    res.ErrorMessage = result.ErrorMessage;
+                //if (result.isSuccess)
+                //{
+                //    //res.Data = result.Data;
 
-                    actionResult = Ok(res);
-                }
+                //    res.Data = 1024 * 1024 * _maxFileSize;
+
+                //    res.isSuccess = result.isSuccess;
+                //    res.ErrorCode = result.ErrorCode;
+                //    res.ErrorMessage = result.ErrorMessage;
+
+                //    actionResult = Ok(res);
+                //}
+                //else
+                //{
+                //    res.Data = 0;
+
+                //    res.isSuccess = result.isSuccess;
+                //    res.ErrorCode = result.ErrorCode;
+                //    res.ErrorMessage = result.ErrorMessage;
+
+                //    actionResult = Ok(res);
+                //}
             }
             catch (Exception ex)
             {
@@ -2721,18 +2734,18 @@ namespace BPIWebApplication.Server.Controllers
         }
 
         [HttpPost("createLogData")]
-        public async Task<IActionResult> createLogData(QueryModel<CashierLogbook> data)
+        public async Task<IActionResult> createLogData(QueryModel<CashierLogData> data)
         {
-            ResultModel<QueryModel<CashierLogbook>> res = new ResultModel<QueryModel<CashierLogbook>>();
+            ResultModel<QueryModel<CashierLogData>> res = new ResultModel<QueryModel<CashierLogData>>();
             IActionResult actionResult = null;
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogbook>>($"api/Facade/CashierLogbook/createLogData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogData>>($"api/Facade/CashierLogbook/createLogData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
-                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogbook>>>();
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogData>>>();
 
                     res.Data = respBody.Data;
 
@@ -2766,51 +2779,51 @@ namespace BPIWebApplication.Server.Controllers
             return actionResult;
         }
 
-        [HttpPost("editLogData")]
-        public async Task<IActionResult> editLogData(QueryModel<CashierLogbook> data)
-        {
-            ResultModel<QueryModel<CashierLogbook>> res = new ResultModel<QueryModel<CashierLogbook>>();
-            IActionResult actionResult = null;
+        //[HttpPost("editLogData")]
+        //public async Task<IActionResult> editLogData(QueryModel<CashierLogbook> data)
+        //{
+        //    ResultModel<QueryModel<CashierLogbook>> res = new ResultModel<QueryModel<CashierLogbook>>();
+        //    IActionResult actionResult = null;
 
-            try
-            {
-                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogbook>>($"api/Facade/CashierLogbook/editLogData", data);
+        //    try
+        //    {
+        //        var result = await _http.PostAsJsonAsync<QueryModel<CashierLogbook>>($"api/Facade/CashierLogbook/editLogData", data);
 
-                if (result.IsSuccessStatusCode)
-                {
-                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogbook>>>();
+        //        if (result.IsSuccessStatusCode)
+        //        {
+        //            var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogbook>>>();
 
-                    res.Data = respBody.Data;
+        //            res.Data = respBody.Data;
 
-                    res.isSuccess = respBody.isSuccess;
-                    res.ErrorCode = respBody.ErrorCode;
-                    res.ErrorMessage = respBody.ErrorMessage;
+        //            res.isSuccess = respBody.isSuccess;
+        //            res.ErrorCode = respBody.ErrorCode;
+        //            res.ErrorMessage = respBody.ErrorMessage;
 
-                    actionResult = Ok(res);
-                }
-                else
-                {
-                    res.Data = null;
+        //            actionResult = Ok(res);
+        //        }
+        //        else
+        //        {
+        //            res.Data = null;
 
-                    res.isSuccess = result.IsSuccessStatusCode;
-                    res.ErrorCode = "01";
-                    res.ErrorMessage = "Fail settle from editLogData DA";
+        //            res.isSuccess = result.IsSuccessStatusCode;
+        //            res.ErrorCode = "01";
+        //            res.ErrorMessage = "Fail settle from editLogData DA";
 
-                    actionResult = Ok(res);
-                }
+        //            actionResult = Ok(res);
+        //        }
 
-            }
-            catch (Exception ex)
-            {
-                res.Data = null;
-                res.isSuccess = false;
-                res.ErrorCode = "99";
-                res.ErrorMessage = ex.Message;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        res.Data = null;
+        //        res.isSuccess = false;
+        //        res.ErrorCode = "99";
+        //        res.ErrorMessage = ex.Message;
 
-                actionResult = BadRequest(res);
-            }
-            return actionResult;
-        }
+        //        actionResult = BadRequest(res);
+        //    }
+        //    return actionResult;
+        //}
 
         [HttpGet("getLogData/{locPage}")]
         public async Task<IActionResult> getLogDataTable(string locPage)

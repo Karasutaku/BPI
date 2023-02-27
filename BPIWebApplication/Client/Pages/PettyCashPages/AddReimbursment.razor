@@ -186,7 +186,7 @@ else
                                                                     <td>@lines.Details</td>
                                                                     <td><input type="text" class="form-control" value="@lines.Amount.ToString("N0")" readonly /></td>
                                                                     <td>
-                                                                        <input type="text" class="form-control" @bind-value="lines.AccountNo" placeholder="Input Coa" list="accountList" />
+                                                                        <input type="text" class="form-control" @bind-value="lines.AccountNo" placeholder="Input Coa" list="accountList" disabled="@(successUpload.Equals(true) ? "disabled" : null)" />
 
                                                                         <datalist id="accountList">
                                                                             @foreach (var coa in PettyCashService.coas)
@@ -263,8 +263,9 @@ else
 
                     <div class="row my-2">
                         <div class="col">
-                            <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" @onclick="resetForm"><b>Reset</b></button>
-                            <button type="button" title="Please Recheck the Total Amount" class="btn btn-sm btn-primary" @onclick="submitReimbursement"> Submit Request
+                            <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="resetForm"><b>Reset</b></button>
+                            <button type="button" title="Please Recheck the Total Amount" class="btn btn-sm btn-primary" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitReimbursement">
+                                Submit Request
                                 @if (isLoading)
                                 {
                                     <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>

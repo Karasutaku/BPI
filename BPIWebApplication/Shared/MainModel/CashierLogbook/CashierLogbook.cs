@@ -20,6 +20,7 @@
         public string AmountCategoryName { get; set; } = string.Empty;
         public decimal HeaderAmount { get; set; } = decimal.Zero;
         public decimal ActualAmount { get; set; } = decimal.Zero;
+        public string CategoryNote { get; set; } = string.Empty;
         public bool isLineDeleted { get; set; } = false;
         public List<CashierLogLineDetail> lines { get; set; } = new();
     }

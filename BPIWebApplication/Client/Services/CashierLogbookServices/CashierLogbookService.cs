@@ -35,17 +35,17 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
             return Convert.ToBase64String(plainTextBytes);
         }
 
-        public async Task<ResultModel<QueryModel<CashierLogbookService>>> createLogData(QueryModel<CashierLogbookService> data)
+        public async Task<ResultModel<QueryModel<CashierLogData>>> createLogData(QueryModel<CashierLogData> data)
         {
-            ResultModel<QueryModel<CashierLogbookService>> resData = new ResultModel<QueryModel<CashierLogbookService>>();
+            ResultModel<QueryModel<CashierLogData>> resData = new ResultModel<QueryModel<CashierLogData>>();
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogbookService>>("api/endUser/CashierLogbook/createLogData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogData>>("api/endUser/CashierLogbook/createLogData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
-                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogbookService>>>();
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogData>>>();
 
                     if (respBody.isSuccess)
                     {
@@ -67,37 +67,37 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
             return resData;
         }
 
-        public async Task<ResultModel<QueryModel<CashierLogbookService>>> editLogData(QueryModel<CashierLogbookService> data)
-        {
-            ResultModel<QueryModel<CashierLogbookService>> resData = new ResultModel<QueryModel<CashierLogbookService>>();
+        //public async Task<ResultModel<QueryModel<CashierLogData>>> editLogData(QueryModel<CashierLogData> data)
+        //{
+        //    ResultModel<QueryModel<CashierLogData>> resData = new ResultModel<QueryModel<CashierLogData>>();
 
-            try
-            {
-                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogbookService>>("api/endUser/CashierLogbook/editLogData", data);
+        //    try
+        //    {
+        //        var result = await _http.PostAsJsonAsync<QueryModel<CashierLogData>>("api/endUser/CashierLogbook/editLogData", data);
 
-                if (result.IsSuccessStatusCode)
-                {
-                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogbookService>>>();
+        //        if (result.IsSuccessStatusCode)
+        //        {
+        //            var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogData>>>();
 
-                    if (respBody.isSuccess)
-                    {
-                        resData.Data = respBody.Data;
-                        resData.isSuccess = respBody.isSuccess;
-                        resData.ErrorCode = respBody.ErrorCode;
-                        resData.ErrorMessage = respBody.ErrorMessage;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                resData.Data = null;
-                resData.isSuccess = false;
-                resData.ErrorCode = "99";
-                resData.ErrorMessage = ex.Message;
-            }
+        //            if (respBody.isSuccess)
+        //            {
+        //                resData.Data = respBody.Data;
+        //                resData.isSuccess = respBody.isSuccess;
+        //                resData.ErrorCode = respBody.ErrorCode;
+        //                resData.ErrorMessage = respBody.ErrorMessage;
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        resData.Data = null;
+        //        resData.isSuccess = false;
+        //        resData.ErrorCode = "99";
+        //        resData.ErrorMessage = ex.Message;
+        //    }
 
-            return resData;
-        }
+        //    return resData;
+        //}
 
         public async Task<ResultModel<List<Shift>>> getShiftData(string moduleName)
         {

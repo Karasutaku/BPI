@@ -10,6 +10,7 @@
         public decimal expenseApprovedAmount { get; set; } = decimal.Zero;
         public decimal reimbursementReqOutstandingAmount { get; set; } = decimal.Zero;
         public decimal reimbursementApvOutstandingAmount { get; set; } = decimal.Zero;
+        public decimal reimbursementApvRejectedAmount { get; set; } = decimal.Zero;
         public DateTime lastFetch { get; set; } = DateTime.Now;
     }
 

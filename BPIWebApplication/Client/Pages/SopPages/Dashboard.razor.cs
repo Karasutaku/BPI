@@ -107,6 +107,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
             //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
 
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
+
         }
 
         private string? param;

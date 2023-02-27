@@ -103,14 +103,14 @@ namespace BPIWebApplication.Client.Pages.LoginPages
                     string appV = tokenz.Claims.FirstOrDefault(c => c.Type.Equals("AppV")).Value;
 
                     loginService.activeUser.token = dt.Data.token;
-                    loginService.activeUser.userName = email;
+                    loginService.activeUser.userName = email.ToLower();
                     loginService.activeUser.company = compLoc.Split("_")[0];
                     loginService.activeUser.location = compLoc.Split("_")[1];
                     loginService.activeUser.sessionId = sessionId;
                     loginService.activeUser.appV = Convert.ToInt32(appV);
 
                     sessionStorage.SetItem("token", dt.Data.token);
-                    sessionStorage.SetItem("userName", Base64Encode(email));
+                    sessionStorage.SetItem("userName", Base64Encode(email.ToLower()));
                     sessionStorage.SetItem("CompLoc", Base64Encode(compLoc));
                     sessionStorage.SetItem("SessionId", sessionId);
                     sessionStorage.SetItem("AppV", Base64Encode(appV));

@@ -244,8 +244,8 @@ else
                                             <tr title="Click to view">
                                                 <th scope="col" class="text-center align-middle" style="width: 14%; font-size: 15px;">Expense ID</th>
                                                 <th scope="col" class="text-center align-middle" style="width: 14%; font-size: 15px;">Advance ID</th>
-                                                <th scope="col" class="text-center align-middle" style="width: 17%; font-size: 15px;">Applicant</th>
-                                                <th scope="col" class="text-center align-middle" style="width: 32%; font-size: 15px;">Details</th>
+                                                <th scope="col" class="text-center align-middle" style="width: 17%; font-size: 15px;">User</th>
+                                                <th scope="col" class="text-center align-middle" style="width: 32%; font-size: 15px;">Applicant</th>
                                                 <th scope="col" style="width: 17%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Request Date</th>
                                                 <th scope="col" style="width: 7%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Status</th>
                                             </tr>
@@ -341,12 +341,12 @@ else
                                     <table class="table table-sm table-hover">
                                         <thead>
                                             <tr>
-                                                <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Reimbursment ID</th>
-                                                <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Location</th>
-                                                <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Applicant</th>
-                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 20%; font-size: 15px;">Create Date</th>
-                                                @*<th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Difference</th>*@
-                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 20%; font-size: 15px;">Status</th>
+                                                <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Reimbursment ID</th>
+                                                <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Location</th>
+                                                <th scope="col" class="text-center align-middle" style="width: 17%; font-size: 15px;">User</th>
+                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Create Date</th>
+                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Apv. Difference</th>
+                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tbodyDashboard">
@@ -357,7 +357,7 @@ else
                                                     <td class="text-center align-middle" style="font-size:14px;">@reim.LocationID</td>
                                                     <td class="text-center align-middle" style="font-size:14px;">@reim.Applicant</td>
                                                     <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseDate.ToString("dd / MM / yyyy")</td>
-                                                    @*<td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;"> @Decimal.Subtract(reim.lines.Sum(a => a.Amount), reim.lines.Sum(a => a.ApprovedAmount)).ToString("N0") </td>*@
+                                                    <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;"> @((reim.ReimburseStatus.Equals("Open") || reim.ReimburseStatus.Equals("Confirmed")) ? "0" : Decimal.Subtract(reim.lines.Sum(a => a.Amount), reim.lines.Sum(a => a.ApprovedAmount)).ToString("N0")) </td>
                                                     <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseStatus</td>
                                                 </tr>
                                             }
@@ -561,8 +561,8 @@ else
                                             <tr title="Click to view">
                                                 <th scope="col" class="text-center align-middle" style="width: 14%; font-size: 15px;">Expense ID</th>
                                                 <th scope="col" class="text-center align-middle" style="width: 14%; font-size: 15px;">Advance ID</th>
-                                                <th scope="col" class="text-center align-middle" style="width: 17%; font-size: 15px;">Applicant</th>
-                                                <th scope="col" class="text-center align-middle" style="width: 32%; font-size: 15px;">Details</th>
+                                                <th scope="col" class="text-center align-middle" style="width: 17%; font-size: 15px;">User</th>
+                                                <th scope="col" class="text-center align-middle" style="width: 32%; font-size: 15px;">Applicant</th>
                                                 <th scope="col" style="width: 17%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Request Date</th>
                                                 <th scope="col" style="width: 7%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Status</th>
                                             </tr>
@@ -660,9 +660,9 @@ else
                                             <tr>
                                                 <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Reimbursment ID</th>
                                                 <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Location</th>
-                                                <th scope="col" class="text-center align-middle" style="width: 17%; font-size: 15px;">Applicant</th>
+                                                <th scope="col" class="text-center align-middle" style="width: 17%; font-size: 15px;">User</th>
                                                 <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Create Date</th>
-                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Difference</th>
+                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Apv. Difference</th>
                                                 <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Status</th>
                                             </tr>
                                         </thead>
@@ -735,7 +735,7 @@ else
         {
             @if (transacType.Contains("advance"))
             {
-                <div class="modal fade show" id="advanceModal" tabindex="-1" role="dialog" aria-labelledby="advanceModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                <div class="modal fade show" id="advanceModal" tabindex="-1" role="dialog" aria-labelledby="advanceModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideDataModalonESC">
                     <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
                         <div class="modal-content">
                             @* header *@
@@ -906,7 +906,7 @@ else
                                 @* DA *@
                                 @if (LoginService.activeUser.userPrivileges.Contains("DA"))
                                 {
-                                    <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!advance.AdvanceStatus.Contains("Submited") || !advance.AdvanceStatus.Contains("Rejected")) ? null : "disabled")">Reject</button>
+                                    <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!advance.AdvanceStatus.Contains("Submited") && !advance.AdvanceStatus.Contains("Rejected")) ? null : "disabled")">Reject</button>
                                 }
 
                                 @* SB *@
@@ -931,7 +931,7 @@ else
             }
             else if (transacType.Contains("expense"))
             {
-                <div class="modal fade show" id="expenseModal" tabindex="-1" role="dialog" aria-labelledby="expenseModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                <div class="modal fade show" id="expenseModal" tabindex="-1" role="dialog" aria-labelledby="expenseModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideDataModalonESC">
                     <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
                         <div class="modal-content">
                             @* header *@
@@ -1152,7 +1152,7 @@ else
                                 @* DA *@
                                 @if (LoginService.activeUser.userPrivileges.Contains("DA"))
                                 {
-                                    <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!expense.ExpenseStatus.Contains("Submited") || !expense.ExpenseStatus.Contains("Rejected"))  ? null : "disabled")">Reject</button>
+                                    <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!expense.ExpenseStatus.Contains("Submited") && !expense.ExpenseStatus.Contains("Rejected"))  ? null : "disabled")">Reject</button>
                                 }
 
                                 @* SB *@
@@ -1174,7 +1174,7 @@ else
             }
             else if (transacType.Contains("reimburse"))
             {
-                <div class="modal fade show" id="reimburseModal" tabindex="-1" role="dialog" aria-labelledby="reimburseModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                <div class="modal fade show" id="reimburseModal" tabindex="-1" role="dialog" aria-labelledby="reimburseModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideDataModalonESC">
                     <div class="modal-dialog modal-xl" role="document">
                         <div class="modal-content">
 
@@ -1238,11 +1238,11 @@ else
 
                                                     <div class="row">
                                                         <div class="col">
-                                                            <label class="fw-bold" for="sub_user">Submit User :</label>
+                                                            <label class="fw-bold" for="sub_user">Confirm User :</label>
                                                         <input type="text" id="sub_user" value="@reimburse.statusDetails.confirmUser" class="form-control-sm w-100 border-1" readonly />
                                                         </div>
                                                         <div class="col">
-                                                            <label class="fw-bold" for="sub_date">Submit Date :</label>
+                                                            <label class="fw-bold" for="sub_date">Confirm Date :</label>
                                                             <input type="text" value="@reimburse.statusDetails.confirmDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
                                                         </div>
                                                     </div>
@@ -1258,22 +1258,22 @@ else
                                                     </div>
                                                     <div class="row">
                                                         <div class="col">
-                                                            <label class="fw-bold" for="rel_user">Release User :</label>
-                                                            <input type="text" id="rel_user" value="@reimburse.statusDetails.releaseUser" class="form-control-sm w-100 border-1" readonly />
-                                                        </div>
-                                                        <div class="col">
-                                                            <label class="fw-bold" for="rel_date">Release Date :</label>
-                                                            <input type="text" id="rel_date" value="@reimburse.statusDetails.releaseDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col">
                                                             <label class="fw-bold" for="apr_user">Approve User :</label>
                                                             <input type="text" id="apr_user" value="@reimburse.statusDetails.approveUser" class="form-control-sm w-100 border-1" readonly />
                                                         </div>
                                                         <div class="col">
                                                             <label class="fw-bold" for="apr_date">Approve Date :</label>
                                                             <input type="text" id="apr_date" value="@reimburse.statusDetails.approveDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="rel_user">Release User :</label>
+                                                            <input type="text" id="rel_user" value="@reimburse.statusDetails.releaseUser" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="rel_date">Release Date :</label>
+                                                            <input type="text" id="rel_date" value="@reimburse.statusDetails.releaseDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
                                                         </div>
                                                     </div>
                                                     <div class="row">
@@ -1484,7 +1484,7 @@ else
                                 @* DA *@
                                 @if (LoginService.activeUser.userPrivileges.Contains("DA"))
                                 {
-                                    <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!reimburse.ReimburseStatus.Contains("Released") || reimburse.ReimburseStatus.Contains("Claimed") || !reimburse.ReimburseStatus.Contains("Rejected")) ? null : "disabled")">Reject</button>
+                                    <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!reimburse.ReimburseStatus.Contains("Released") && !reimburse.ReimburseStatus.Contains("Claimed") && !reimburse.ReimburseStatus.Contains("Rejected")) ? null : "disabled")">Reject</button>
                                 }
 
                                 @* SB *@
@@ -1522,7 +1522,7 @@ else
 
         @if (showBalanceModal)
         {
-            <div class="modal fade show" id="balanceModal" tabindex="-1" role="dialog" aria-labelledby="balanceModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal fade show" id="balanceModal" tabindex="-1" role="dialog" aria-labelledby="balanceModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideBalanceModalonESC">
                 <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                     <div class="modal-content">
                         @* header *@
@@ -1587,30 +1587,34 @@ else
                             <div class="separator my-3">Outstanding Amount</div>
 
                             <div class="row">
-                                <div class="col"><b>Outstanding Advance</b></div>
+                                <div class="col"><b>Requested Advance</b></div>
                                 <div class="col">: Rp. @outstandingBalance.advanceOutstandingAmount.ToString("N0") ,-</div>
                             </div>
                             <div class="row">
-                                <div class="col"><b>Outstanding Expense</b></div>
-                                <div class="col">: Rp. @outstandingBalance.expenseOutstandingAmount.ToString("N0") ,-</div>
-                            </div>
-                            <div class="row mt-4">
                                 <div class="col"><b><i>Approved Advance</i></b></div>
                                 <div class="col"><i>: Rp. @outstandingBalance.advanceApprovedAmount.ToString("N0") ,-</i></div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col"><b>Requested Expense</b></div>
+                                <div class="col">: Rp. @outstandingBalance.expenseOutstandingAmount.ToString("N0") ,-</div>
                             </div>
                             <div class="row">
                                 <div class="col"><b><i>Approved Expense</i></b></div>
                                 <div class="col"><i>: Rp. @outstandingBalance.expenseApprovedAmount.ToString("N0") ,-</i></div>
                             </div>
-                            <div class="row">
-                                <div class="col"><b><i>Requested Reimbursement</i></b></div>
-                                <div class="col"><i>: Rp. @outstandingBalance.reimbursementReqOutstandingAmount.ToString("N0") ,-</i></div>
+                            <div class="row mt-3">
+                                <div class="col"><b>Requested Reimbursement</b></div>
+                                <div class="col">: Rp. @outstandingBalance.reimbursementReqOutstandingAmount.ToString("N0") ,-</div>
                             </div>
                             <div class="row">
                                 <div class="col"><b><i>Approved Reimbursement</i></b></div>
                                 <div class="col"><i>: Rp. @outstandingBalance.reimbursementApvOutstandingAmount.ToString("N0") ,-</i></div>
                             </div>
                             <div class="row">
+                                <div class="col"><b><i>Rejected Reimbursement</i></b></div>
+                                <div class="col"><i>: Rp. @outstandingBalance.reimbursementApvRejectedAmount.ToString("N0") ,-</i></div>
+                            </div>
+                            <div class="row mt-1">
                                 <div class="col"><b>As Of</b></div>
                                 <div class="col">: @outstandingBalance.lastFetch.ToString("dd/MM/yyyy HH:mm:ss")</div>
                             </div>
@@ -1628,7 +1632,7 @@ else
 
         @if (showUpdateBudgetModal)
         {
-            <div class="modal fade show" id="editBudgetModal" tabindex="-2" role="dialog" aria-labelledby="editBudgetModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal fade show" id="editBudgetModal" tabindex="-2" role="dialog" aria-labelledby="editBudgetModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideUpdateBudgetModalonESC">
                 <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                     <div class="modal-content">
                         @* header *@
@@ -1671,7 +1675,7 @@ else
 
         @if (showUpdateCutoffModal)
         {
-            <div class="modal fade show" id="editCutoffModal" tabindex="-2" role="dialog" aria-labelledby="editCutoffModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal fade show" id="editCutoffModal" tabindex="-2" role="dialog" aria-labelledby="editCutoffModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideCutoffModalonESC">
                 <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                     <div class="modal-content">
                         @* header *@
@@ -1714,7 +1718,7 @@ else
 
         @if (showExportModal)
         {
-            <div class="modal fade show" id="exportModal" tabindex="-2" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal fade show" id="exportModal" tabindex="-2" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideExportModalonESC">
                 <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                     <div class="modal-content">
                         @* header *@

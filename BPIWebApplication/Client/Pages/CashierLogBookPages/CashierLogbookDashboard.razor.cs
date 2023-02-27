@@ -5,7 +5,7 @@ using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.PagesModel.CashierLogbook;
 using Microsoft.AspNetCore.Components;
 
-namespace BPIWebApplication.Client.Pages.CashierLogBook
+namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 {
     public partial class CashierLogbookDashboard : ComponentBase
     {
@@ -18,7 +18,10 @@ namespace BPIWebApplication.Client.Pages.CashierLogBook
         List<Shift> activeShift = new();
 
         private int mainLogPageActive = 0;
+        private int transitLogPageActive = 0;
 
+        private bool isMainLogActive = false;
+        private bool isTransitLogActive = false;
         private bool showModal = false;
 
         private static string Base64Encode(string plainText)
@@ -53,6 +56,14 @@ namespace BPIWebApplication.Client.Pages.CashierLogBook
             string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
 
             await CashierLogbookService.getLogData(Base64Encode(temp));
+
+            type = "TRANSIT";
+            transitLogPageActive = 1;
+
+            temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+
+            await CashierLogbookService.getLogData(Base64Encode(temp));
+
             await CashierLogbookService.getShiftData("CashierLogbook");
 
             //_jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/PettyCashPages/PettyCashDashboard.razor.js");
@@ -60,8 +71,20 @@ namespace BPIWebApplication.Client.Pages.CashierLogBook
 
         private void hideModal() => showModal = false;
 
-        private void showMainModal(CashierLogData data)
+        private void showMainModal(CashierLogData data, string tp)
         {
+            isMainLogActive = false;
+            isTransitLogActive = false;
+
+            if (tp.Equals("MAIN"))
+            {
+                isMainLogActive = true;
+            }
+            else if (tp.Equals("TRANSIT"))
+            {
+                isTransitLogActive = true;
+            }
+
             showModal = true;
             activeCategories.Clear();
             activeSubCategories.Clear();
@@ -116,6 +139,24 @@ namespace BPIWebApplication.Client.Pages.CashierLogBook
 
             activeShift.First().isActive = true;
             //
+        }
+
+        private void editDocument(CashierLogData data)
+        {
+            string temp = string.Empty;
+
+            if (isMainLogActive)
+            {
+                temp = data.LogID + "!_!MAIN";
+            }
+            else if (isTransitLogActive)
+            {
+                temp = data.LogID + "!_!TRANSIT";
+            }
+
+            string param = Base64Encode(temp);
+
+            navigate.NavigateTo($"cashierlogbook/editlogbook/{param}");
         }
 
         private void shiftSelect(Shift data)

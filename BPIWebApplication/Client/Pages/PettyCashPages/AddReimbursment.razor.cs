@@ -21,6 +21,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private bool triggerModal = false;
         private bool isLoading = false;
+        private bool successUpload = false;
 
         private bool alertTrigger = false;
         private bool successAlert = false;
@@ -177,10 +178,12 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                                 if (res3.isSuccess)
                                 {
+                                    successUpload = true;
                                     await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success");
                                 }
                                 else
                                 {
+                                    successUpload = false;
                                     await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed");
                                 }
 

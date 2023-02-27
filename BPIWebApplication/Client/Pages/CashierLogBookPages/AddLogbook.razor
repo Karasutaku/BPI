@@ -1,6 +1,9 @@
 ﻿@page "/cashierlogbook/addlogbook"
+@page "/cashierlogbook/editlogbook/{param}"
 @inject ICashierLogbookService CashierLogbookService
+@inject IPettyCashService PettyCashService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject IJSRuntime JS
 @using System.Text.Json
 
 
@@ -40,7 +43,7 @@
             <div class="row my-2">
                 <div class="col">
                     <label for="log_type">Log Type :</label>
-                    <InputSelect id="log_type" @bind-Value="logbook.LogType" class="form-select">
+                    <InputSelect id="log_type" @bind-Value="logbook.LogType" class="form-select" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)">
                         <option value="MAIN">UTAMA</option>
                         <option value="TRANSIT">TRANSIT</option>
                     </InputSelect>
@@ -106,9 +109,9 @@
                     <div class="row mt-3 mb-1">
                         <div class="col">
                             <div class="d-flex justify-content-between align-middle">
-                                <button type="submit" title="Previous Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.First().AmountCategoryID) ? "disabled" : null)" @onclick="(() => selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) - 1].AmountCategoryID)"><span class="oi oi-chevron-left"></span> Prev</button>
+                                <button type="submit" title="Previous Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.First().AmountCategoryID) ? "disabled" : null)" @onclick="@(() => { selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) - 1].AmountCategoryID; if (logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)) != null) { previewActualAmount = logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).ActualAmount.ToString("N0"); } else { previewActualAmount = ""; } })"><span class="oi oi-chevron-left"></span> Prev</button>
                                 <p><span>&lt; <b>@(CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) + 1)</b> of @CashierLogbookService.categories.Count() &gt;</span></p>
-                                <button type="submit" title="Next Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.Last().AmountCategoryID) ? "disabled" : null)" @onclick="(() => selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) + 1].AmountCategoryID)">Next <span class="oi oi-chevron-right"></span></button>
+                                <button type="submit" title="Next Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.Last().AmountCategoryID) ? "disabled" : null)" @onclick="@(() => { selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) + 1].AmountCategoryID; if (logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)) != null) { previewActualAmount = logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).ActualAmount.ToString("N0"); } else { previewActualAmount = ""; } })">Next <span class="oi oi-chevron-right"></span></button>
                             </div>
                         </div>
                     </div>
@@ -118,12 +121,29 @@
 
                         <div class="row my-3">
                             <div class="col">
-                                <button type="button" title="Add New Line" class="btn btn-sm btn-warning" @onclick="(() => addLine(selectedShiftID, selectedCategoryID))"><b>Add</b></button>
+                                <button type="button" title="Add New Line" class="btn btn-sm btn-warning" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="(() => addLine(selectedShiftID, selectedCategoryID))"><b>Add</b></button>
                             </div>
                         </div>
 
                         @if (logbook.header.Where(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).SelectMany(ln => ln.lines).Any())
                         {
+                            <div class="row">
+                                <div class="col">
+                                    <label for="log_note">Note :</label>
+                                    <InputText id="log_note" @bind-Value="logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).CategoryNote" class="form-control" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)"></InputText>
+                                </div>
+                            </div>
+                        <div class="row my-3">
+                            <div class="col">
+                                    <label for="log_note"><b>Actual @amtCat.AmountCategoryName Amount :</b></label>
+                                    <input type="number" id="log_note" @bind-value="logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).ActualAmount" @oninput="@((ChangeEventArgs e) => { try { if (e.Value.ToString().Length > 0) { previewActualAmount = Convert.ToDecimal(e.Value).ToString("N0"); logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).ActualAmount = Convert.ToDecimal(e.Value); } else { previewActualAmount = ""; logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).ActualAmount = decimal.Zero; } } catch (Exception exc) { } })" class="form-control" />
+                                </div>
+                                <div class="col">
+                                    <label for="log_note">Preview Amount :</label>
+                                    <input type="text" id="log_note" @bind="@previewActualAmount" @bind:event="onchange" class="form-control" readonly></input>
+                                </div>
+                            </div>
+
                             <table class="table table-sm table-bordered" style="width: 100%">
                                 <thead>
                                     <tr>
@@ -138,10 +158,11 @@
                                     {
                                         <tr>
                                             <td class="text-center align-middle">
-                                                <button type="button" class="btn btn-sm btn-danger h-100 w-100" @onclick="(() => deleteLine(line, amtCat.AmountCategoryID))"><i class="oi oi-delete"></i></button>
+                                                <button type="button" class="btn btn-sm btn-danger h-100 w-100" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="(() => deleteLine(line, amtCat.AmountCategoryID))"><i class="oi oi-delete"></i></button>
                                             </td>
                                             <td>
-                                                <InputSelect id="sub_cat" @bind-Value="line.AmountType" class="form-select h-100 w-100">
+                                                <InputSelect id="sub_cat" @bind-Value="line.AmountType" class="form-select h-100 w-100" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)">
+                                                    <option value="BLANK" hidden>Select Type</option>
                                                     @if (checkTypePresent())
                                                     {
                                                         @foreach (var tp in CashierLogbookService.types)
@@ -156,7 +177,8 @@
                                                 </InputSelect>
                                             </td>
                                             <td>
-                                                <InputSelect id="sub_cat" @bind-Value="line.AmountSubCategoryID" class="form-select h-100 w-100">
+                                                <select id="sub_cat" class="form-select h-100 w-100" value="@line.AmountSubCategoryID" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onchange="((ChangeEventArgs evt) => checkSubCategoryAutoFill(evt, line))">
+                                                    <option value="BLANK" hidden>Select Sub Cat.</option>
                                                     @if (checkSubCategoriesPresent())
                                                     {
                                                         @foreach (var subCat in CashierLogbookService.subCategories)
@@ -168,10 +190,10 @@
                                                     {
                                                         <option value="" disabled>No Sub Category Found</option>
                                                     }
-                                                </InputSelect>
+                                                </select>
                                             </td>
                                             <td>
-                                                <input type="number" class="form-control" @bind-value="line.LineAmount" />
+                                                <input type="number" class="form-control" disabled="@((isFetchBalanceActive.Equals(true) || isSuccessUpload.Equals(true)) ? "disabled" : null)" @bind-value="line.LineAmount" />
                                             </td>
                                         </tr>
                                     }
@@ -201,8 +223,27 @@
 
             <div class="row my-3">
                 <div class="col">
-                    <button type="button" title="Reset" class="btn btn-sm btn-outline-dark"><b>Reset</b></button>
-                    <button type="button" title="Create" class="btn btn-sm btn-primary"><b>Create</b></button>
+                    @if (param == null)
+                    {
+                        <button type="button" title="Reset" class="btn btn-sm btn-outline-dark"><b>Reset</b></button>
+                        <button type="button" title="Create" class="btn btn-sm btn-primary" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="createLogData">
+                            <b>Create</b>
+                            @if (isLoading)
+                            {
+                                <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                            }
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" title="Create" class="btn btn-sm btn-primary" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="createLogData">
+                            <b>Edit</b>
+                            @if (isLoading)
+                            {
+                                <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                            }
+                        </button>
+                    }
                 </div>
             </div>
 

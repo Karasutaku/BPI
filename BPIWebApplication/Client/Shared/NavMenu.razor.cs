@@ -24,6 +24,11 @@ namespace BPIWebApplication.Client.Shared
         private bool hasPageName = false;
         private bool expandMainMenu = false;
 
+        private int? clickedCaId = 0;
+        private int? prevClickedCaId = 0;
+        private bool caHasPageName = false;
+        private bool expandCaMenu = false;
+
         //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
         //private ActiveUser activeUser = new();
         private List<FacadeUserModuleResp> module = new();
@@ -373,8 +378,38 @@ namespace BPIWebApplication.Client.Shared
 
             prevClickedMainMenuId = clickedMainMenuId;
 
+            if (expandMainMenu.Equals(false))
+            {
+                clickedMainMenuId = 0;
+            }
         }
 
+        private void toggleCaMenu(ChildApplication ca)
+        {
+            //showSopMenu = !showSopMenu;
+
+            clickedCaId = ca.ChildApplicationId;
+
+            if (prevClickedCaId != clickedCaId)
+            {
+                if (!ca.ChildApplicationName.IsNullOrEmpty())
+                {
+                    caHasPageName = true;
+                    expandCaMenu = true;
+                }
+                else
+                {
+                    caHasPageName = false;
+                    expandCaMenu = false;
+                }
+            }
+            else
+            {
+                expandCaMenu = !expandCaMenu;
+            }
+
+            prevClickedCaId = clickedCaId;
+        }
 
         private async void confirmLogout()
         {

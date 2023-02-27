@@ -5,7 +5,7 @@
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 
 
-@if (!LoginService.activeUser.userPrivileges.Contains("VW"))
+@if (LoginService.activeUser.userPrivileges == null || !LoginService.activeUser.userPrivileges.Contains("VW"))
 {
     <div class="container-fluid">
         <div class="d-flex align-items-center">
