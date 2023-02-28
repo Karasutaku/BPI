@@ -221,11 +221,11 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             }
         }
 
-        private void hideDataModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showModal = false; } }
-        private void hideBalanceModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showBalanceModal = false; } }
-        private void hideUpdateBudgetModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showUpdateBudgetModal = false; } }
-        private void hideCutoffModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showUpdateCutoffModal = false; } }
-        private void hideExportModalonESC(KeyboardEventArgs e) { if (e.Key.Equals("Escape")) { showExportModal = false; } }
+        private void hideDataModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showModal = false; } } catch (Exception exc) { } }
+        private void hideBalanceModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showBalanceModal = false; } } catch (Exception exc) { } }
+        private void hideUpdateBudgetModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showUpdateBudgetModal = false; } } catch (Exception exc) { } }
+        private void hideCutoffModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showUpdateCutoffModal = false; } } catch (Exception exc) { } }
+        private void hideExportModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showExportModal = false; } } catch (Exception exc) { } }
 
         private bool checkUserPrivilegeViewable()
         {
@@ -297,12 +297,14 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         {
             showUpdateBudgetModal = true;
             locBalanceDetails.LocationID = loc;
+            editedBudgetAmount = decimal.Zero;
         }
 
         private void triggerCutoffUpdateModal(string loc)
         {
             showUpdateCutoffModal = true;
             locBalanceDetails.LocationID = loc;
+            editedCutoffDate = DateTime.Now;
         }
 
         private void triggerExportModal(string loc)
@@ -502,7 +504,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                     var res = await PettyCashService.updateDocumentStatus(statData);
 
-                    if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
+                    if (res.isSuccess)
                     {
 
                         if (action.Contains("Rejected"))
@@ -615,6 +617,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                         
                         //await _jsModule.InvokeVoidAsync("showAlert", "");
                     }
+                    else
+                    {
+                        await _jsModule.InvokeVoidAsync("showAlert", "Status Might've Updated from Another User, Please Refresh Your Page !");
+                    }
                 }
                 else if (isExpenseActive)
                 {
@@ -629,7 +635,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                     var res = await PettyCashService.updateDocumentStatus(statData);
 
-                    if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
+                    if (res.isSuccess)
                     {
 
                         if (action.Contains("Rejected"))
@@ -732,6 +738,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                         //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
                     }
+                    else
+                    {
+                        await _jsModule.InvokeVoidAsync("showAlert", "Status Might've Updated from Another User, Please Refresh Your Page !");
+                    }
                 }
                 else if (isReimburseActive)
                 {
@@ -748,51 +758,62 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     {
                         if (!reimburse.lines.Any(x => x.Status.Contains("OP")))
                         {
-                            var res = await PettyCashService.updateDocumentStatus(statData);
-
-                            if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
+                            if (Decimal.Subtract(reimburse.lines.Sum(x => x.Amount), reimburse.lines.Sum(x => x.ApprovedAmount)) > 0 && reimburse.ReimburseNote.IsNullOrEmpty())
                             {
-                                // update data to db
+                                await _jsModule.InvokeVoidAsync("showAlert", "Fill Blank Note !");
+                            }
+                            else
+                            {
+                                var res = await PettyCashService.updateDocumentStatus(statData);
 
-                                try
+                                if (res.isSuccess)
                                 {
-                                    QueryModel<Reimburse> updateData = new();
-                                    updateData.Data = new();
+                                    // update data to db
 
-                                    updateData.Data = reimburse;
-                                    updateData.userEmail = activeUser.userName;
-                                    updateData.userAction = "U";
-                                    updateData.userActionDate = DateTime.Now;
-
-                                    var res2 = await PettyCashService.updateReimburseLineData(updateData);
-
-                                    if (res.isSuccess)
+                                    try
                                     {
-                                        string temp = "PettyCash!_!StatusVerify!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID;
-                                        var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+                                        QueryModel<Reimburse> updateData = new();
+                                        updateData.Data = new();
 
-                                        if (res3.isSuccess)
+                                        updateData.Data = reimburse;
+                                        updateData.userEmail = activeUser.userName;
+                                        updateData.userAction = "U";
+                                        updateData.userActionDate = DateTime.Now;
+
+                                        var res2 = await PettyCashService.updateReimburseLineData(updateData);
+
+                                        if (res.isSuccess)
                                         {
-                                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
-                                        }
-                                        else
-                                        {
-                                            await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                            string temp = "PettyCash!_!StatusVerify!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID;
+                                            var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
+
+                                            if (res3.isSuccess)
+                                            {
+                                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Success AND Approval Status Success Updated, Please Reload Your Page !");
+                                            }
+                                            else
+                                            {
+                                                await _jsModule.InvokeVoidAsync("showAlert", "Email Auto Generate Failed BUT Approval Status Success Updated, Please Reload Your Page !");
+                                            }
+
+                                            reimburse.ReimburseStatus = action;
+                                            PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).ReimburseStatus = action;
+                                            reimburse.statusDetails.verifyUser = activeUser.userName;
+                                            PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.verifyUser = activeUser.userName;
+                                            reimburse.statusDetails.verifyDate = DateTime.Now;
+                                            PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.verifyDate = DateTime.Now;
+                                            //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
                                         }
 
-                                        reimburse.ReimburseStatus = action;
-                                        PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).ReimburseStatus = action;
-                                        reimburse.statusDetails.verifyUser = activeUser.userName;
-                                        PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.verifyUser = activeUser.userName;
-                                        reimburse.statusDetails.verifyDate = DateTime.Now;
-                                        PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.verifyDate = DateTime.Now;
-                                        //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
                                     }
-                                
+                                    catch (Exception ex)
+                                    {
+                                        throw new Exception(ex.Message);
+                                    }
                                 }
-                                catch (Exception ex)
+                                else
                                 {
-                                    throw new Exception(ex.Message);
+                                    await _jsModule.InvokeVoidAsync("showAlert", "Status Might've Updated from Another User, Please Refresh Your Page !");
                                 }
                             }
                         }
@@ -805,7 +826,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     {
                         var res = await PettyCashService.updateDocumentStatus(statData);
 
-                        if (res.ErrorCode.Contains("00") || res.ErrorCode.Contains("01"))
+                        if (res.isSuccess)
                         {
                             // update
                             if (action.Contains("Rejected"))
@@ -948,6 +969,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                             PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).ReimburseStatus = action;
 
                             //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
+                        }
+                        else
+                        {
+                            await _jsModule.InvokeVoidAsync("showAlert", "Status Might've Updated from Another User, Please Refresh Your Page !");
                         }
                     }
                     

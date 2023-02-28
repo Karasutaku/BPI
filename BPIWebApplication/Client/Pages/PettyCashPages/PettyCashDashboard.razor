@@ -836,22 +836,22 @@ else
 
                                                         <div class="row">
                                                             <div class="col">
-                                                                <label class="fw-bold" for="sub_user">Submit User :</label>
-                                                                <input type="text" id="sub_user" value="@advance.statusDetails.submitUser" class="form-control-sm w-100 border-1" readonly />
-                                                            </div>
-                                                            <div class="col">
-                                                                <label class="fw-bold" for="sub_date">Submit Date :</label>
-                                                                <input type="text" value="@advance.statusDetails.submitDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col">
                                                                 <label class="fw-bold" for="con_user">Confirm User :</label>
                                                                 <input type="text" id="con_user" value="@advance.statusDetails.confirmUser" class="form-control-sm w-100 border-1" readonly />
                                                             </div>
                                                             <div class="col">
                                                                 <label class="fw-bold" for="con_date">Confirm Date :</label>
                                                                 <input type="text" id="con_date" value="@advance.statusDetails.confirmDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col">
+                                                                <label class="fw-bold" for="sub_user">Submit User :</label>
+                                                                <input type="text" id="sub_user" value="@advance.statusDetails.submitUser" class="form-control-sm w-100 border-1" readonly />
+                                                            </div>
+                                                            <div class="col">
+                                                                <label class="fw-bold" for="sub_date">Submit Date :</label>
+                                                                <input type="text" value="@advance.statusDetails.submitDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
                                                             </div>
                                                         </div>
                                                         <div class="row">
@@ -1047,22 +1047,22 @@ else
 
                                                     <div class="row">
                                                         <div class="col">
-                                                            <label class="fw-bold" for="sub_user">Submit User :</label>
-                                                            <input type="text" id="sub_user" value="@expense.statusDetails.submitUser" class="form-control-sm w-100 border-1" readonly />
-                                                        </div>
-                                                        <div class="col">
-                                                            <label class="fw-bold" for="sub_date">Submit Date :</label>
-                                                            <input type="text" value="@expense.statusDetails.submitDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col">
                                                             <label class="fw-bold" for="con_user">Confirm User :</label>
                                                             <input type="text" id="con_user" value="@expense.statusDetails.confirmUser" class="form-control-sm w-100 border-1" readonly />
                                                         </div>
                                                         <div class="col">
                                                             <label class="fw-bold" for="con_date">Confirm Date :</label>
                                                             <input type="text" id="con_date" value="@expense.statusDetails.confirmDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="sub_user">Submit User :</label>
+                                                            <input type="text" id="sub_user" value="@expense.statusDetails.submitUser" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="sub_date">Submit Date :</label>
+                                                            <input type="text" value="@expense.statusDetails.submitDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
                                                         </div>
                                                     </div>
                                                     <div class="row">
@@ -1114,8 +1114,8 @@ else
                                                     @if (!expense.lines.Sum(x => x.Amount).Equals(expense.lines.Sum(x => x.ActualAmount)))
                                                     {
                                                         <tr>
-                                                            <td colspan="2" style="font-size: 17px;" class="fw-bold">Difference :</td>
-                                                            <td colspan="2" id="total_amount">Rp <span id="nominal_amount"> @Decimal.Subtract(expense.lines.Sum(a => a.Amount), expense.lines.Sum(a => a.ActualAmount)).ToString("N0") </span> ,- </td>
+                                                            <td colspan="2" style="font-size: 17px;" class="text-left align-middle fw-bold px-4">Difference :</td>
+                                                            <td colspan="2" class="text-left align-middle px-3" id="total_amount">Rp <span id="nominal_amount"> @Decimal.Subtract(expense.lines.Sum(a => a.Amount), expense.lines.Sum(a => a.ActualAmount)).ToString("N0") </span> ,- </td>
                                                         </tr>
                                                     }
                                                 }

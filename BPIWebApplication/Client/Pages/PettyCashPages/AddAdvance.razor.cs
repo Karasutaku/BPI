@@ -280,6 +280,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private void resetForm()
         {
             isTypeTransfer = false;
+            isLoading = false;
 
             advance.AdvanceID = "";
             advance.AdvanceDate = DateTime.Now;
@@ -289,6 +290,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             advance.AdvanceType = "CH";
             advance.TypeAccount = "";
             advance.DepartmentID = "";
+            advance.Approver = "";
             advance.lines = new();
 
             advanceLines.Clear();

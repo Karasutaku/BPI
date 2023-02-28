@@ -14,402 +14,405 @@
 }
 else
 {
-    @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
+    if (LoginService.activeUser.userPrivileges != null)
     {
-        <div class="container-fluid">
-            <div class="d-flex align-items-center">
-                <h3>User Require Elevation</h3>
-            </div>
-        </div>
-    }
-    else
-    {
-        <h3>Petty Cash</h3>
-        <small><i>Settlement / Expense Submision</i></small>
-
-        @if (alertTrigger)
+        @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
         {
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                <strong>@alertMessage</strong> @alertBody
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <h3>User Require Elevation</h3>
+                </div>
             </div>
         }
-
-
-        @if (successAlert)
+        else
         {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <strong>@alertMessage</strong> @alertBody
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        }
+            <h3>Petty Cash</h3>
+            <small><i>Settlement / Expense Submision</i></small>
 
-        <div class="container-fluid">
-            <div class="d-flex flex-column align-items-center">
+            @if (alertTrigger)
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <strong>@alertMessage</strong> @alertBody
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            }
 
-                <EditForm Model="expense">
 
-                    <div class="row my-3">
-                        <div class="col">
-                            <label for="expense_id">Expense ID :</label>
-                            <InputText id="expense_id" @bind-Value="expense.ExpenseID" class="form-control" readonly></InputText>
-                        </div>
-                        <div class="col">
-                            <label for="advance_id">Advance ID :</label>
-                            <div id="advance_id" class="input-group">
-                                <InputText @bind-Value="expense.AdvanceID" class="form-control" readonly></InputText>
-                                <button type="button" class="btn btn-sm btn-primary" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="selectAdvance">...</button>
-                            </div>
-                        </div>
-                    </div>
+            @if (successAlert)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <strong>@alertMessage</strong> @alertBody
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            }
 
-                    <div class="row my-3">
-                        <div class="col">
-                            <label for="user_id">User :</label>
-                            <InputText id="user_id" @bind-Value="expense.Applicant" class="form-control" readonly></InputText>
-                        </div>
-                    </div>
+            <div class="container-fluid">
+                <div class="d-flex flex-column align-items-center">
 
-                    <div class="row my-3">
-                        <div class="col">
-                            <label for="user_note">Applicant :</label>
-                        <InputText id="user_note" @bind-Value="expense.ExpenseNote" class="form-control" readonly="@(isSettlement.Equals(true) ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputText>
-                        </div>
-                        <div class="col">
-                            <label for="user_detail">Applicant NIK :</label>
-                            <InputText id="user_detail" @bind-Value="expense.ExpenseNIK" class="form-control" readonly="@(isSettlement.Equals(true) ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputText>
-                        </div>
-                    </div>
+                    <EditForm Model="expense">
 
-                    @if (activeUser.location.Equals(""))
-                    {
                         <div class="row my-3">
                             <div class="col">
-                                <label for="user_aprv">Approver Email :</label>
-                                <InputText id="user_aprv" @bind-Value="expense.Approver" class="form-control"></InputText>
+                                <label for="expense_id">Expense ID :</label>
+                                <InputText id="expense_id" @bind-Value="expense.ExpenseID" class="form-control" readonly></InputText>
                             </div>
-                        </div>
-                    }
-
-                    <div class="row my-3">
-                        <div class="col">
-                            <label for="type_radio">Type :</label>
-
-                            <div id="type_radio" class="w-100">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="Radio1" name="Radios" @onclick="@(() => setExpenseType("CH"))" checked="@(isTypeTransfer.Equals(false) ? "checked" : null)" disabled="@(isSettlement.Equals(true) || successUpload.Equals(true) ? "disabled" : null)">
-                                    <label class="form-check-label" for="Radio1">
-                                        Cash
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="Radio2" name="Radios" @onclick="@(() => setExpenseType("TF"))" checked="@(isTypeTransfer.Equals(true) ? "checked" : null)" disabled="@(isSettlement.Equals(true) || successUpload.Equals(true) ? "disabled" : null)">
-                                    <label class="form-check-label" for="Radio2">
-                                        Transfer
-                                    </label>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        @if (isTypeTransfer)
-                        {
                             <div class="col">
-                                <label for="account_no">Account No :</label>
-                                <InputText id="account_no" @bind-Value="expense.TypeAccount" class="form-control" readonly="@(isSettlement.Equals(true) ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputText>
+                                <label for="advance_id">Advance ID :</label>
+                                <div id="advance_id" class="input-group">
+                                    <InputText @bind-Value="expense.AdvanceID" class="form-control" readonly></InputText>
+                                    <button type="button" class="btn btn-sm btn-primary" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="selectAdvance">...</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row my-3">
+                            <div class="col">
+                                <label for="user_id">User :</label>
+                                <InputText id="user_id" @bind-Value="expense.Applicant" class="form-control" readonly></InputText>
+                            </div>
+                        </div>
+
+                        <div class="row my-3">
+                            <div class="col">
+                                <label for="user_note">Applicant :</label>
+                            <InputText id="user_note" @bind-Value="expense.ExpenseNote" class="form-control" readonly="@(isSettlement.Equals(true) ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputText>
+                            </div>
+                            <div class="col">
+                                <label for="user_detail">Applicant NIK :</label>
+                                <InputText id="user_detail" @bind-Value="expense.ExpenseNIK" class="form-control" readonly="@(isSettlement.Equals(true) ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputText>
+                            </div>
+                        </div>
+
+                        @if (activeUser.location.Equals(""))
+                        {
+                            <div class="row my-3">
+                                <div class="col">
+                                    <label for="user_aprv">Approver Email :</label>
+                                    <InputText id="user_aprv" @bind-Value="expense.Approver" class="form-control"></InputText>
+                                </div>
                             </div>
                         }
 
-                    </div>
+                        <div class="row my-3">
+                            <div class="col">
+                                <label for="type_radio">Type :</label>
 
-                    <div class="row my-3">
-                        <div class="col">
-                            <label for="location_id">Location :</label>
-                            <InputText id="location_id" @bind-Value="expense.LocationID" class="form-control" readonly></InputText>
-                        </div>
-                        <div class="col">
-                            <label for="dept_id">Department :</label>
-                            <InputSelect id="dept_id" @bind-Value="expense.DepartmentID" class="form-select" disabled="@(isSettlement.Equals(true) || successUpload.Equals(true) ? "disabled" : null)">
-                                <option hidden value="0">Select Department</option>
+                                <div id="type_radio" class="w-100">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="Radio1" name="Radios" @onclick="@(() => setExpenseType("CH"))" checked="@(isTypeTransfer.Equals(false) ? "checked" : null)" disabled="@(isSettlement.Equals(true) || successUpload.Equals(true) ? "disabled" : null)">
+                                        <label class="form-check-label" for="Radio1">
+                                            Cash
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="Radio2" name="Radios" @onclick="@(() => setExpenseType("TF"))" checked="@(isTypeTransfer.Equals(true) ? "checked" : null)" disabled="@(isSettlement.Equals(true) || successUpload.Equals(true) ? "disabled" : null)">
+                                        <label class="form-check-label" for="Radio2">
+                                            Transfer
+                                        </label>
+                                    </div>
+                                </div>
 
-                                @foreach (var dept in ManagementService.departments)
-                                {
-                                    <option value="@dept.DepartmentID">@dept.DepartmentName</option>
-                                }
-                            </InputSelect>
-                        </div>
-                    </div>
-
-                    <div class="separator">Advance Details</div>
-                
-                    @if (!isSettlement)
-                    {
-                        <button type="button" class="btn btn-sm btn-warning my-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="addLine"><b>Add</b></button>
-                    }
-                    else
-                    {
-                        @if (!expenseLines.Sum(x => x.Amount).Equals(expenseLines.Sum(x => x.ActualAmount)))
-                        {
-                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                                <strong>Status Difference !</strong> Please recheck and Settle your Remaining Difference Below
                             </div>
+
+                            @if (isTypeTransfer)
+                            {
+                                <div class="col">
+                                    <label for="account_no">Account No :</label>
+                                    <InputText id="account_no" @bind-Value="expense.TypeAccount" class="form-control" readonly="@(isSettlement.Equals(true) ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputText>
+                                </div>
+                            }
+
+                        </div>
+
+                        <div class="row my-3">
+                            <div class="col">
+                                <label for="location_id">Location :</label>
+                                <InputText id="location_id" @bind-Value="expense.LocationID" class="form-control" readonly></InputText>
+                            </div>
+                            <div class="col">
+                                <label for="dept_id">Department :</label>
+                                <InputSelect id="dept_id" @bind-Value="expense.DepartmentID" class="form-select" disabled="@(isSettlement.Equals(true) || successUpload.Equals(true) ? "disabled" : null)">
+                                    <option hidden value="0">Select Department</option>
+
+                                    @foreach (var dept in ManagementService.departments)
+                                    {
+                                        <option value="@dept.DepartmentID">@dept.DepartmentName</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="separator">Advance Details</div>
+                
+                        @if (!isSettlement)
+                        {
+                            <button type="button" class="btn btn-sm btn-warning my-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="addLine"><b>Add</b></button>
                         }
                         else
                         {
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <strong>Status Accept !</strong> Please recheck and Create Your Expense
-                            </div>
-                        }
-                    }
-                
-
-                    @if (expenseLines.Any())
-                    {
-                        <table class="table table-sm table-bordered" style="width: 100%">
-                            <thead>
-                                <tr>
-                                    @if (isSettlement)
-                                    {
-                                        <th style="width: 5%;">#</th>
-                                        <th style="width: 45%;">Description</th>
-                                        <th style="width: 25%;">Request Amount</th>
-                                        <th style="width: 25%; background-color:aquamarine;">Actual Amount</th>
-                                    }
-                                    else
-                                    {
-                                        <th style="width: 5%;">Action</th>
-                                        <th style="width: 50%;">Description</th>
-                                        <th style="width: 25%;">Amount</th>
-                                    }
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var line in expenseLines)
-                                {
-                                    <tr>
-
-                                        @if (!isSettlement)
-                                        {
-                                            <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => deleteLine(line))"><i class="oi oi-delete"></i></button></td>
-                                        }
-                                        else
-                                        {
-                                            <td>@line.LineNo</td>
-                                        }
-
-                                        <td><input type="text" class="form-control" @bind-value="line.Details" readonly="@(isSettlement.Equals(true) ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)" /></td>
-
-                                        @if (isSettlement)
-                                        {
-                                            <td><input type="text" class="form-control" value="@line.Amount.ToString("N0")" readonly /></td>
-                                            <td><input type="number" class="form-control" @bind-value="line.ActualAmount" disabled="@(successUpload.Equals(true) ? "disabled" : null)" /></td>
-                                        }
-                                        else
-                                        {
-                                            <td><input type="number" class="form-control" @bind-value="@line.ActualAmount" disabled="@(successUpload.Equals(true) ? "disabled" : null)" /></td>
-                                        }
-                                    
-                                </tr>
-                                }
-                                <tr>
-                                    @if (isSettlement)
-                                    {
-                                        <td colspan="2" style="font-size: 17px;" class="fw-bold">Total :</td>
-                                        <td id="total_amount">Rp <span id="nominal_amount"> @expenseLines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
-                                        <td id="total_amount">Rp <span id="nominal_amount"> @expenseLines.Sum(a => a.ActualAmount).ToString("N0") </span> ,- </td>
-                                    }
-                                    else
-                                    {
-                                        <td colspan="3" id="total_amount">Rp <span id="nominal_amount"> @expenseLines.Sum(a => a.ActualAmount).ToString("N0") </span> ,- </td>
-                                    }
-                                </tr>
-                                @if (!expenseLines.Sum(x => x.Amount).Equals(expenseLines.Sum(x => x.ActualAmount)) && isSettlement)
-                                {
-                                    <tr>
-                                        <td colspan="2" style="font-size: 17px;" class="fw-bold">Difference :</td>
-                                        <td colspan="2" id="total_amount">Rp <span id="nominal_amount"> @Decimal.Subtract(expenseLines.Sum(a => a.Amount), expenseLines.Sum(a => a.ActualAmount)).ToString("N0") </span> ,- </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning fade show" role="alert">
-                            <strong>Add New Expense !</strong>
-                        </div>
-                    }
-
-                    <div class="separator">File(s)</div>
-
-                    <button type="button" class="btn btn-sm btn-warning my-2" @onclick="addFileLine"><b>Add</b></button>
-
-                    @if (fileLines.Any())
-                    {
-                        <table class="table table-sm table-bordered" style="width: 100%">
-                            <thead>
-                                <tr>
-                                    <th style="width: 5%;">Action</th>
-                                    <th style="width: 40%;">File Name</th>
-                                    <th style="width: 30%;">Size (KB)</th>
-                                    <th style="width: 25%; background-color:aquamarine;">Select File</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var f in fileLines)
-                                {
-                                    <tr>
-                                        <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => deleteFileLine(f))"><i class="oi oi-delete"></i></button></td>
-                                        <td>@f.fileName</td>
-                                        <td>@(f.fileSize / 1024)</td>
-                                        <td><InputFile class="form-control form-control-file" accept=".pdf, .jpeg, .jpg, .png" OnChange="@((InputFileChangeEventArgs args) => UploadHandleSelection(args, f))" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputFile></td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning fade show" role="alert">
-                            <strong>Add New Attachment !</strong>
-                        </div>
-                    }
-
-                    <div class="row my-3">
-                        <div class="col">
-                            <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="resetForm"><b>Reset</b></button>
-                        
-                                @if (isSettlement)
-                                {
-                                    <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
-                                        Settle
-                                        @if (isLoading)
-                                        {
-                                        <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
-                                        }
-                                    </button>
-                                }
-                                else
-                                {
-                                    <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
-                                        Create Expense(s)
-                                        @if (isLoading)
-                                        {
-                                        <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
-                                        }
-                                    </button>
-                                }
-
-                        </div>
-                    </div>
-
-                </EditForm>
-
-            </div>
-
-        </div>
-
-        @if (showModal)
-        {
-            <div class="modal fade show" id="selectAdvanceModal" tabindex="-1" role="dialog" aria-labelledby="selectAdvanceModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
-                <div class="modal-dialog modal-lg" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header cus-bg">
-                            <h5 class="modal-title fw-bold text-white">Select Advance Settlement</h5>
-
-                            <button type="button" class="close border-0" @onclick="modalHide">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-
-                        <div class="modal-body">
-
-                            @if (checkAdvanceDataPresent())
+                            @if (!expenseLines.Sum(x => x.Amount).Equals(expenseLines.Sum(x => x.ActualAmount)))
                             {
-                                <div class="my-3">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-hover" style="width: 100%;">
-                                            <thead>
-                                                <tr>
-                                                    <th scope="col" style="width: 2%;">Select</th>
-                                                    <th scope="col" style="width: 16%;">Advance ID</th>
-                                                    <th scope="col" style="width: 45%;" class="d-none d-sm-table-cell">User</th>
-                                                    <th scope="col" style="width: 17%;">Amount</th>
-                                                    <th scope="col" style="width: 20%;" class="d-none d-sm-table-cell">Advance Date</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach (var adv in PettyCashService.advances)
-                                                {
-
-                                                    <tr @onclick="(() => selectAdvanceItem(adv))" id="selectAdvanceRowStyle">
-                                                        <td>
-                                                            <input class="form-check-input" type="radio" id="@adv.AdvanceID" value="@adv.AdvanceID" name="advanceList" checked="@(adv == selectedAdvance == false ? null : "checked")" />
-                                                        </td>
-
-                                                        <td>@adv.AdvanceID</td>
-                                                        <td class="d-none d-sm-table-cell">@adv.Applicant</td>
-                                                        <td>@adv.lines.Sum(x => x.Amount).ToString("N0")</td>
-                                                        <td class="d-none d-sm-table-cell">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
-                                                    </tr>
-                                                }
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-
+                                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                    <strong>Status Difference !</strong> Please recheck and Settle your Remaining Difference Below
                                 </div>
                             }
                             else
                             {
                                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <strong>There is no Outstanding Advance(s) !</strong> Have a great day !
+                                        <strong>Status Accept !</strong> Please recheck and Create Your Expense
                                 </div>
                             }
+                        }
+                
 
-                            <ul class="pagination pagination-sm justify-content-center my-2">
+                        @if (expenseLines.Any())
+                        {
+                            <table class="table table-sm table-bordered" style="width: 100%">
+                                <thead>
+                                    <tr>
+                                        @if (isSettlement)
+                                        {
+                                            <th style="width: 5%;">#</th>
+                                            <th style="width: 45%;">Description</th>
+                                            <th style="width: 25%;">Request Amount</th>
+                                            <th style="width: 25%; background-color:aquamarine;">Actual Amount</th>
+                                        }
+                                        else
+                                        {
+                                            <th style="width: 5%;">Action</th>
+                                            <th style="width: 50%;">Description</th>
+                                            <th style="width: 25%;">Amount</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var line in expenseLines)
+                                    {
+                                        <tr>
 
-                                @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
-                                @if ((advancePageActive - 1) > 0)
-                                {
-                                    <li class="page-item px-1 paging-style" @onclick="(() => advancePageSelect((advancePageActive - 1)))"><span class="page-link">Previous</span></li>
-                                    <li class="page-item paging-style" @onclick="(() => advancePageSelect((advancePageActive - 1)))"><span class="page-link">@(advancePageActive - 1)</span></li>
-                                }
-                                else
-                                {
-                                    <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
-                                    <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
-                                }
+                                            @if (!isSettlement)
+                                            {
+                                                <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => deleteLine(line))"><i class="oi oi-delete"></i></button></td>
+                                            }
+                                            else
+                                            {
+                                                <td>@line.LineNo</td>
+                                            }
 
-                                <li class="page-item active paging-style" @onclick="(() => advancePageSelect(advancePageActive))"><span class="page-link">@advancePageActive</span></li>
+                                            <td><input type="text" class="form-control" @bind-value="line.Details" readonly="@(isSettlement.Equals(true) ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)" /></td>
 
-                                @if (advancePageActive < advanceNumberofPage)
-                                {
-                                    <li class="page-item paging-style" @onclick="(() => advancePageSelect((advancePageActive + 1)))"><span class="page-link">@(advancePageActive + 1)</span></li>
-                                    <li class="page-item px-1 paging-style" @onclick="(() => advancePageSelect((advancePageActive + 1)))"><span class="page-link">Next</span></li>
-                                }
-                                else
-                                {
-                                    <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
-                                    <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
-                                }
+                                            @if (isSettlement)
+                                            {
+                                                <td><input type="text" class="form-control" value="@line.Amount.ToString("N0")" readonly /></td>
+                                                <td><input type="number" class="form-control" @bind-value="line.ActualAmount" disabled="@(successUpload.Equals(true) ? "disabled" : null)" /></td>
+                                            }
+                                            else
+                                            {
+                                                <td><input type="number" class="form-control" @bind-value="@line.ActualAmount" disabled="@(successUpload.Equals(true) ? "disabled" : null)" /></td>
+                                            }
+                                    
+                                    </tr>
+                                    }
+                                    <tr>
+                                        @if (isSettlement)
+                                        {
+                                            <td colspan="2" style="font-size: 17px;" class="fw-bold">Total :</td>
+                                            <td id="total_amount">Rp <span id="nominal_amount"> @expenseLines.Sum(a => a.Amount).ToString("N0") </span> ,- </td>
+                                            <td id="total_amount">Rp <span id="nominal_amount"> @expenseLines.Sum(a => a.ActualAmount).ToString("N0") </span> ,- </td>
+                                        }
+                                        else
+                                        {
+                                            <td colspan="3" id="total_amount">Rp <span id="nominal_amount"> @expenseLines.Sum(a => a.ActualAmount).ToString("N0") </span> ,- </td>
+                                        }
+                                    </tr>
+                                    @if (!expenseLines.Sum(x => x.Amount).Equals(expenseLines.Sum(x => x.ActualAmount)) && isSettlement)
+                                    {
+                                        <tr>
+                                            <td colspan="2" style="font-size: 17px;" class="fw-bold">Difference :</td>
+                                            <td colspan="2" id="total_amount">Rp <span id="nominal_amount"> @Decimal.Subtract(expenseLines.Sum(a => a.Amount), expenseLines.Sum(a => a.ActualAmount)).ToString("N0") </span> ,- </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning fade show" role="alert">
+                                <strong>Add New Expense !</strong>
+                            </div>
+                        }
 
+                        <div class="separator">File(s)</div>
 
-                                @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
-                            </ul>
-                    
+                        <button type="button" class="btn btn-sm btn-warning my-2" @onclick="addFileLine"><b>Add</b></button>
+
+                        @if (fileLines.Any())
+                        {
+                            <table class="table table-sm table-bordered" style="width: 100%">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">Action</th>
+                                        <th style="width: 40%;">File Name</th>
+                                        <th style="width: 30%;">Size (KB)</th>
+                                        <th style="width: 25%; background-color:aquamarine;">Select File</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var f in fileLines)
+                                    {
+                                        <tr>
+                                            <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => deleteFileLine(f))"><i class="oi oi-delete"></i></button></td>
+                                            <td>@f.fileName</td>
+                                            <td>@(f.fileSize / 1024)</td>
+                                            <td><InputFile class="form-control form-control-file" accept=".pdf, .jpeg, .jpg, .png" OnChange="@((InputFileChangeEventArgs args) => UploadHandleSelection(args, f))" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputFile></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning fade show" role="alert">
+                                <strong>Add New Attachment !</strong>
+                            </div>
+                        }
+
+                        <div class="row my-3">
+                            <div class="col">
+                                <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" @onclick="resetForm"><b>Reset</b></button>
+                        
+                                    @if (isSettlement)
+                                    {
+                                        <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
+                                            Settle
+                                            @if (isLoading)
+                                            {
+                                            <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                            }
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
+                                            Create Expense(s)
+                                            @if (isLoading)
+                                            {
+                                            <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                            }
+                                        </button>
+                                    }
+
+                            </div>
                         </div>
-                        <div class="modal-footer cus-bg">
 
-                            <button type="button" class="btn btn-sm btn-primary fw-bold" @onclick="modalAdvanceSelect">Select</button>
+                    </EditForm>
+
+                </div>
+
+            </div>
+
+            @if (showModal)
+            {
+                <div class="modal fade show" id="selectAdvanceModal" tabindex="-1" role="dialog" aria-labelledby="selectAdvanceModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header cus-bg">
+                                <h5 class="modal-title fw-bold text-white">Select Advance Settlement</h5>
+
+                                <button type="button" class="close border-0" @onclick="modalHide">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+
+                                @if (checkAdvanceDataPresent())
+                                {
+                                    <div class="my-3">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover" style="width: 100%;">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col" style="width: 2%;">Select</th>
+                                                        <th scope="col" style="width: 16%;">Advance ID</th>
+                                                        <th scope="col" style="width: 45%;" class="d-none d-sm-table-cell">User</th>
+                                                        <th scope="col" style="width: 17%;">Amount</th>
+                                                        <th scope="col" style="width: 20%;" class="d-none d-sm-table-cell">Advance Date</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var adv in PettyCashService.advances)
+                                                    {
+
+                                                        <tr @onclick="(() => selectAdvanceItem(adv))" id="selectAdvanceRowStyle">
+                                                            <td>
+                                                                <input class="form-check-input" type="radio" id="@adv.AdvanceID" value="@adv.AdvanceID" name="advanceList" checked="@(adv == selectedAdvance == false ? null : "checked")" />
+                                                            </td>
+
+                                                            <td>@adv.AdvanceID</td>
+                                                            <td class="d-none d-sm-table-cell">@adv.Applicant</td>
+                                                            <td>@adv.lines.Sum(x => x.Amount).ToString("N0")</td>
+                                                            <td class="d-none d-sm-table-cell">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
+                                                        </tr>
+                                                    }
+
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                        <strong>There is no Outstanding Advance(s) !</strong> Have a great day !
+                                    </div>
+                                }
+
+                                <ul class="pagination pagination-sm justify-content-center my-2">
+
+                                    @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                                    @if ((advancePageActive - 1) > 0)
+                                    {
+                                        <li class="page-item px-1 paging-style" @onclick="(() => advancePageSelect((advancePageActive - 1)))"><span class="page-link">Previous</span></li>
+                                        <li class="page-item paging-style" @onclick="(() => advancePageSelect((advancePageActive - 1)))"><span class="page-link">@(advancePageActive - 1)</span></li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                    }
+
+                                    <li class="page-item active paging-style" @onclick="(() => advancePageSelect(advancePageActive))"><span class="page-link">@advancePageActive</span></li>
+
+                                    @if (advancePageActive < advanceNumberofPage)
+                                    {
+                                        <li class="page-item paging-style" @onclick="(() => advancePageSelect((advancePageActive + 1)))"><span class="page-link">@(advancePageActive + 1)</span></li>
+                                        <li class="page-item px-1 paging-style" @onclick="(() => advancePageSelect((advancePageActive + 1)))"><span class="page-link">Next</span></li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                                    }
+
+
+                                    @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                                </ul>
+                    
+                            </div>
+                            <div class="modal-footer cus-bg">
+
+                                <button type="button" class="btn btn-sm btn-primary fw-bold" @onclick="modalAdvanceSelect">Select</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            }
         }
     }
 }

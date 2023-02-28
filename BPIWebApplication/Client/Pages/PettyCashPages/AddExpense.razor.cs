@@ -116,7 +116,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             }
         }
 
-        IReadOnlyList<IBrowserFile> listFileUpload;
+        IReadOnlyList<IBrowserFile>? listFileUpload;
 
         private async void UploadHandleSelection(InputFileChangeEventArgs files, BPIWebApplication.Shared.MainModel.Stream.FileStream line)
         {
@@ -429,6 +429,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         {
             isTypeTransfer = false;
             isSettlement = false;
+            isLoading = false;
+            successUpload = false;
             clearInputFile = !clearInputFile;
 
             listFileUpload = null;
@@ -436,6 +438,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             expense.ExpenseID = "";
             expense.AdvanceID = "";
             expense.ExpenseDate = DateTime.Now;
+            expense.Approver = "";
             expense.ExpenseStatus = "";
             expense.ExpenseNIK = "";
             expense.ExpenseNote = "";
