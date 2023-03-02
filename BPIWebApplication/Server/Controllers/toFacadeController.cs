@@ -12,7 +12,7 @@ using BPIWebApplication.Shared.MainModel;
 using BPIWebApplication.Shared.MainModel.Procedure;
 using BPIWebApplication.Shared.MainModel.PettyCash;
 using BPIWebApplication.Shared.MainModel.Company;
-using BPIFacade.Models.MainModel.Mailing;
+using BPIWebApplication.Shared.MainModel.Mailing;
 using BPIWebApplication.Shared.MainModel.CashierLogbook;
 using BPIWebApplication.Shared.PagesModel.CashierLogbook;
 using Microsoft.Extensions.Configuration;

@@ -1,4 +1,4 @@
-﻿namespace BPIFacade.Models.MainModel.Mailing
+﻿namespace BPIWebApplication.Shared.MainModel.Mailing
 {
     public class Mailing
     {

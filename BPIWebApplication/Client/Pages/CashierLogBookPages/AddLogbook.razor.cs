@@ -88,8 +88,8 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                 {
                     if (CashierLogbookService.mainLogs.SingleOrDefault(a => a.LogID.Equals(temp.Split("!_!")[0])) != null)
                     {
-                        logbook.LogType = "MAIN";
                         logbook = CashierLogbookService.mainLogs.SingleOrDefault(a => a.LogID.Equals(temp.Split("!_!")[0]));
+                        logbook.LogType = "MAIN";
                     }
                     else
                     {
@@ -100,8 +100,8 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                 {
                     if (CashierLogbookService.transitLogs.SingleOrDefault(a => a.LogID.Equals(temp.Split("!_!")[0])) != null)
                     {
-                        logbook.LogType = "TRANSIT";
                         logbook = CashierLogbookService.transitLogs.SingleOrDefault(a => a.LogID.Equals(temp.Split("!_!")[0]));
+                        logbook.LogType = "TRANSIT";
                     }
                     else
                     {
@@ -151,6 +151,56 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                     else
                     {
                         await _jsModule.InvokeVoidAsync("showAlert", "Create Log Failed, Please Check Your Connection !");
+                        isLoading = false;
+                        isSuccessUpload = false;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                await _jsModule.InvokeVoidAsync("showAlert", $"Error {e.Message} !");
+                isFetchBalanceActive = false;
+            }
+        }
+
+        private async void editLogData()
+        {
+            try
+            {
+                if (!validateInput())
+                {
+                    await _jsModule.InvokeVoidAsync("showAlert", "Blank Input Field, Please Fill the Blank Field !");
+                    isLoading = false;
+                    isSuccessUpload = false;
+                }
+                else
+                {
+                    isLoading = true;
+
+                    QueryModel<CashierLogData> uploadData = new();
+                    uploadData.Data = new();
+
+                    uploadData.Data = logbook;
+                    uploadData.userEmail = activeUser.userName;
+                    uploadData.userAction = "U";
+                    uploadData.userActionDate = DateTime.Now;
+
+                    var res = await CashierLogbookService.editLogData(uploadData);
+
+                    if (res.isSuccess)
+                    {
+                        await _jsModule.InvokeVoidAsync("showAlert", "Edit Log Success !");
+
+                        //logbook.LogID = res.Data.Data.LogID;
+
+                        isLoading = false;
+                        isSuccessUpload = true;
+
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        await _jsModule.InvokeVoidAsync("showAlert", "Edit Log Failed, Please Check Your Connection !");
                         isLoading = false;
                         isSuccessUpload = false;
                     }

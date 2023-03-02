@@ -137,9 +137,7 @@ else
                                         @if ((reimbursePageActive - 1) > 0)
                                         {
                                             <li class="page-item px-1 paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive - 1)))"><span class="page-link">Previous</span></li>
-                                            <li class="page-item paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive - 1)))"><span class="page-link">@(
-                            reimbursePageActive - 1
-                            )</span></li>
+                                            <li class="page-item paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive - 1)))"><span class="page-link">@(reimbursePageActive - 1)</span></li>
                                         }
                                         else
                                         {
@@ -151,9 +149,7 @@ else
 
                                         @if (reimbursePageActive < reimburseNumberofPage)
                                         {
-                                            <li class="page-item paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive + 1)))"><span class="page-link">@(
-                            reimbursePageActive + 1
-                            )</span></li>
+                                            <li class="page-item paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive + 1)))"><span class="page-link">@(reimbursePageActive + 1)</span></li>
                                             <li class="page-item px-1 paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive + 1)))"><span class="page-link">Next</span></li>
                                         }
                                         else

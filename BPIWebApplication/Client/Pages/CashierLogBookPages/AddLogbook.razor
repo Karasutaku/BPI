@@ -97,7 +97,7 @@
                 </div>
             </div>
 
-            @*@JsonSerializer.Serialize(logbook)*@
+            @JsonSerializer.Serialize(logbook)
 
             @if (checkCategoriesPresent())
             {
@@ -130,13 +130,13 @@
                             <div class="row">
                                 <div class="col">
                                     <label for="log_note">Note :</label>
-                                    <InputText id="log_note" @bind-Value="logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).CategoryNote" class="form-control" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)"></InputText>
+                                    <InputText id="log_note" @bind-Value="logbook.header.Where(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).CategoryNote" class="form-control" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)"></InputText>
                                 </div>
                             </div>
                         <div class="row my-3">
                             <div class="col">
                                     <label for="log_note"><b>Actual @amtCat.AmountCategoryName Amount :</b></label>
-                                    <input type="number" id="log_note" @bind-value="logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).ActualAmount" @oninput="@((ChangeEventArgs e) => { try { if (e.Value.ToString().Length > 0) { previewActualAmount = Convert.ToDecimal(e.Value).ToString("N0"); logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).ActualAmount = Convert.ToDecimal(e.Value); } else { previewActualAmount = ""; logbook.header.FirstOrDefault(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).ActualAmount = decimal.Zero; } } catch (Exception exc) { } })" class="form-control" />
+                                    <input type="number" id="log_note" @bind-value="logbook.header.Where(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).ActualAmount" @oninput="@((ChangeEventArgs e) => { try { if (e.Value.ToString().Length > 0) { previewActualAmount = Convert.ToDecimal(e.Value).ToString("N0"); logbook.header.Where(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).ActualAmount = Convert.ToDecimal(e.Value); } else { previewActualAmount = ""; logbook.header.Where(x => x.AmountCategoryID.Equals(amtCat.AmountCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).ActualAmount = decimal.Zero; } } catch (Exception exc) { } })" class="form-control" />
                                 </div>
                                 <div class="col">
                                     <label for="log_note">Preview Amount :</label>
@@ -236,7 +236,7 @@
                     }
                     else
                     {
-                        <button type="button" title="Create" class="btn btn-sm btn-primary" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="createLogData">
+                        <button type="button" title="Create" class="btn btn-sm btn-primary" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="editLogData">
                             <b>Edit</b>
                             @if (isLoading)
                             {

@@ -25,4 +25,15 @@
         public List<AmountCategories> categories { get; set; } = new();
         public List<AmountSubCategories> subCategories { get; set; } = new();
     }
+
+    public class CashierLogApproval
+    {
+        public string LogID { get; set; } = string.Empty;
+        public int ShiftID { get; set; } = 0;
+        public string CreateUser { get; set; } = string.Empty;
+        public DateTime CreateDate { get; set; } = DateTime.Now;
+        public string ConfirmUser { get; set; } = string.Empty;
+        public DateTime ConfirmDate { get; set; } = DateTime.Now;
+        public string ApproveNote { get; set; } = string.Empty;
+    }
 }

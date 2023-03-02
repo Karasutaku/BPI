@@ -1,4 +1,6 @@
-﻿namespace BPIWebApplication.Shared.MainModel.CashierLogbook
+﻿using BPIWebApplication.Shared.PagesModel.CashierLogbook;
+
+namespace BPIWebApplication.Shared.MainModel.CashierLogbook
 {
     public class CashierLogData
     {
@@ -10,6 +12,7 @@
         public string LogStatus { get; set; } = string.Empty;
         public DateTime LogStatusDate { get; set; } = DateTime.Now;
         public List<CashierLogCategoryDetail> header { get; set; } = new();
+        public List<CashierLogApproval>? approvals { get; set; } = new();
     }
 
     public class CashierLogCategoryDetail

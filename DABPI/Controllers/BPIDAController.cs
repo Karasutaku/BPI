@@ -21,7 +21,7 @@ namespace BPIDA.Controllers
     /// <summary>
     /// BPI BASE CONTROLLER
     /// </summary>
-    
+
 
     [Route("api/DA/BPIBase")]
     [ApiController]
@@ -157,6 +157,7 @@ namespace BPIDA.Controllers
 
         // create DA
 
+        
         internal void createNewDepartmentData(QueryModel<Department> data)
         {
             using (SqlConnection con = new SqlConnection(_conString))
@@ -2680,6 +2681,41 @@ namespace BPIDA.Controllers
         }
 
         // create
+
+        internal bool createPettyCashTableSchema(string objName)
+        {
+            bool conBool = false;
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createPettyCashSchemaTables]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@objectName", objName);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret > 0)
+                        conBool = true;
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conBool;
+        }
 
         internal DataTable createIDData(string docType)
         {
@@ -5550,6 +5586,7 @@ namespace BPIDA.Controllers
 
             try
             {
+                createPettyCashTableSchema(data.Data.LocationID);
                 updateLocationBudget(data);
 
                 res.Data = data;
@@ -5806,6 +5843,82 @@ namespace BPIDA.Controllers
         {
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
             return Convert.ToBase64String(plainTextBytes);
+        }
+
+        internal DataTable createBrankasActionLogData(QueryModel<CashierLogAction> data)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createBrankasActionLogData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LogID", data.Data.LogID);
+                    command.Parameters.AddWithValue("@LocationID", data.Data.LocationID);
+                    command.Parameters.AddWithValue("@UserEmail", data.Data.UserEmail);
+                    command.Parameters.AddWithValue("@LogAction", data.Data.LogAction);
+                    command.Parameters.AddWithValue("@ActionDate", data.Data.ActionDate);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return dt;
+        }
+
+        internal bool createCashierLogbookTableSchema(string objName)
+        {
+            bool conBool = false;
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createBrankasSchemaTables]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@objectName", objName);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret > 0)
+                        conBool = true;
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conBool;
         }
 
         internal DataTable createIDData(string docType)
@@ -6129,7 +6242,7 @@ namespace BPIDA.Controllers
         //    }
         //}
 
-        internal void createLogLineData(DataTable data, string loc)
+        internal void createLogLineData(DataTable data, string loc, string logId)
         {
             using (SqlConnection con = new SqlConnection(_conString))
             {
@@ -6145,6 +6258,7 @@ namespace BPIDA.Controllers
 
                     command.Parameters.Clear();
                     command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@LogID", logId);
                     command.Parameters.AddWithValue("@BrankasCategoryLineData", data);
 
                     command.ExecuteNonQuery();
@@ -6160,7 +6274,87 @@ namespace BPIDA.Controllers
             }
         }
 
-        internal void deleteLogLineData(QueryModel<string> data)
+        //internal void createLogLineData(QueryModel<CashierLogApproval> data, string loc)
+        //{
+        //    using (SqlConnection con = new SqlConnection(_conString))
+        //    {
+        //        con.Open();
+        //        SqlCommand command = new SqlCommand();
+
+        //        try
+        //        {
+        //            command.Connection = con;
+        //            command.CommandType = CommandType.StoredProcedure;
+        //            command.CommandText = "[createBrankasApproveLog]";
+        //            command.CommandTimeout = 1000;
+
+        //            command.Parameters.Clear();
+        //            command.Parameters.AddWithValue("@LogID", data.Data.LogID);
+        //            command.Parameters.AddWithValue("@LocationID", loc);
+        //            command.Parameters.AddWithValue("@ShiftID", data.Data.ShiftID);
+        //            command.Parameters.AddWithValue("@CreateUser", data.Data.CreateUser);
+        //            command.Parameters.AddWithValue("@CreateDate", data.Data.CreateDate);
+        //            command.Parameters.AddWithValue("@ConfirmUser", data.Data.ConfirmUser);
+        //            command.Parameters.AddWithValue("@ConfirmDate", data.Data.ConfirmDate);
+        //            command.Parameters.AddWithValue("@ApproveNote", data.Data.ApproveNote);
+        //            command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+        //            command.Parameters.AddWithValue("@AuditAction", data.userAction);
+        //            command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+        //            command.ExecuteNonQuery();
+        //        }
+        //        catch (SqlException ex)
+        //        {
+        //            throw ex;
+        //        }
+        //        finally
+        //        {
+        //            con.Close();
+        //        }
+        //    }
+        //}
+
+        //internal void deleteLogLineData(QueryModel<string> data)
+        //{
+        //    using (SqlConnection con = new SqlConnection(_conString))
+        //    {
+        //        con.Open();
+        //        SqlCommand command = new SqlCommand();
+
+        //        try
+        //        {
+        //            command.Connection = con;
+        //            command.CommandType = CommandType.StoredProcedure;
+        //            command.CommandText = "[createBrankasCategoryLine]";
+        //            command.CommandTimeout = 1000;
+
+        //            command.Parameters.Clear();
+        //            command.Parameters.AddWithValue("@LineAction", "DEL");
+        //            command.Parameters.AddWithValue("@LocationID", data.Data);
+        //            command.Parameters.AddWithValue("@BrankasCategoryID", "");
+        //            command.Parameters.AddWithValue("@LineNum", 0);
+        //            command.Parameters.AddWithValue("@AmountSubCategoryID", "");
+        //            command.Parameters.AddWithValue("@AmountType", "");
+        //            command.Parameters.AddWithValue("@ShiftID", 0);
+        //            command.Parameters.AddWithValue("@LineAmount", 0);
+        //            command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+        //            command.Parameters.AddWithValue("@AuditAction", data.userAction);
+        //            command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+        //            command.ExecuteNonQuery();
+        //        }
+        //        catch (SqlException ex)
+        //        {
+        //            throw ex;
+        //        }
+        //        finally
+        //        {
+        //            con.Close();
+        //        }
+        //    }
+        //}
+
+        internal void updateApproveLogData(DataTable data, string loc, string logId)
         {
             using (SqlConnection con = new SqlConnection(_conString))
             {
@@ -6175,17 +6369,9 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@LineAction", "DEL");
-                    command.Parameters.AddWithValue("@LocationID", data.Data);
-                    command.Parameters.AddWithValue("@BrankasCategoryID", "");
-                    command.Parameters.AddWithValue("@LineNum", 0);
-                    command.Parameters.AddWithValue("@AmountSubCategoryID", "");
-                    command.Parameters.AddWithValue("@AmountType", "");
-                    command.Parameters.AddWithValue("@ShiftID", 0);
-                    command.Parameters.AddWithValue("@LineAmount", 0);
-                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
-                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
-                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@LogID", logId);
+                    command.Parameters.AddWithValue("@BrankasCategoryLineData", data);
 
                     command.ExecuteNonQuery();
                 }
@@ -6316,6 +6502,43 @@ namespace BPIDA.Controllers
             return dt;
         }
 
+        internal DataTable getLogApprovalData(string logID, string loc)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getBrankasApproveDatabyLogID]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LogID", logID);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
         // http
 
         [HttpPost("createLogData")]
@@ -6323,11 +6546,14 @@ namespace BPIDA.Controllers
         {
             ResultModel<QueryModel<CashierLogData>> res = new ResultModel<QueryModel<CashierLogData>>();
             DataTable dtMainIdentity = new DataTable("Identity");
-            string code = string.Empty;
+            string logID = string.Empty;
+            string headerID = string.Empty;
             IActionResult actionResult = null;
 
             try
             {
+                createCashierLogbookTableSchema(data.Data.LocationID);
+                
                 dtMainIdentity = createIDData("CashierLogbook");
 
                 if (dtMainIdentity.Rows.Count > 0)
@@ -6341,12 +6567,12 @@ namespace BPIDA.Controllers
                             zero = zero + "0";
                         }
 
-                        code = dt["Code"].ToString() + DateTime.Now.Year.ToString() + DateTime.Now.ToString("MM") + DateTime.Now.ToString("dd") + zero + dt["DocNumber"].ToString() + dt["Parity"].ToString();
+                        logID = dt["Code"].ToString() + DateTime.Now.Year.ToString() + DateTime.Now.ToString("MM") + DateTime.Now.ToString("dd") + zero + dt["DocNumber"].ToString() + dt["Parity"].ToString();
 
                     }
                 }
 
-                data.Data.LogID = code;
+                data.Data.LogID = logID;
 
                 QueryModel<CashierLogDataConv> temp1 = new();
                 temp1.Data = new();
@@ -6382,7 +6608,7 @@ namespace BPIDA.Controllers
                                 zero = zero + "0";
                             }
 
-                            code = dt["Code"].ToString() + DateTime.Now.Year.ToString() + DateTime.Now.ToString("MM") + DateTime.Now.ToString("dd") + zero + dt["DocNumber"].ToString() + dt["Parity"].ToString();
+                            headerID = dt["Code"].ToString() + DateTime.Now.Year.ToString() + DateTime.Now.ToString("MM") + DateTime.Now.ToString("dd") + zero + dt["DocNumber"].ToString() + dt["Parity"].ToString();
 
                         }
                     }
@@ -6390,7 +6616,7 @@ namespace BPIDA.Controllers
                     CashierLogCategoryDetailConv temp2 = new();
 
                     temp2.LogID = data.Data.LogID;
-                    temp2.BrankasCategoryID = code;
+                    temp2.BrankasCategoryID = headerID;
                     temp2.AmountCategoryID = hd.AmountCategoryID;
                     temp2.HeaderAmount = hd.lines.Sum(x => x.LineAmount);
                     temp2.ActualAmount = hd.ActualAmount;
@@ -6404,7 +6630,7 @@ namespace BPIDA.Controllers
                     {
                         CashierLogLineDetailConv temp3 = new();
 
-                        temp3.BrankasCategoryID = code;
+                        temp3.BrankasCategoryID = headerID;
                         temp3.LineNum = c;
                         temp3.AmountSubCategoryID = dt.AmountSubCategoryID;
                         temp3.AmountType = dt.AmountType;
@@ -6454,7 +6680,7 @@ namespace BPIDA.Controllers
                 //foreach (var dt in data.Data.header.SelectMany(x => x.lines))
                 //{
                 //    CashierLogLineDetailConv temp = new();
-                    
+
                 //    temp.BrankasCategoryID = dt.BrankasCategoryID;
                 //    temp.LineNum = dt.LineNo;
                 //    temp.AmountSubCategoryID = dt.AmountSubCategoryID;
@@ -6465,7 +6691,7 @@ namespace BPIDA.Controllers
                 //    lines.Add(temp);
                 //}
 
-                createLogLineData(ListToDataTable<CashierLogLineDetailConv>(lines, data.userEmail, data.userAction, data.userActionDate, "Lines"), data.Data.LocationID);
+                createLogLineData(ListToDataTable<CashierLogLineDetailConv>(lines, data.userEmail, data.userAction, data.userActionDate, "Lines"), data.Data.LocationID, logID);
 
                 //foreach (var dt in data.Data.header)
                 //{
@@ -6493,6 +6719,154 @@ namespace BPIDA.Controllers
                 //    }
                 //}
 
+                QueryModel<CashierLogAction> logAction = new();
+                logAction.Data = new();
+
+                logAction.Data.LogID = logID;
+                logAction.Data.LocationID = data.Data.LocationID;
+                logAction.Data.UserEmail = data.userEmail;
+                logAction.Data.LogAction = "Created";
+                logAction.Data.ActionDate = DateTime.Now;
+                logAction.userEmail = data.userEmail;
+                logAction.userAction = data.userAction;
+                logAction.userActionDate = data.userActionDate;
+
+                createBrankasActionLogData(logAction);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+                
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("editLogData")]
+        public async Task<IActionResult> editLogData(QueryModel<CashierLogData> data)
+        {
+            ResultModel<QueryModel<CashierLogData>> res = new ResultModel<QueryModel<CashierLogData>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                //dtMainIdentity = createIDData("CashierLogbook");
+
+                //if (dtMainIdentity.Rows.Count > 0)
+                //{
+                //    foreach (DataRow dt in dtMainIdentity.Rows)
+                //    {
+                //        string zero = string.Empty;
+
+                //        for (int i = 0; i < (5 - Convert.ToInt32(dt["IDLength"])); i++)
+                //        {
+                //            zero = zero + "0";
+                //        }
+
+                //        logID = dt["Code"].ToString() + DateTime.Now.Year.ToString() + DateTime.Now.ToString("MM") + DateTime.Now.ToString("dd") + zero + dt["DocNumber"].ToString() + dt["Parity"].ToString();
+
+                //    }
+                //}
+
+                //data.Data.LogID = logID;
+
+                QueryModel<CashierLogDataConv> temp1 = new();
+                temp1.Data = new();
+
+                temp1.Data.LogID = data.Data.LogID;
+                temp1.Data.LocationID = data.Data.LocationID;
+                temp1.Data.Applicant = data.Data.Applicant;
+                temp1.Data.LogDate = data.Data.LogDate;
+                temp1.Data.LogStatus = data.Data.LogStatus;
+                temp1.Data.LogStatusDate = data.Data.LogStatusDate;
+                temp1.userEmail = data.userEmail;
+                temp1.userAction = data.userAction;
+                temp1.userActionDate = data.userActionDate;
+
+                createLogData(temp1, data.Data.LogType);
+
+                List<CashierLogLineDetailConv> lines = new();
+                List<CashierLogCategoryDetailConv> headers = new();
+
+                foreach (var hd in data.Data.header)
+                {
+                    //DataTable dtHeaderIdentity = new DataTable("HIdentity");
+                    //dtHeaderIdentity = createIDData("CashierLogHeader");
+
+                    //if (dtHeaderIdentity.Rows.Count > 0)
+                    //{
+                    //    foreach (DataRow dt in dtHeaderIdentity.Rows)
+                    //    {
+                    //        string zero = string.Empty;
+
+                    //        for (int i = 0; i < (5 - Convert.ToInt32(dt["IDLength"])); i++)
+                    //        {
+                    //            zero = zero + "0";
+                    //        }
+
+                    //        headerID = dt["Code"].ToString() + DateTime.Now.Year.ToString() + DateTime.Now.ToString("MM") + DateTime.Now.ToString("dd") + zero + dt["DocNumber"].ToString() + dt["Parity"].ToString();
+
+                    //    }
+                    //}
+
+                    CashierLogCategoryDetailConv temp2 = new();
+
+                    temp2.LogID = data.Data.LogID;
+                    temp2.BrankasCategoryID = hd.BrankasCategoryID;
+                    temp2.AmountCategoryID = hd.AmountCategoryID;
+                    temp2.HeaderAmount = hd.lines.Sum(x => x.LineAmount);
+                    temp2.ActualAmount = hd.ActualAmount;
+                    temp2.CategoryNote = hd.CategoryNote;
+
+                    headers.Add(temp2);
+
+                    int c = 1;
+
+                    foreach (var dt in hd.lines)
+                    {
+                        CashierLogLineDetailConv temp3 = new();
+
+                        temp3.BrankasCategoryID = hd.BrankasCategoryID;
+                        temp3.LineNum = c;
+                        temp3.AmountSubCategoryID = dt.AmountSubCategoryID;
+                        temp3.AmountType = dt.AmountType;
+                        temp3.ShiftID = dt.ShiftID;
+                        temp3.LineAmount = dt.LineAmount;
+
+                        c++;
+                        lines.Add(temp3);
+                    }
+                }
+
+                createLogHeaderData(ListToDataTable<CashierLogCategoryDetailConv>(headers, data.userEmail, data.userAction, data.userActionDate, "Headers"), data.Data.LocationID);
+
+                createLogLineData(ListToDataTable<CashierLogLineDetailConv>(lines, data.userEmail, data.userAction, data.userActionDate, "Lines"), data.Data.LocationID, data.Data.LogID);
+
+                QueryModel<CashierLogAction> logAction = new();
+                logAction.Data = new();
+
+                logAction.Data.LogID = data.Data.LogID;
+                logAction.Data.LocationID = data.Data.LocationID;
+                logAction.Data.UserEmail = data.userEmail;
+                logAction.Data.LogAction = "Edited";
+                logAction.Data.ActionDate = DateTime.Now;
+                logAction.userEmail = data.userEmail;
+                logAction.userAction = data.userAction;
+                logAction.userActionDate = data.userActionDate;
+
+                createBrankasActionLogData(logAction);
+
                 res.Data = data;
                 res.isSuccess = true;
                 res.ErrorCode = "00";
@@ -6512,82 +6886,6 @@ namespace BPIDA.Controllers
             }
             return actionResult;
         }
-
-        //[HttpPost("editLogData")]
-        //public async Task<IActionResult> editLogData(QueryModel<CashierLogData> data)
-        //{
-        //    ResultModel<QueryModel<CashierLogData>> res = new ResultModel<QueryModel<CashierLogData>>();
-        //    IActionResult actionResult = null;
-
-        //    try
-        //    {
-        //        QueryModel<CashierLogData> temp1 = new();
-        //        temp1.Data = new();
-
-        //        temp1.Data = data.Data;
-        //        temp1.userEmail = data.userEmail;
-        //        temp1.userAction = data.userAction;
-        //        temp1.userActionDate = data.userActionDate;
-
-        //        //createLogData(temp1);
-
-        //        //foreach (var dt in data.Data.header)
-        //        //{
-        //        //    QueryModel<CashierLogCategoryDetail> temp2 = new();
-        //        //    temp2.Data = new();
-
-        //        //    temp2.Data = dt;
-        //        //    temp2.userEmail = data.userEmail;
-        //        //    temp2.userAction = data.userAction;
-        //        //    temp2.userActionDate = data.userActionDate;
-
-        //        //    createLogHeaderData(temp2, data.Data.LocationID);
-
-        //        //    if (dt.isLineDeleted)
-        //        //    {
-        //        //        QueryModel<string> temp3 = new();
-
-        //        //        temp3.Data = data.Data.LocationID;
-        //        //        temp3.userEmail = data.userEmail;
-        //        //        temp3.userAction = data.userAction;
-        //        //        temp3.userActionDate = data.userActionDate;
-
-        //        //        deleteLogLineData(temp3);
-        //        //    }
-
-        //        //    foreach (var dtLine in dt.lines)
-        //        //    {
-        //        //        QueryModel<CashierLogLineDetail> temp4 = new();
-        //        //        temp4.Data = new();
-
-        //        //        temp4.Data = dtLine;
-        //        //        temp4.userEmail = data.userEmail;
-        //        //        temp4.userAction = data.userAction;
-        //        //        temp4.userActionDate = data.userActionDate;
-
-        //        //        createLogLineData(temp4, data.Data.LocationID);
-        //        //    }
-        //        //}
-
-        //        res.Data = data;
-        //        res.isSuccess = true;
-        //        res.ErrorCode = "00";
-        //        res.ErrorMessage = "";
-
-        //        actionResult = Ok(res);
-
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        res.Data = null;
-        //        res.isSuccess = false;
-        //        res.ErrorCode = "99";
-        //        res.ErrorMessage = ex.Message;
-
-        //        actionResult = BadRequest(res);
-        //    }
-        //    return actionResult;
-        //}
 
         [HttpGet("getLogData/{locPage}")]
         public async Task<IActionResult> getLogDataTable(string locPage)
@@ -6685,6 +6983,36 @@ namespace BPIDA.Controllers
                             flag = false;
                         }
 
+                        DataTable dtApv = new DataTable("Approval");
+                        List<CashierLogApproval> cashierLogApproval = new();
+
+                        dtApv = getLogApprovalData(dt["LogID"].ToString(), loc);
+
+                        if (dtApv.Rows.Count > 0)
+                        {
+                            foreach (DataRow rApproval in dtApv.Rows)
+                            {
+                                CashierLogApproval temp4 = new();
+
+                                temp4.LogID = rApproval["LogID"].ToString();
+                                temp4.ShiftID = Convert.ToInt32(rApproval["ShiftID"]);
+                                temp4.CreateUser = rApproval["CreateUser"].ToString();
+                                temp4.CreateDate = Convert.ToDateTime(rApproval["CreateDate"]);
+                                temp4.ConfirmUser = rApproval["ConfirmUser"].ToString();
+                                temp4.ConfirmDate = Convert.ToDateTime(rApproval["ConfirmDate"]);
+                                temp4.ApproveNote = rApproval.IsNull("ApproveNote") ? "" : rApproval["ApproveNote"].ToString();
+
+                                cashierLogApproval.Add(temp4);
+                            }
+
+                            temp1.approvals = cashierLogApproval;
+                        }
+                        else
+                        {
+                            temp1.approvals = null;
+                            flag = false;
+                        }
+                        
                         cashierLogbooks.Add(temp1);
                     }
                 }

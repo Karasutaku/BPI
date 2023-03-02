@@ -67,37 +67,37 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
             return resData;
         }
 
-        //public async Task<ResultModel<QueryModel<CashierLogData>>> editLogData(QueryModel<CashierLogData> data)
-        //{
-        //    ResultModel<QueryModel<CashierLogData>> resData = new ResultModel<QueryModel<CashierLogData>>();
+        public async Task<ResultModel<QueryModel<CashierLogData>>> editLogData(QueryModel<CashierLogData> data)
+        {
+            ResultModel<QueryModel<CashierLogData>> resData = new ResultModel<QueryModel<CashierLogData>>();
 
-        //    try
-        //    {
-        //        var result = await _http.PostAsJsonAsync<QueryModel<CashierLogData>>("api/endUser/CashierLogbook/editLogData", data);
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogData>>("api/endUser/CashierLogbook/editLogData", data);
 
-        //        if (result.IsSuccessStatusCode)
-        //        {
-        //            var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogData>>>();
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogData>>>();
 
-        //            if (respBody.isSuccess)
-        //            {
-        //                resData.Data = respBody.Data;
-        //                resData.isSuccess = respBody.isSuccess;
-        //                resData.ErrorCode = respBody.ErrorCode;
-        //                resData.ErrorMessage = respBody.ErrorMessage;
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        resData.Data = null;
-        //        resData.isSuccess = false;
-        //        resData.ErrorCode = "99";
-        //        resData.ErrorMessage = ex.Message;
-        //    }
+                    if (respBody.isSuccess)
+                    {
+                        resData.Data = respBody.Data;
+                        resData.isSuccess = respBody.isSuccess;
+                        resData.ErrorCode = respBody.ErrorCode;
+                        resData.ErrorMessage = respBody.ErrorMessage;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = null;
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
 
-        //    return resData;
-        //}
+            return resData;
+        }
 
         public async Task<ResultModel<List<Shift>>> getShiftData(string moduleName)
         {
