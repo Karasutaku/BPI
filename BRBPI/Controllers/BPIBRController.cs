@@ -3301,6 +3301,52 @@ namespace BPIBR.Controllers
             return actionResult;
         }
 
+        [HttpPost("editBrankasApproveLogOnConfirm")]
+        public async Task<IActionResult> editBrankasApproveLogOnConfirm(QueryModel<CashierLogApproval> data)
+        {
+            ResultModel<QueryModel<CashierLogApproval>> res = new ResultModel<QueryModel<CashierLogApproval>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogApproval>>($"api/DA/CashierLogbook/editBrankasApproveLogOnConfirm", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogApproval>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Fail settle from editBrankasApproveLogOnConfirm DA";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
         //
     }
 

@@ -1,9 +1,11 @@
 ﻿using BPIWebApplication.Client.Services.PettyCashServices;
+using BPIWebApplication.Shared.DbModel;
 using BPIWebApplication.Shared.MainModel.CashierLogbook;
 using BPIWebApplication.Shared.MainModel.Company;
 using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.PagesModel.CashierLogbook;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 
 namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 {
@@ -19,10 +21,14 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
         private int mainLogPageActive = 0;
         private int transitLogPageActive = 0;
+        private int confirmShift = 0;
 
         private bool isMainLogActive = false;
         private bool isTransitLogActive = false;
         private bool showModal = false;
+        private bool confirmModal = false;
+
+        private string confirmNote { get; set; } = string.Empty;
 
         private static string Base64Encode(string plainText)
         {
@@ -34,6 +40,8 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
             return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
         }
+
+        IJSObjectReference _jsModule;
 
         protected override async Task OnInitializedAsync()
         {
@@ -66,7 +74,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
             await CashierLogbookService.getShiftData("CashierLogbook");
 
-            //_jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/PettyCashPages/PettyCashDashboard.razor.js");
+            _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/CashierLogBookPages/CashierLogbookDashboard.razor.js");
         }
 
         private void hideModal() => showModal = false;
@@ -157,6 +165,45 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             string param = Base64Encode(temp);
 
             navigate.NavigateTo($"cashierlogbook/editlogbook/{param}");
+        }
+
+        private async void confirmLog()
+        {
+            try
+            {
+                QueryModel<CashierLogApproval> editData = new();
+                editData.Data = new();
+
+                editData.Data.LogID = activeLog.LogID;
+                editData.Data.LocationID = activeLog.LocationID;
+                editData.Data.ShiftID = activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID;
+                editData.Data.CreateUser = activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).CreateUser;
+                editData.Data.CreateDate = activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).CreateDate;
+                editData.Data.ConfirmUser = activeUser.userName;
+                editData.Data.ConfirmDate = DateTime.Now;
+                editData.Data.ApproveNote = confirmNote;
+                editData.userEmail = activeUser.userName;
+                editData.userAction = "U";
+                editData.userActionDate = DateTime.Now;
+
+                var res = await CashierLogbookService.editBrankasApproveLogOnConfirm(editData);
+
+                if (res.isSuccess)
+                {
+                    await _jsModule.InvokeVoidAsync("showAlert", "Log Confirm Handover Success !");
+
+                    activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmUser = activeUser.userName;
+                    activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmDate = DateTime.Now;
+                }
+                else
+                {
+                    await _jsModule.InvokeVoidAsync("showAlert", "Log Confirm Handover Failed, Please Check Your Connection and Try Again !");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _jsModule.InvokeVoidAsync("showAlert", $"Log Confirm Handover Failed, {ex.Message} !");
+            }
         }
 
         private void shiftSelect(Shift data)

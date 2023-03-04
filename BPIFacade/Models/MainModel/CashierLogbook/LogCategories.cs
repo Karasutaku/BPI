@@ -30,10 +30,11 @@
     {
         public string LogID { get; set; } = string.Empty;
         public int ShiftID { get; set; } = 0;
+        public string LocationID { get; set; } = string.Empty;
         public string CreateUser { get; set; } = string.Empty;
-        public DateTime CreateDate { get; set; } = DateTime.Now;
+        public DateTime CreateDate { get; set; } = DateTime.MinValue;
         public string ConfirmUser { get; set; } = string.Empty;
-        public DateTime ConfirmDate { get; set; } = DateTime.Now;
+        public DateTime ConfirmDate { get; set; } = DateTime.MinValue;
         public string ApproveNote { get; set; } = string.Empty;
     }
 

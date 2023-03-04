@@ -82,6 +82,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
         {
             if (param != null)
             {
+                isSuccessUpload = false;
                 string temp = Base64Decode(param);
 
                 if (temp.Split("!_!")[1].Equals("MAIN"))
@@ -127,10 +128,25 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                 {
                     isLoading = true;
 
+                    //logbook.header.SelectMany(x => x.lines).Select(y => y.ShiftID).Distinct();
+
                     QueryModel<CashierLogData> uploadData = new();
                     uploadData.Data = new();
 
                     uploadData.Data = logbook;
+
+                    uploadData.Data.approvals = new() { new CashierLogApproval
+                    {
+                        LocationID = activeUser.location,
+                        LogID = "",
+                        ShiftID = selectedShiftID,
+                        CreateUser = activeUser.userName,
+                        CreateDate = DateTime.Now,
+                        ConfirmUser = "",
+                        ConfirmDate = DateTime.MinValue,
+                        ApproveNote = ""
+                    }};
+
                     uploadData.userEmail = activeUser.userName;
                     uploadData.userAction = "I";
                     uploadData.userActionDate = DateTime.Now;

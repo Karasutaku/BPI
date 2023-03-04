@@ -2779,51 +2779,51 @@ namespace BPIWebApplication.Server.Controllers
             return actionResult;
         }
 
-        //[HttpPost("editLogData")]
-        //public async Task<IActionResult> editLogData(QueryModel<CashierLogbook> data)
-        //{
-        //    ResultModel<QueryModel<CashierLogbook>> res = new ResultModel<QueryModel<CashierLogbook>>();
-        //    IActionResult actionResult = null;
+        [HttpPost("editLogData")]
+        public async Task<IActionResult> editLogData(QueryModel<CashierLogData> data)
+        {
+            ResultModel<QueryModel<CashierLogData>> res = new ResultModel<QueryModel<CashierLogData>>();
+            IActionResult actionResult = null;
 
-        //    try
-        //    {
-        //        var result = await _http.PostAsJsonAsync<QueryModel<CashierLogbook>>($"api/Facade/CashierLogbook/editLogData", data);
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogData>>($"api/Facade/CashierLogbook/editLogData", data);
 
-        //        if (result.IsSuccessStatusCode)
-        //        {
-        //            var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogbook>>>();
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogData>>>();
 
-        //            res.Data = respBody.Data;
+                    res.Data = respBody.Data;
 
-        //            res.isSuccess = respBody.isSuccess;
-        //            res.ErrorCode = respBody.ErrorCode;
-        //            res.ErrorMessage = respBody.ErrorMessage;
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
 
-        //            actionResult = Ok(res);
-        //        }
-        //        else
-        //        {
-        //            res.Data = null;
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
 
-        //            res.isSuccess = result.IsSuccessStatusCode;
-        //            res.ErrorCode = "01";
-        //            res.ErrorMessage = "Fail settle from editLogData DA";
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fail settle from editLogData DA";
 
-        //            actionResult = Ok(res);
-        //        }
+                    actionResult = Ok(res);
+                }
 
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        res.Data = null;
-        //        res.isSuccess = false;
-        //        res.ErrorCode = "99";
-        //        res.ErrorMessage = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
 
-        //        actionResult = BadRequest(res);
-        //    }
-        //    return actionResult;
-        //}
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
 
         [HttpGet("getLogData/{locPage}")]
         public async Task<IActionResult> getLogDataTable(string locPage)
@@ -2954,6 +2954,52 @@ namespace BPIWebApplication.Server.Controllers
                 actionResult = BadRequest(res);
             }
 
+            return actionResult;
+        }
+
+        [HttpPost("editBrankasApproveLogOnConfirm")]
+        public async Task<IActionResult> editBrankasApproveLogOnConfirm(QueryModel<CashierLogApproval> data)
+        {
+            ResultModel<QueryModel<CashierLogApproval>> res = new ResultModel<QueryModel<CashierLogApproval>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogApproval>>($"api/Facade/CashierLogbook/editBrankasApproveLogOnConfirm", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogApproval>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Fail settle from editBrankasApproveLogOnConfirm Facade";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
             return actionResult;
         }
 

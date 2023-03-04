@@ -25,5 +25,6 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
 
         // edit
         public Task<ResultModel<QueryModel<CashierLogData>>> editLogData(QueryModel<CashierLogData> data);
+        public Task<ResultModel<QueryModel<CashierLogApproval>>> editBrankasApproveLogOnConfirm(QueryModel<CashierLogApproval> data);
     }
 }

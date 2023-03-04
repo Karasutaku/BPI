@@ -3,6 +3,12 @@
     background: linear-gradient(90deg, rgba(254,255,125,0.44870448179271705) 0%, rgba(255,222,87,0.5439425770308124) 38%, rgba(245,255,118,0.48792016806722693) 100%);
 }
 
+#AccordionTitleCard {
+    width: 100%;
+    color: white;
+    background-color: #515060;
+}
+
 .table {
     -webkit-overflow-scrolling: touch;
 }

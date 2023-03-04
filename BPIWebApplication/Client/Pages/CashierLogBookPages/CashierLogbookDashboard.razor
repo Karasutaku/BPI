@@ -2,6 +2,7 @@
 @inject ICashierLogbookService CashierLogbookService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject NavigationManager navigate
+@inject IJSRuntime JS
 
 <PageTitle>Cashier Logbook - Dashboard</PageTitle>
 
@@ -214,9 +215,60 @@
                         </ul>
 
                         <div class="tab-content" id="mypTabContent">
+
                             @foreach (var shift in activeShift)
                             {
                                 <div class="tab-pane fade @(shift.isActive ? "show active" : null)" id="@shift.ShiftDesc" role="tabpanel" aria-labelledby="list-tab">
+
+                                    @if (activeLog.approvals != null)
+                                    {
+                                        <div id="accordion" style="width: 100%;" class="my-2">
+
+                                            <div class="card" style="width: 100%;">
+                                                <div class="card-header" id="header_@shift.ShiftDesc">
+                                                    <div class="input-group border border-1">
+                                                        <button id="AccordionTitleCard" class="btn" data-toggle="collapse" data-target="#accord_@shift.ShiftDesc" aria-expanded="true" aria-controls="accord_@shift.ShiftDesc">
+                                                            <b>Shift <b>@shift.ShiftDesc</b> Details</b>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div id="accord_@shift.ShiftDesc" class="collapse bg-special" aria-labelledby="accord_@shift.ShiftDesc" data-parent="#accordion">
+                                                    <div class="card-body">
+
+                                                        <div class="row">
+                                                            <div class="col">
+                                                                <label class="fw-bold" for="create_user">Create User :</label>
+                                                                <input type="text" id="create_user" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).CreateUser" class="form-control-sm w-100 border-1" readonly />
+                                                            </div>
+                                                            <div class="col">
+                                                                <label class="fw-bold" for="create_date">Create Date :</label>
+                                                                <input type="text" id="create_date" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).CreateDate.ToString("dd MMMM yyyy HH:mm:ss")" class="form-control-sm w-100 border-1" readonly />
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col">
+                                                                <label class="fw-bold" for="cf_user">Confirm User :</label>
+                                                                <input type="text" id="cf_user" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).ConfirmUser" class="form-control-sm w-100 border-1" readonly />
+                                                            </div>
+                                                            <div class="col">
+                                                                <label class="fw-bold" for="cf_date">Confirm Date :</label>
+                                                                <input type="text" id="cf_date" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).ConfirmDate.ToString("dd MMMM yyyy HH:mm:ss")" class="form-control-sm w-100 border-1" readonly />
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col">
+                                                                <label class="fw-bold" for="cf_user">Confirm Note :</label>
+                                                                <input type="text" id="cf_user" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).ApproveNote" class="form-control-sm w-100 border-1" readonly />
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    }
 
                                     <div class="table-responsive mt-3">
 
@@ -394,9 +446,62 @@
                 </div>
 
                 <div class="modal-footer cus-bg">
-                    <button type="button" class="btn btn-sm btn-success fw-bold">Confirm</button>
+                    <button type="button" class="btn btn-sm btn-success fw-bold" @onclick="(() => confirmModal = true)">Confirm</button>
                     <button type="button" class="btn btn-sm btn-dark fw-bold" @onclick="(() => editDocument(activeLog))">Edit</button>
                     <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="hideModal">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@if (confirmModal)
+{
+    <div class="modal fade show" id="confirmModal" tabindex="-2" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                @* header *@
+                <div class="modal-header cus-bg">
+                    <h5 class="modal-title fw-bolder text-white">Confirm Log Handover ?</h5>
+
+                    <button type="button" class="close border-0" aria-label="Close" @onclick="(() => confirmModal = false)">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col">
+                            <label class="fw-bold" for="create_user">Create User :</label>
+                            <input type="text" id="create_user" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).CreateUser" class="form-control-sm w-100 border-1" readonly />
+                        </div>
+                        <div class="col">
+                            <label class="fw-bold" for="create_date">Create Date :</label>
+                            <input type="text" id="create_date" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).CreateDate.ToString("dd MMMM yyyy HH:mm:ss")" class="form-control-sm w-100 border-1" readonly />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label class="fw-bold" for="cf_user">Confirm User :</label>
+                            <input type="text" id="cf_user" value="@activeUser.userName" class="form-control-sm w-100 border-1" readonly />
+                        </div>
+                        <div class="col">
+                            <label class="fw-bold" for="cf_date">Confirm Date :</label>
+                            <input type="text" id="cf_date" value="@DateTime.Now.ToString("dd MMMM yyyy HH:mm:ss")" class="form-control-sm w-100 border-1" readonly />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label class="fw-bold" for="cf_user">Confirm Note :</label>
+                            <input type="text" id="cf_user" @bind-value="confirmNote" class="form-control-sm w-100 border-1" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer cus-bg">
+                    <button type="button" class="btn btn-sm btn-success fw-bold" @onclick="(() => confirmLog())">Confirm</button>
+                    <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="(() => confirmModal = false)">No</button>
                 </div>
 
             </div>

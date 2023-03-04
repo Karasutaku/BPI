@@ -192,6 +192,38 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
             return resData;
         }
 
+        public async Task<ResultModel<QueryModel<CashierLogApproval>>> editBrankasApproveLogOnConfirm(QueryModel<CashierLogApproval> data)
+        {
+            ResultModel<QueryModel<CashierLogApproval>> resData = new ResultModel<QueryModel<CashierLogApproval>>();
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<CashierLogApproval>>("api/endUser/CashierLogbook/editBrankasApproveLogOnConfirm", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<CashierLogApproval>>>();
+
+                    if (respBody.isSuccess)
+                    {
+                        resData.Data = respBody.Data;
+                        resData.isSuccess = respBody.isSuccess;
+                        resData.ErrorCode = respBody.ErrorCode;
+                        resData.ErrorMessage = respBody.ErrorMessage;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = null;
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
+
+            return resData;
+        }
+
         //
     }
 }
