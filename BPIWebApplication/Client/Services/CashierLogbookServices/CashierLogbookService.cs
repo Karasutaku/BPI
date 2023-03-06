@@ -22,6 +22,7 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
         public List<AmountSubCategories> subCategories { get; set; } = new();
         public List<CashierLogData> mainLogs { get; set; } = new();
         public List<CashierLogData> transitLogs { get; set; } = new();
+        public List<CashierLogAction> actionLogs { get; set; } = new();
 
         private static string Base64Decode(string base64EncodedData)
         {
@@ -192,6 +193,34 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
             return resData;
         }
 
+        public async Task<ResultModel<List<CashierLogAction>>> getBrankasActionLogData(string locPage)
+        {
+            ResultModel<List<CashierLogAction>> resData = new ResultModel<List<CashierLogAction>>();
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<List<CashierLogAction>>>($"api/endUser/CashierLogbook/getBrankasActionLogData/{locPage}");
+
+                if (result.isSuccess)
+                {
+                    actionLogs = result.Data;
+
+                    resData.Data = result.Data;
+                    resData.isSuccess = result.isSuccess;
+                    resData.ErrorCode = result.ErrorCode;
+                    resData.ErrorMessage = result.ErrorMessage;
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = null;
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
+            return resData;
+        }
+
         public async Task<ResultModel<QueryModel<CashierLogApproval>>> editBrankasApproveLogOnConfirm(QueryModel<CashierLogApproval> data)
         {
             ResultModel<QueryModel<CashierLogApproval>> resData = new ResultModel<QueryModel<CashierLogApproval>>();
@@ -222,6 +251,41 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
             }
 
             return resData;
+        }
+
+        public async Task<int> getModulePageSize(string Table)
+        {
+            ResultModel<int> resData = new ResultModel<int>();
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/endUser/CashierLogbook/getModulePageSize/{Table}");
+
+                if (result.isSuccess)
+                {
+                    resData.Data = result.Data;
+                    resData.isSuccess = result.isSuccess;
+                    resData.ErrorCode = result.ErrorCode;
+                    resData.ErrorMessage = result.ErrorMessage;
+
+                }
+                else
+                {
+                    resData.Data = result.Data;
+                    resData.isSuccess = result.isSuccess;
+                    resData.ErrorCode = result.ErrorCode;
+                    resData.ErrorMessage = result.ErrorMessage;
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = 0;
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
+
+            return resData.Data;
         }
 
         //

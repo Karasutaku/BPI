@@ -954,6 +954,16 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                 PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.approveDate = DateTime.Now;
 
                             }
+                            else if (action.Contains("Resolved"))
+                            {
+                                await _jsModule.InvokeVoidAsync("showAlert", "Reimburse Amount Difference Resolved, Please Reload Your Page !");
+
+                                reimburse.statusDetails.resolveUser = activeUser.userName;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.resolveUser = activeUser.userName;
+                                reimburse.statusDetails.resolveDate = DateTime.Now;
+                                PettyCashService.reimburses.SingleOrDefault(a => a.ReimburseID.Equals(reimburse.ReimburseID)).statusDetails.resolveDate = DateTime.Now;
+
+                            }
                             else if (action.Contains("Claimed"))
                             {
                                 await _jsModule.InvokeVoidAsync("showAlert", "Reimburse Amount Claimed, Please Reload Your Page !");

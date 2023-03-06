@@ -23,6 +23,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private int advancePageActive = 0;
         private int advanceNumberofPage = 0;
 
+        private bool showModalConfirmation = false;
         private bool isTypeTransfer = false;
         private bool isSettlement = false;
         private bool clearInputFile = false;
@@ -212,7 +213,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                     Amount = line.Amount,
                                     ActualAmount = line.ActualAmount,
                                     //Attach = "",
-                                    Status = "OP"
+                                    Status = "AP"
                                 };
 
                                 uploadData.expenseDetails.Data.lines.Add(temp);
@@ -232,7 +233,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                     Amount = line.ActualAmount,
                                     ActualAmount = line.ActualAmount,
                                     //Attach = "",
-                                    Status = "OP"
+                                    Status = "AP"
                                 };
 
                                 uploadData.expenseDetails.Data.lines.Add(temp);
@@ -378,7 +379,15 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private void addLine()
         {
-            expenseLines.Add(new ExpenseLine());
+            expenseLines.Add(new ExpenseLine
+            {
+                ExpenseID = "",
+                LineNo = expenseLines.Count + 1,
+                Details = "",
+                Amount = decimal.Zero,
+                ActualAmount = decimal.Zero,
+                Status = "OP"
+            });
         }
 
         private void addFileLine()
@@ -492,7 +501,16 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 return false;
 
             if (!fileLines.Any())
-                return false;
+            {
+                if (expenseLines.Sum(x => x.ActualAmount).Equals(decimal.Zero))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
 
             if (fileLines.Any(x => x.fileSize < 1))
                 return false;
@@ -569,7 +587,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                         Amount = line.Amount,
                         ActualAmount = decimal.Zero,
                         //Attach = "",
-                        Status = "OP"
+                        Status = line.Status
                     });
                 }
 

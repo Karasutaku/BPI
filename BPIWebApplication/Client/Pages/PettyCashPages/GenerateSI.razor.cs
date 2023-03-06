@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components;
 using ClosedXML.Excel;
 using Microsoft.JSInterop;
 using System.Runtime.Intrinsics.X86;
+using BPIWebApplication.Shared.MainModel;
 
 namespace BPIWebApplication.Client.Pages.PettyCashPages
 {
@@ -14,6 +15,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         List<Reimburse> reimburses = new List<Reimburse>();
         List<Reimburse> selectedReimburse = new List<Reimburse>();
+
+        private Location location = new();
 
         private int reimbursePageActive = 0;
         private int reimburseNumberofPage = 0;
@@ -47,6 +50,14 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
             LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+
+            location.Condition = $"a.CompanyId={activeUser.company}";
+            location.PageIndex = 1;
+            location.PageSize = 100;
+            location.FieldOrder = "a.CompanyId";
+            location.MethodOrder = "ASC";
+
+            await ManagementService.GetCompanyLocations(location);
 
             reimbursePageActive = 1;
 
@@ -160,7 +171,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     worksheet.Cell($"B{rowInsertStart}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                     worksheet.Cell($"B{rowInsertStart}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                     worksheet.Range($"B{rowInsertStart}:C{rowInsertStart}").Row(1).Merge();
-                    worksheet.Cell($"D{rowInsertStart}").Value = dt.LocationID;
+                    worksheet.Cell($"D{rowInsertStart}").Value = dt.LocationID + " - " + (dt.LocationID.Equals("HO") ? "HEAD OFFICE" : ManagementService.locations.FirstOrDefault(x => x.locationId.Equals(dt.LocationID)).locationName);
                     worksheet.Cell($"D{rowInsertStart}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                     worksheet.Cell($"D{rowInsertStart}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                     worksheet.Cell($"E{rowInsertStart}").Value = dt.lines.Sum(x => x.ApprovedAmount).ToString("N0");
@@ -196,21 +207,21 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 worksheet.Cell($"A{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 worksheet.Cell($"A{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 worksheet.Cell($"A{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
-                worksheet.Range($"A{rowFooterEnd}:C{rowFooterEnd}").Row(1).Merge();
+                worksheet.Range($"A{rowFooterEnd}:E{rowFooterEnd}").Row(1).Merge();
 
-                worksheet.Cell($"D{rowFooterEnd}").Value = "DIAMBIL OLEH";
-                worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetBold(true);
-                worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetFontSize(headerFontSize);
-                worksheet.Cell($"D{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                worksheet.Cell($"D{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-                worksheet.Cell($"D{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
+                //worksheet.Cell($"D{rowFooterEnd}").Value = "DIAMBIL OLEH";
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetBold(true);
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetFontSize(headerFontSize);
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
 
-                worksheet.Cell($"E{rowFooterEnd}").Value = "DIKETAHUI OLEH";
-                worksheet.Cell($"E{rowFooterEnd}").Style.Font.SetBold(true);
-                worksheet.Cell($"E{rowFooterEnd}").Style.Font.SetFontSize(headerFontSize);
-                worksheet.Cell($"E{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                worksheet.Cell($"E{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-                worksheet.Cell($"E{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
+                //worksheet.Cell($"E{rowFooterEnd}").Value = "DIKETAHUI OLEH";
+                //worksheet.Cell($"E{rowFooterEnd}").Style.Font.SetBold(true);
+                //worksheet.Cell($"E{rowFooterEnd}").Style.Font.SetFontSize(headerFontSize);
+                //worksheet.Cell($"E{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                //worksheet.Cell($"E{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                //worksheet.Cell($"E{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
 
                 rowFooterEnd = rowFooterEnd + 4;
 
@@ -220,22 +231,23 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 worksheet.Cell($"A{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 worksheet.Cell($"A{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 worksheet.Cell($"A{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
-                worksheet.Range($"A{rowFooterEnd}:B{rowFooterStart}").Row(1).Merge();
+                worksheet.Range($"A{rowFooterEnd}:C{rowFooterStart}").Row(1).Merge();
 
-                worksheet.Cell($"C{rowFooterEnd}").Value = "GM FINANCE";
-                worksheet.Cell($"C{rowFooterEnd}").Style.Font.SetBold(true);
-                worksheet.Cell($"C{rowFooterEnd}").Style.Font.SetFontSize(headerFontSize);
-                worksheet.Cell($"C{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                worksheet.Cell($"C{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-                worksheet.Cell($"C{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
-
-                worksheet.Cell($"D{rowFooterEnd}").Value = "TL KASIR / MOD";
+                worksheet.Cell($"D{rowFooterEnd}").Value = "GM FINANCE";
                 worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetBold(true);
                 worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetFontSize(headerFontSize);
                 worksheet.Cell($"D{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 worksheet.Cell($"D{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 worksheet.Cell($"D{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
-                worksheet.Range($"D{rowFooterEnd}:E{rowFooterEnd}").Row(1).Merge();
+                worksheet.Range($"D{rowFooterEnd}:E{rowFooterStart}").Row(1).Merge();
+
+                //worksheet.Cell($"D{rowFooterEnd}").Value = "TL KASIR / MOD";
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetBold(true);
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Font.SetFontSize(headerFontSize);
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                //worksheet.Cell($"D{rowFooterEnd}").Style.Fill.BackgroundColor = XLColor.FromArgb(183, 222, 232);
+                //worksheet.Range($"D{rowFooterEnd}:E{rowFooterEnd}").Row(1).Merge();
 
                 // styling
 
@@ -307,17 +319,22 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             try
             {
                 
-                if (selectedReimburse.Any())
+                if (selectedReimburse.Count > 0)
                 {
                     foreach (var dt in selectedReimburse)
                     {
                         reimburses.Add(dt);
                     }
                 }
+                else
+                {
+                    await _jsModule.InvokeVoidAsync("showAlert", "Select 1 or More Reimburses !");
+                }
 
             }
             catch (Exception ex)
             {
+                isLoading = false;
                 throw new Exception(ex.Message);
             }
 

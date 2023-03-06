@@ -73,7 +73,7 @@ else
                     </div>
 
                     <div class="row my-2">
-                        <button type="button" title="Please Recheck the Total Amount" class="btn btn-sm btn-primary" disabled="@(LoginService.activeUser.userPrivileges.Contains("XP") ? null : "disabled")" @onclick="generateSI">Generate SI</button>
+                        <button type="button" title="Please Recheck the Total Amount" class="btn btn-sm btn-primary fw-bold" disabled="@(LoginService.activeUser.userPrivileges.Contains("XP") ? null : "disabled")" @onclick="generateSI">Generate SI</button>
                     </div>
                 }
                 else

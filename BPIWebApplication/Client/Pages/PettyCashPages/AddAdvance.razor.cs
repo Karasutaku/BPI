@@ -176,7 +176,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                 LineNo = nLine,
                                 Details = line.Details,
                                 Amount = line.Amount,
-                                Status = "OP"
+                                Status = "AP"
                             };
 
                             inputData.Data.lines.Add(temp);

@@ -197,6 +197,38 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                     uploadData.Data = new();
 
                     uploadData.Data = logbook;
+
+                    List<int?> sft = new();
+
+                    foreach (var x in uploadData.Data.header)
+                    {
+                        foreach (var y in x.lines)
+                        {
+                            if (sft.FirstOrDefault(sf => sf.Equals(y.ShiftID)) == null)
+                            {
+                                uploadData.Data.approvals.Add(new CashierLogApproval
+                                {
+                                    LocationID = activeUser.location,
+                                    LogID = "",
+                                    ShiftID = selectedShiftID,
+                                    CreateUser = activeUser.userName,
+                                    CreateDate = DateTime.Now,
+                                    ConfirmUser = "",
+                                    ConfirmDate = DateTime.Now,
+                                    ApproveNote = ""
+                                });
+                            }
+                            else
+                            {
+                                if (uploadData.Data.approvals.FirstOrDefault(x => x.ShiftID.Equals(y.ShiftID)).ConfirmUser.Equals(""))
+                                {
+                                    uploadData.Data.approvals.SingleOrDefault(x => x.ShiftID.Equals(y.ShiftID)).CreateUser = activeUser.userName;
+                                    uploadData.Data.approvals.SingleOrDefault(x => x.ShiftID.Equals(y.ShiftID)).CreateDate = DateTime.Now;
+                                }
+                            }
+                        }
+                    }
+
                     uploadData.userEmail = activeUser.userName;
                     uploadData.userAction = "U";
                     uploadData.userActionDate = DateTime.Now;

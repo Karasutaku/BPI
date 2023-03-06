@@ -147,10 +147,12 @@ else
                         </div>
 
                         <div class="separator">Advance Details</div>
-                
+
+                        <button type="button" class="btn btn-sm btn-warning my-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="addLine"><b>Add</b></button>
+
                         @if (!isSettlement)
                         {
-                            <button type="button" class="btn btn-sm btn-warning my-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="addLine"><b>Add</b></button>
+                            @*<button type="button" class="btn btn-sm btn-warning my-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="addLine"><b>Add</b></button>*@
                         }
                         else
                         {
@@ -176,7 +178,7 @@ else
                                     <tr>
                                         @if (isSettlement)
                                         {
-                                            <th style="width: 5%;">#</th>
+                                            <th style="width: 5%;">Action</th>
                                             <th style="width: 45%;">Description</th>
                                             <th style="width: 25%;">Request Amount</th>
                                             <th style="width: 25%; background-color:aquamarine;">Actual Amount</th>
@@ -200,14 +202,15 @@ else
                                             }
                                             else
                                             {
-                                                <td>@line.LineNo</td>
+                                                @*<td>@line.LineNo</td>*@
+                                                <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" disabled="@(!line.Status.Equals("OP") ? "disabled" : null)" @onclick="(() => deleteLine(line))"><i class="oi oi-delete"></i></button></td>
                                             }
 
-                                            <td><input type="text" class="form-control" @bind-value="line.Details" readonly="@(isSettlement.Equals(true) ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)" /></td>
+                                            <td><input type="text" class="form-control" @bind-value="line.Details" readonly="@(!line.Status.Equals("OP") ? "readonly" : null)" disabled="@(successUpload.Equals(true) ? "disabled" : null)" /></td>
 
                                             @if (isSettlement)
                                             {
-                                                <td><input type="text" class="form-control" value="@line.Amount.ToString("N0")" readonly /></td>
+                                                <td><input type="text" class="form-control" value="@line.Amount.ToString("N0")" readonly="@(!line.Status.Equals("OP") ? "readonly" : null)" /></td>
                                                 <td><input type="number" class="form-control" @bind-value="line.ActualAmount" disabled="@(successUpload.Equals(true) ? "disabled" : null)" /></td>
                                             }
                                             else
@@ -284,26 +287,32 @@ else
                         <div class="row my-3">
                             <div class="col">
                                 <button type="button" title="Reset" class="btn btn-sm btn-outline-dark" @onclick="resetForm"><b>Reset</b></button>
-                        
+                                
                                     @if (isSettlement)
                                     {
-                                        <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
+                                        <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => showModalConfirmation = true)">
+                                            Settle
+                                        </button>
+                                        @*<button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
                                             Settle
                                             @if (isLoading)
                                             {
                                             <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
                                             }
-                                        </button>
+                                        </button>*@
                                     }
                                     else
                                     {
-                                        <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
+                                        <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => showModalConfirmation = true)">
+                                            Create Expense(s)
+                                        </button>
+                                        @*<button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary mx-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
                                             Create Expense(s)
                                             @if (isLoading)
                                             {
                                             <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
                                             }
-                                        </button>
+                                        </button>*@
                                     }
 
                             </div>
@@ -408,6 +417,45 @@ else
                             <div class="modal-footer cus-bg">
 
                                 <button type="button" class="btn btn-sm btn-primary fw-bold" @onclick="modalAdvanceSelect">Select</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (showModalConfirmation)
+            {
+                <div class="modal fade show" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header cus-bg">
+                                <h5 class="modal-title fw-bold text-white">Confirmation</h5>
+
+                                <button type="button" class="close border-0" @onclick="(() => showModalConfirmation = false)">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+
+                                <div class="row">
+                                    <div class="col">
+                                        <p>Confirm Document Creation ?</p>
+                                    </div>
+                                </div>
+                    
+                            </div>
+                            <div class="modal-footer cus-bg">
+                                <button type="submit" title="Please Recheck the Amount" class="btn btn-sm btn-primary" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="submitExpense">
+                                    Yes
+                                    @if (isLoading)
+                                    {
+                                        <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                    }
+                                </button>
+                                <button type="submit" class="btn btn-danger mx-2" @onclick="(() => showModalConfirmation = false)">
+                                    Cancel
+                                </button>
                             </div>
                         </div>
                     </div>

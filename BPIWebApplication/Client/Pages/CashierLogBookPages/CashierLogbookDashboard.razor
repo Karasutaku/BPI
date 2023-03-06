@@ -12,19 +12,17 @@
     <h3>Cashier Logbook</h3>
     <small><i>Dashboard</i></small>
 
-    <div class="border border-2 p-2">
-        <h5 class="float-lg-end"><b>Latest Log Action</b></h5>
-
-        @*Table*@
-    </div>
-
     @*<div class="row">
         <button type="button" class="btn btn-sm btn-primary">New Logbook</button>
     </div>*@
 
-    <div class="border border-2 p-2">
-        <h5 class="float-lg-end"><b>Ongoing Logbook Document</b></h5>
-
+    <div class="border border-2 p-2 my-3">
+        <div class="row mb-2">
+            <div class="col px-3">
+                <h5><b>Ongoing Logbook Document</b></h5>
+            </div>
+        </div>
+        
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item">
                 <a class="nav-link active fw-bold link-muted" id="utama-tab" data-toggle="tab" href="#utama" role="tab" aria-controls="logUtama" aria-selected="true">Utama</a>
@@ -73,6 +71,37 @@
                         </div>
 
                     </div>
+
+                    <ul class="pagination pagination-sm justify-content-center my-2">
+
+                        @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                        @if ((mainLogPageActive - 1) > 0)
+                        {
+                            <li class="page-item px-1 paging-style" @onclick="(() => mainLogPageSelect((mainLogPageActive - 1)))"><span class="page-link">Previous</span></li>
+                            <li class="page-item paging-style" @onclick="(() => mainLogPageSelect((mainLogPageActive - 1)))"><span class="page-link">@(mainLogPageActive - 1)</span></li>
+                        }
+                        else
+                        {
+                            <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                            <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                        }
+
+                        <li class="page-item active paging-style" @onclick="(() => mainLogPageSelect(mainLogPageActive))"><span class="page-link">@mainLogPageActive</span></li>
+
+                        @if (mainLogPageActive < mainLogPageSize)
+                        {
+                            <li class="page-item paging-style" @onclick="(() => mainLogPageSelect((mainLogPageActive + 1)))"><span class="page-link">@(mainLogPageActive + 1)</span></li>
+                            <li class="page-item px-1 paging-style" @onclick="(() => mainLogPageSelect((mainLogPageActive + 1)))"><span class="page-link">Next</span></li>
+                        }
+                        else
+                        {
+                            <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                        }
+
+
+                        @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                    </ul>
                 }
                 else
                 {
@@ -117,6 +146,37 @@
                         </div>
 
                     </div>
+
+                    <ul class="pagination pagination-sm justify-content-center my-2">
+
+                        @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                        @if ((transitLogPageActive - 1) > 0)
+                        {
+                            <li class="page-item px-1 paging-style" @onclick="(() => transitLogPageSelect((transitLogPageActive - 1)))"><span class="page-link">Previous</span></li>
+                            <li class="page-item paging-style" @onclick="(() => transitLogPageSelect((transitLogPageActive - 1)))"><span class="page-link">@(transitLogPageActive - 1)</span></li>
+                        }
+                        else
+                        {
+                            <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                            <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                        }
+
+                        <li class="page-item active paging-style" @onclick="(() => transitLogPageSelect(transitLogPageActive))"><span class="page-link">@transitLogPageActive</span></li>
+
+                        @if (transitLogPageActive < transitLogPageSize)
+                        {
+                            <li class="page-item paging-style" @onclick="(() => transitLogPageSelect((transitLogPageActive + 1)))"><span class="page-link">@(transitLogPageActive + 1)</span></li>
+                            <li class="page-item px-1 paging-style" @onclick="(() => transitLogPageSelect((transitLogPageActive + 1)))"><span class="page-link">Next</span></li>
+                        }
+                        else
+                        {
+                            <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                        }
+
+
+                        @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                    </ul>
                 }
                 else
                 {
@@ -127,6 +187,89 @@
     </div>
 
     <div class="border border-2 p-2">
+        <div class="row mb-2">
+            <div class="col px-3">
+                <h5><b>Logbook Action History</b></h5>
+            </div>
+        </div>
+
+        @*Table*@
+        @if (checkActionLogPresent())
+        {
+            <div class="mb-3">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover" style="width: 100%">
+                        <thead>
+                            <tr title="Click to view">
+                                <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Action Date</th>
+                                <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">User</th>
+                                @*<th scope="col" class="text-center align-middle" style="width: 25%; font-size: 15px;">Applicant</th>*@
+                                <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Log Action</th>
+                                <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Log ID</th>
+                                <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Location ID</th>
+                                @*<th scope="col" style="width: 20%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Request Date</th>
+                            <th scope="col" style="width: 10%; font-size: 16px;" class="d-none d-sm-table-cell text-center align-middle">Status</th>*@
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyDashboard">
+                            @foreach (var actLog in CashierLogbookService.actionLogs)
+                            {
+                                <tr>
+                                    <td class="text-center align-middle" style="font-size:14px;">@actLog.ActionDate.ToString("dd MMMM yyyy")</td>
+                                    <td class="text-center align-middle" style="font-size:14px;">@actLog.UserEmail</td>
+                                    @*<td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.Applicant</td>*@
+                                    <td class="text-center text-truncate align-middle" style="font-size:14px;">@actLog.LogAction</td>
+                                    <td class="text-center text-truncate align-middle" style="font-size:14px;">@actLog.LogID</td>
+                                    <td class="text-center text-truncate align-middle" style="font-size:14px;">@actLog.LocationID</td>
+                                    @*<td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceDate.ToString("dd / MM / yyyy")</td>
+                            <td scope="col" style="font-size:14px;" class="d-none d-sm-table-cell text-center align-middle">@adv.AdvanceStatus</td>*@
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <ul class="pagination pagination-sm justify-content-center my-2">
+
+                @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                @if ((actionLogPageActive - 1) > 0)
+                {
+                    <li class="page-item px-1 paging-style" @onclick="(() => actionLogPageSelect((actionLogPageActive - 1)))"><span class="page-link">Previous</span></li>
+                    <li class="page-item paging-style" @onclick="(() => actionLogPageSelect((actionLogPageActive - 1)))"><span class="page-link">@(actionLogPageActive - 1)</span></li>
+                }
+                else
+                {
+                    <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                    <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                }
+
+                <li class="page-item active paging-style" @onclick="(() => actionLogPageSelect(actionLogPageActive))"><span class="page-link">@actionLogPageActive</span></li>
+
+                @if (actionLogPageActive < actionLogPageSize)
+                {
+                    <li class="page-item paging-style" @onclick="(() => actionLogPageSelect((actionLogPageActive + 1)))"><span class="page-link">@(actionLogPageActive + 1)</span></li>
+                    <li class="page-item px-1 paging-style" @onclick="(() => actionLogPageSelect((actionLogPageActive + 1)))"><span class="page-link">Next</span></li>
+                }
+                else
+                {
+                    <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                    <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                }
+
+
+                @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+            </ul>
+        }
+        else
+        {
+            <p class="fw-bold text-center">. . . There is no Document . . .</p>
+        }
+    </div>
+
+   @* <div class="border border-2 p-2">
         <h5 class="float-lg-end"><b>Logbook Document History</b></h5>
 
         <ul class="nav nav-tabs" id="mypTab" role="tablist">
@@ -144,7 +287,7 @@
             <div class="tab-pane fade" id="ptransit" role="tabpanel" aria-labelledby="list-tab">
             </div>
         </div>
-    </div>
+    </div>*@
 
 </div>
 
@@ -220,7 +363,7 @@
                             {
                                 <div class="tab-pane fade @(shift.isActive ? "show active" : null)" id="@shift.ShiftDesc" role="tabpanel" aria-labelledby="list-tab">
 
-                                    @if (activeLog.approvals != null)
+                                    @if (activeLog.approvals != null && activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)) != null)
                                     {
                                         <div id="accordion" style="width: 100%;" class="my-2">
 

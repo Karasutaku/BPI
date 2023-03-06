@@ -30,6 +30,8 @@
         public string? releaseUser { get; set; } = string.Empty;
         public DateTime? approveDate { get; set; } = DateTime.Now;
         public string? approveUser { get; set; } = string.Empty;
+        public DateTime? resolveDate { get; set; } = DateTime.Now;
+        public string ? resolveUser { get; set; } = string.Empty;
         public DateTime? claimDate { get; set; } = DateTime.Now;
         public string? claimUser { get; set; } = string.Empty;
         public DateTime? rejectDate { get; set; } = DateTime.Now;

@@ -1278,6 +1278,16 @@ else
                                                     </div>
                                                     <div class="row">
                                                         <div class="col">
+                                                            <label class="fw-bold" for="clm_user">Resolve User :</label>
+                                                            <input type="text" id="clm_user" value="@reimburse.statusDetails.resolveUser" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                        <div class="col">
+                                                            <label class="fw-bold" for="clm_date">Resolve Date :</label>
+                                                            <input type="text" id="clm_date" value="@reimburse.statusDetails.resolveDate.ToString("dd / MM / yyyy")" class="form-control-sm w-100 border-1" readonly />
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col">
                                                             <label class="fw-bold" for="clm_user">Claim User :</label>
                                                             <input type="text" id="clm_user" value="@reimburse.statusDetails.claimUser" class="form-control-sm w-100 border-1" readonly />
                                                         </div>
@@ -1408,15 +1418,28 @@ else
                                             
                                                 <div class="card-body">
 
-                                                    @foreach (var summary in coaSummary)
-                                                    {
-
-                                                        <div class="row">
-                                                            <div class="col text-truncate"><b> @summary </b> - @(PettyCashService.coas.FirstOrDefault(x => x.AccountCode.Contains(summary)) == null ? null : PettyCashService.coas.FirstOrDefault(x => x.AccountCode.Contains(summary)).AccountDescription) </div>
-                                                            <div class="col">: Rp. @reimburse.lines.Where(x => x.AccountNo.Contains(summary)).Sum(x => x.ApprovedAmount).ToString("N0") ,- </div>
+                                                    <div class="row">
+                                                        <div class="col col-md-6 col-sm-12">
+                                                            <p class="fw-bold">Requested</p>
+                                                            @foreach (var summary in coaSummary)
+                                                            {
+                                                                <div class="row">
+                                                                    <div class="col text-truncate"><b> @summary </b> - @(PettyCashService.coas.FirstOrDefault(x => x.AccountCode.Contains(summary)) == null ? null : PettyCashService.coas.FirstOrDefault(x => x.AccountCode.Contains(summary)).AccountDescription) </div>
+                                                                    <div class="col">: Rp. @reimburse.lines.Where(x => x.AccountNo.Contains(summary)).Sum(x => x.Amount).ToString("N0") ,- </div>
+                                                                </div>
+                                                            }
                                                         </div>
-
-                                                    }
+                                                        <div class="col col-md-6 col-sm-12">
+                                                            <p class="fw-bold">Approved</p>
+                                                            @foreach (var summary in coaSummary)
+                                                            {
+                                                                <div class="row">
+                                                                    <div class="col text-truncate"><b> @summary </b> - @(PettyCashService.coas.FirstOrDefault(x => x.AccountCode.Contains(summary)) == null ? null : PettyCashService.coas.FirstOrDefault(x => x.AccountCode.Contains(summary)).AccountDescription) </div>
+                                                                    <div class="col">: Rp. @reimburse.lines.Where(x => x.AccountNo.Contains(summary)).Sum(x => x.ApprovedAmount).ToString("N0") ,- </div>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
 
                                                 </div>
 
@@ -1484,13 +1507,21 @@ else
                                 @* DA *@
                                 @if (LoginService.activeUser.userPrivileges.Contains("DA"))
                                 {
-                                    <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!reimburse.ReimburseStatus.Contains("Released") && !reimburse.ReimburseStatus.Contains("Claimed") && !reimburse.ReimburseStatus.Contains("Rejected")) ? null : "disabled")">Reject</button>
+                                    <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => updateDocumentStatus("Rejected"))" disabled="@((!reimburse.ReimburseStatus.Contains("Released") && !reimburse.ReimburseStatus.Contains("Claimed") && !reimburse.ReimburseStatus.Contains("Resolved")  && !reimburse.ReimburseStatus.Contains("Rejected")) ? null : "disabled")">Reject</button>
                                 }
 
                                 @* SB *@
                                 @if (LoginService.activeUser.userPrivileges.Contains("SB"))
                                 {
-                                    <button type="button" class="btn btn-sm btn-success fw-bold" @onclick="@(() => updateDocumentStatus("Claimed"))" disabled="@(reimburse.ReimburseStatus.Contains("Released") ? null : "disabled")">Claim</button>
+                                    @if (!reimburse.lines.Sum(x => x.Amount).Equals(reimburse.lines.Sum(x => x.ApprovedAmount)))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-success fw-bold" @onclick="@(() => updateDocumentStatus("Claimed"))" disabled="@(reimburse.ReimburseStatus.Contains("Released") ? null : "disabled")">Claim</button>
+                                        <button type="button" class="btn btn-sm btn-success fw-bold" @onclick="@(() => updateDocumentStatus("Resolved"))" disabled="@(reimburse.ReimburseStatus.Contains("Claimed") ? null : "disabled")">Resolve</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm btn-success fw-bold" @onclick="@(() => updateDocumentStatus("Claimed"))" disabled="@(reimburse.ReimburseStatus.Contains("Released") ? null : "disabled")">Claim</button>
+                                    }
                                 }
                                 @* CF *@
                                 @if (LoginService.activeUser.userPrivileges.Contains("CF"))

@@ -4,6 +4,7 @@ using BPIWebApplication.Shared.MainModel.CashierLogbook;
 using BPIWebApplication.Shared.MainModel.Company;
 using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.PagesModel.CashierLogbook;
+using DocumentFormat.OpenXml.Vml.Office;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
@@ -21,10 +22,17 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
         private int mainLogPageActive = 0;
         private int transitLogPageActive = 0;
+        private int actionLogPageActive = 0;
+        private int mainLogPageSize = 0;
+        private int transitLogPageSize = 0;
+        private int actionLogPageSize = 0;
         private int confirmShift = 0;
 
         private bool isMainLogActive = false;
         private bool isTransitLogActive = false;
+        private bool isMainLogFilterActive = false;
+        private bool isTransitLogFilterActive = false;
+        private bool isActionLogFilterActive = false;
         private bool showModal = false;
         private bool confirmModal = false;
 
@@ -61,16 +69,28 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             string filValue = "";
             mainLogPageActive = 1;
 
+            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType!_!MAIN";
+            mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
             string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
-
             await CashierLogbookService.getLogData(Base64Encode(temp));
 
             type = "TRANSIT";
             transitLogPageActive = 1;
 
+            string transpz = "BrankasLog!_!" + activeUser.location + "!_!LogType!_!TRANSIT";
+            transitLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(transpz));
             temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
-
             await CashierLogbookService.getLogData(Base64Encode(temp));
+
+            string orderby = "AuditActionDate";
+            filType = "LogID";
+            filValue = "";
+            actionLogPageActive = 1;
+
+            string actpz = "BrankasApproveLog!_!" + activeUser.location + "!_!LogID!_!";
+            actionLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(actpz));
+            temp = activeUser.location + "!_!" + orderby + "!_!" + filType + "!_!" + filValue + "!_!" + actionLogPageActive.ToString();
+            await CashierLogbookService.getBrankasActionLogData(Base64Encode(temp));
 
             await CashierLogbookService.getShiftData("CashierLogbook");
 
@@ -206,6 +226,85 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             }
         }
 
+        private async Task mainLogPageSelect(int currPage)
+        {
+            mainLogPageActive = currPage;
+
+            if (isMainLogFilterActive)
+            {
+                string type = "MAIN";
+                string status = "";
+                string filType = "";
+                string filValue = "";
+
+                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+                await CashierLogbookService.getLogData(Base64Encode(temp));
+            }
+            else
+            {
+                string type = "MAIN";
+                string status = "";
+                string filType = "";
+                string filValue = "";
+
+                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+                await CashierLogbookService.getLogData(Base64Encode(temp));
+            }
+
+        }
+
+        private async Task transitLogPageSelect(int currPage)
+        {
+            transitLogPageActive = currPage;
+
+            if (isTransitLogFilterActive)
+            {
+                string type = "TRANSIT";
+                string status = "";
+                string filType = "";
+                string filValue = "";
+
+                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+                await CashierLogbookService.getLogData(Base64Encode(temp));
+            }
+            else
+            {
+                string type = "TRANSIT";
+                string status = "";
+                string filType = "";
+                string filValue = "";
+
+                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+                await CashierLogbookService.getLogData(Base64Encode(temp));
+            }
+
+        }
+
+        private async Task actionLogPageSelect(int currPage)
+        {
+            actionLogPageActive = currPage;
+
+            if (isActionLogFilterActive)
+            {
+                string orderby = "AuditActionDate";
+                string filType = "LogID";
+                string filValue = "";
+
+                string temp = activeUser.location + "!_!" + orderby + "!_!" + filType + "!_!" + filValue + "!_!" + actionLogPageActive.ToString();
+                await CashierLogbookService.getBrankasActionLogData(Base64Encode(temp));
+            }
+            else
+            {
+                string orderby = "AuditActionDate";
+                string filType = "LogID";
+                string filValue = "";
+
+                string temp = activeUser.location + "!_!" + orderby + "!_!" + filType + "!_!" + filValue + "!_!" + actionLogPageActive.ToString();
+                await CashierLogbookService.getBrankasActionLogData(Base64Encode(temp));
+            }
+
+        }
+
         private void shiftSelect(Shift data)
         {
             foreach (var sh in activeShift)
@@ -221,6 +320,25 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             try
             {
                 if (CashierLogbookService.mainLogs.Any())
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        private bool checkActionLogPresent()
+        {
+            try
+            {
+                if (CashierLogbookService.actionLogs.Any())
                 {
                     return true;
                 }

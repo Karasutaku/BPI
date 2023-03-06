@@ -3870,7 +3870,7 @@ namespace BPIDA.Controllers
                 {
                     command.Connection = con;
                     command.CommandType = CommandType.StoredProcedure;
-                    command.CommandText = "[getModulePageSize]";
+                    command.CommandText = "[getPettyCashModulePageSize]";
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
@@ -5348,6 +5348,8 @@ namespace BPIDA.Controllers
                         temp1.statusDetails.approveUser = dt.IsNull("ApproveUser") ? "" : dt["ApproveUser"].ToString();
                         temp1.statusDetails.claimDate = dt.IsNull("ClaimDate") ? DateTime.MinValue : Convert.ToDateTime(dt["ClaimDate"]);
                         temp1.statusDetails.claimUser = dt.IsNull("ClaimUser") ? "" : dt["ClaimUser"].ToString();
+                        temp1.statusDetails.resolveDate = dt.IsNull("ResolveDate") ? DateTime.MinValue : Convert.ToDateTime(dt["ResolveDate"]);
+                        temp1.statusDetails.resolveUser = dt.IsNull("ResolveUser") ? "" : dt["ResolveUser"].ToString();
                         temp1.statusDetails.rejectDate = dt.IsNull("RejectDate") ? DateTime.MinValue : Convert.ToDateTime(dt["RejectDate"]);
                         temp1.statusDetails.rejectUser = dt.IsNull("RejectUser") ? "" : dt["RejectUser"].ToString();
 
@@ -6561,6 +6563,86 @@ namespace BPIDA.Controllers
             return dt;
         }
 
+        internal DataTable getBrankasActionLogData(string loc, string orderBy, string filType, string filVal, int pageNo, int rowPerPage)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getBrankasActionLogData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@OrderBy", orderBy);
+                    command.Parameters.AddWithValue("@FilterType", filType);
+                    command.Parameters.AddWithValue("@FilterValue", filVal);
+                    command.Parameters.AddWithValue("@PageNo", pageNo);
+                    command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return dt;
+        }
+
+        internal int getModuleNumberOfPage(string TbName, string loc,string type, string filValue, int rowPerPage)
+        {
+            int conInt = 0;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getBrankasModulePageSize]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@TbName", TbName);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@FilterType", type);
+                    command.Parameters.AddWithValue("@FilterValue", filValue);
+                    command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
+
+                    var data = command.ExecuteScalar();
+                    conInt = Convert.ToInt32(data);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conInt;
+        }
+
         // http
 
         [HttpPost("createLogData")]
@@ -6798,7 +6880,7 @@ namespace BPIDA.Controllers
         public async Task<IActionResult> editLogData(QueryModel<CashierLogData> data)
         {
             ResultModel<QueryModel<CashierLogData>> res = new ResultModel<QueryModel<CashierLogData>>();
-            string logID = string.Empty;
+            //string logID = string.Empty;
             string headerID = string.Empty;
             IActionResult actionResult = null;
 
@@ -6943,7 +7025,24 @@ namespace BPIDA.Controllers
                 createLogHeaderData(ListToDataTable<CashierLogCategoryDetailConv>(header, data.userEmail, data.userAction, data.userActionDate, "Headers"), data.Data.LocationID);
                 createLogLineData(ListToDataTable<CashierLogLineDetailConv>(lines, data.userEmail, data.userAction, data.userActionDate, "Lines"), data.Data.LocationID, data.Data.LogID);
 
-                createBrankasApproveLogData(ListToDataTable<CashierLogApproval>(data.Data.approvals, data.userEmail, data.userAction, data.userActionDate, "Apv"), data.Data.LocationID);
+                List<CashierLogApproval> apvLines = new();
+
+                foreach (var apv in data.Data.approvals)
+                {
+                    apvLines.Add(new CashierLogApproval
+                    {
+                        LogID = data.Data.LogID,
+                        LocationID = apv.LocationID,
+                        ShiftID = apv.ShiftID,
+                        CreateUser = apv.CreateUser,
+                        CreateDate = apv.CreateDate,
+                        ConfirmUser = apv.ConfirmUser,
+                        ConfirmDate = DateTime.Now,
+                        ApproveNote = apv.ApproveNote
+                    });
+                }
+
+                createBrankasApproveLogData(ListToDataTable<CashierLogApproval>(apvLines, data.userEmail, data.userAction, data.userActionDate, "Apv"), data.Data.LocationID);
 
                 //createLogHeaderData(ListToDataTable<CashierLogCategoryDetailConv>(headersUpdated, data.userEmail, data.userAction, data.userActionDate, "Headers"), data.Data.LocationID);
                 //createLogLineData(ListToDataTable<CashierLogLineDetailConv>(linesUpdated, data.userEmail, data.userAction, data.userActionDate, "Lines"), data.Data.LocationID, data.Data.LogID);
@@ -6984,6 +7083,36 @@ namespace BPIDA.Controllers
                 logAction.userActionDate = data.userActionDate;
 
                 createBrankasActionLogData(logAction);
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("editLogDocumentStatus")]
+        public async Task<IActionResult> editLogDocumentStatusTable(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                
 
                 res.Data = data;
                 res.isSuccess = true;
@@ -7290,6 +7419,97 @@ namespace BPIDA.Controllers
             catch (Exception ex)
             {
                 res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getBrankasActionLogData/{locPage}")]
+        public async Task<IActionResult> getBrankasActionLogDataTable(string locPage)
+        {
+            ResultModel<List<CashierLogAction>> res = new ResultModel<List<CashierLogAction>>();
+            List<CashierLogAction> actionLines = new List<CashierLogAction>();
+            DataTable dtAction = new DataTable("Action");
+            IActionResult actionResult = null;
+
+            try
+            {
+                string temp = Base64Decode(locPage);
+
+                string loc = temp.Split("!_!")[0].Equals("") ? "HO" : temp.Split("!_!")[0];
+                string orderby = temp.Split("!_!")[1];
+                string filType = temp.Split("!_!")[2];
+                string filVal = temp.Split("!_!")[3];
+                int page = Convert.ToInt32(temp.Split("!_!")[4]);
+
+                dtAction = getBrankasActionLogData(loc, orderby, filType, filVal, page, _rowPerPage);
+
+                if (dtAction.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtAction.Rows)
+                    {
+                        CashierLogAction temp1 = new CashierLogAction();
+
+                        temp1.LogID = dt["LogID"].ToString();
+                        temp1.LocationID = dt["LocationID"].ToString();
+                        temp1.UserEmail = dt["UserEmail"].ToString();
+                        temp1.LogAction = dt["LogAction"].ToString();
+                        temp1.ActionDate = Convert.ToDateTime(dt["ActionDate"]);
+
+                        actionLines.Add(temp1);
+                    }
+
+                    res.Data = actionLines;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getModulePageSize/{Table}")]
+        public async Task<IActionResult> getModulePageSize(string Table)
+        {
+            ResultModel<int> res = new ResultModel<int>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                string tbname = Base64Decode(Table).Split("!_!")[0];
+                string loc = Base64Decode(Table).Split("!_!")[1];
+                string tp = Base64Decode(Table).Split("!_!")[2];
+                string filVal = Base64Decode(Table).Split("!_!")[3];
+
+                res.Data = getModuleNumberOfPage(tbname, loc, tp, filVal, _rowPerPage);
+
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+            }
+            catch (Exception ex)
+            {
+                res.Data = 0;
                 res.isSuccess = false;
                 res.ErrorCode = "99";
                 res.ErrorMessage = ex.Message;
