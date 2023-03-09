@@ -1844,3 +1844,10 @@ else
         }
     }
 }
+
+@if (isLoading || isFetchBalanceActive)
+{
+    <div class="modal show" id="splashLoading" tabindex="-5" role="dialog" aria-labelledby="splashLoadingDialog" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+        <BPIWebApplication.Client.Shared.CustomLayout.SplashScreen></BPIWebApplication.Client.Shared.CustomLayout.SplashScreen>
+    </div>
+}

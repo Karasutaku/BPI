@@ -253,6 +253,38 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
             return resData;
         }
 
+        public async Task<ResultModel<QueryModel<string>>> updateBrankasDocumentStatusData(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> resData = new ResultModel<QueryModel<string>>();
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<string>>("api/endUser/CashierLogbook/editBrankasDocumentStatus", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<string>>>();
+
+                    if (respBody.isSuccess)
+                    {
+                        resData.Data = respBody.Data;
+                        resData.isSuccess = respBody.isSuccess;
+                        resData.ErrorCode = respBody.ErrorCode;
+                        resData.ErrorMessage = respBody.ErrorMessage;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = null;
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
+
+            return resData;
+        }
+
         public async Task<int> getModulePageSize(string Table)
         {
             ResultModel<int> resData = new ResultModel<int>();
@@ -287,6 +319,7 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
 
             return resData.Data;
         }
+
 
         //
     }

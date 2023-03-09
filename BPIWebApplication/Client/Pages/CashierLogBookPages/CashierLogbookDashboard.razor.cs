@@ -4,6 +4,7 @@ using BPIWebApplication.Shared.MainModel.CashierLogbook;
 using BPIWebApplication.Shared.MainModel.Company;
 using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.PagesModel.CashierLogbook;
+using DocumentFormat.OpenXml.ExtendedProperties;
 using DocumentFormat.OpenXml.Vml.Office;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -36,6 +37,13 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
         private bool showModal = false;
         private bool confirmModal = false;
 
+        private string mainLogFilterType { get; set; } = string.Empty;
+        private string transitLogFilterType { get; set; } = string.Empty;
+        private string mainLogFilterValue { get; set; } = string.Empty;
+        private string transitLogFilterValue { get; set; } = string.Empty;
+        private DateTime mainLogFilterDateValue { get; set; } = DateTime.Now;
+        private DateTime transitLogFilterDateValue { get; set; } = DateTime.Now;
+
         private string confirmNote { get; set; } = string.Empty;
 
         private static string Base64Encode(string plainText)
@@ -65,21 +73,21 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
             string type = "MAIN";
             string status = "";
-            string filType = "";
+            string filType = "LogID";
             string filValue = "";
             mainLogPageActive = 1;
 
-            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType!_!MAIN";
+            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'MAIN\'";
             mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
-            string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+            string temp = type + "!_!" + activeUser.location + "!_!" + status + $"!_!{filType} LIKE \'%%\'!_!" + mainLogPageActive.ToString();
             await CashierLogbookService.getLogData(Base64Encode(temp));
 
             type = "TRANSIT";
             transitLogPageActive = 1;
 
-            string transpz = "BrankasLog!_!" + activeUser.location + "!_!LogType!_!TRANSIT";
+            string transpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'TRANSIT\'";
             transitLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(transpz));
-            temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+            temp = type + "!_!" + activeUser.location + "!_!" + status + $"!_!{filType} LIKE \'%%\'!_!" + mainLogPageActive.ToString();
             await CashierLogbookService.getLogData(Base64Encode(temp));
 
             string orderby = "AuditActionDate";
@@ -87,7 +95,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             filValue = "";
             actionLogPageActive = 1;
 
-            string actpz = "BrankasApproveLog!_!" + activeUser.location + "!_!LogID!_!";
+            string actpz = "BrankasApproveLog!_!" + activeUser.location + "!_!LogID LIKE \'%%\'";
             actionLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(actpz));
             temp = activeUser.location + "!_!" + orderby + "!_!" + filType + "!_!" + filValue + "!_!" + actionLogPageActive.ToString();
             await CashierLogbookService.getBrankasActionLogData(Base64Encode(temp));
@@ -212,6 +220,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                 {
                     await _jsModule.InvokeVoidAsync("showAlert", "Log Confirm Handover Success !");
 
+                    activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ApproveNote = confirmNote;
                     activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmUser = activeUser.userName;
                     activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmDate = DateTime.Now;
                 }
@@ -226,6 +235,36 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             }
         }
 
+        private async void updateBrankasStatus(string stat)
+        {
+            try
+            {
+                QueryModel<string> editData = new();
+
+                string temp = activeLog.LogID + "!_!" + activeUser.location + "!_!" + stat;
+
+                editData.Data = Base64Encode(temp);
+                editData.userEmail = activeUser.userName;
+                editData.userAction = "U";
+                editData.userActionDate = DateTime.Now;
+
+                var res = await CashierLogbookService.updateBrankasDocumentStatusData(editData);
+
+                if (res.isSuccess)
+                {
+                    await _jsModule.InvokeVoidAsync("showAlert", "Log Data Status Success Updated !");
+                }
+                else
+                {
+                    await _jsModule.InvokeVoidAsync("showAlert", "Log Data Status Fail Updated, Please Check Your Connection and Try Again !");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _jsModule.InvokeVoidAsync("showAlert", $"Log Data Status Fail Updated, {ex.Message} !");
+            }
+        }
+
         private async Task mainLogPageSelect(int currPage)
         {
             mainLogPageActive = currPage;
@@ -234,23 +273,20 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             {
                 string type = "MAIN";
                 string status = "";
-                string filType = "";
-                string filValue = "";
+                string cond = $"{mainLogFilterType} LIKE \'%{mainLogFilterValue}%\'";
 
-                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
                 await CashierLogbookService.getLogData(Base64Encode(temp));
             }
             else
             {
                 string type = "MAIN";
                 string status = "";
-                string filType = "";
-                string filValue = "";
+                string cond = "LogID LIKE \'%%\'";
 
-                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
                 await CashierLogbookService.getLogData(Base64Encode(temp));
             }
-
         }
 
         private async Task transitLogPageSelect(int currPage)
@@ -261,23 +297,20 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             {
                 string type = "TRANSIT";
                 string status = "";
-                string filType = "";
-                string filValue = "";
+                string cond = $"{transitLogFilterType} LIKE \'%{transitLogFilterValue}%\'";
 
-                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
                 await CashierLogbookService.getLogData(Base64Encode(temp));
             }
             else
             {
                 string type = "TRANSIT";
                 string status = "";
-                string filType = "";
-                string filValue = "";
+                string cond = "LogID LIKE \'%%\'";
 
-                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + filType + "!_!" + filValue + "!_!" + mainLogPageActive.ToString();
+                string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
                 await CashierLogbookService.getLogData(Base64Encode(temp));
             }
-
         }
 
         private async Task actionLogPageSelect(int currPage)
@@ -302,7 +335,126 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                 string temp = activeUser.location + "!_!" + orderby + "!_!" + filType + "!_!" + filValue + "!_!" + actionLogPageActive.ToString();
                 await CashierLogbookService.getBrankasActionLogData(Base64Encode(temp));
             }
+        }
 
+        private async Task mainLogFilter()
+        {
+            if (mainLogFilterType.Length > 0)
+            {
+                mainLogPageActive = 1;
+                isMainLogFilterActive = true;
+
+                string type = "MAIN";
+                string status = "";
+                string filType = mainLogFilterType;
+                string filValue = mainLogFilterValue;
+
+                CashierLogbookService.mainLogs.Clear();
+
+                if (mainLogFilterType.Equals("LogDate"))
+                {
+                    string mainpz = "BrankasLog!_!" + activeUser.location + $"!_!LogType = \'MAIN\' AND {filType} LIKE \'%{filValue}%\'";
+                    mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
+
+                    string cond = $"{mainLogFilterType} BETWEEN \'{mainLogFilterDateValue.ToString("yyyyMMdd")}\' AND \'{mainLogFilterDateValue.ToString("yyyyMMdd")}\'";
+
+                    string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
+                    await CashierLogbookService.getLogData(Base64Encode(temp));
+                }
+                else
+                {
+                    string mainpz = "BrankasLog!_!" + activeUser.location + $"!_!LogType = \'MAIN\' AND {filType} LIKE \'%{filValue}%\'";
+                    mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
+
+                    string cond = $"LogID LIKE \'%%\' AND {filType} LIKE \'%{filValue}%\'";
+
+                    string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
+                    await CashierLogbookService.getLogData(Base64Encode(temp));
+                }
+            }
+            else
+            {
+                await _jsModule.InvokeVoidAsync("showAlert", "Please Select Filter Type !");
+            }
+        }
+
+        private async Task mainLogFilterReset()
+        {
+            mainLogPageActive = 1;
+            isMainLogFilterActive = false;
+            mainLogFilterType = "";
+            mainLogFilterValue = "";
+
+            string type = "MAIN";
+            string status = "";
+
+            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'MAIN\'";
+            mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
+
+            string cond = "LogID LIKE \'%%\'";
+
+            string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
+            await CashierLogbookService.getLogData(Base64Encode(temp));
+        }
+
+        private async Task transitLogFilter()
+        {
+            if (transitLogFilterType.Length > 0)
+            {
+                transitLogPageActive = 1;
+                isTransitLogFilterActive = true;
+
+                string type = "TRANSIT";
+                string status = "";
+                string filType = transitLogFilterType;
+                string filValue = transitLogFilterValue;
+
+                CashierLogbookService.transitLogs.Clear();
+
+                if (transitLogFilterType.Equals("LogDate"))
+                {
+                    string mainpz = "BrankasLog!_!" + activeUser.location + $"!_!LogType = \'TRANSIT\' AND {filType} LIKE \'%{filValue}%\'";
+                    mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
+
+                    string cond = $"{mainLogFilterType} BETWEEN \'{mainLogFilterDateValue.ToString("yyyyMMdd")}\' AND \'{mainLogFilterDateValue.ToString("yyyyMMdd")}\'";
+
+                    string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
+                    await CashierLogbookService.getLogData(Base64Encode(temp));
+                }
+                else
+                {
+                    string mainpz = "BrankasLog!_!" + activeUser.location + $"!_!LogType = \'TRANSIT\' AND {filType} LIKE \'%{filValue}%\'";
+                    mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
+
+                    string cond = $"LogID LIKE \'%%\' AND {filType} LIKE \'%{filValue}%\'";
+
+                    string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
+                    await CashierLogbookService.getLogData(Base64Encode(temp));
+                }
+            }
+            else
+            {
+                await _jsModule.InvokeVoidAsync("showAlert", "Please Select Filter Type !");
+            }
+        }
+
+        private async Task transitLogFilterReset()
+        {
+            mainLogPageActive = 1;
+            isMainLogFilterActive = false;
+            mainLogFilterType = "";
+            mainLogFilterValue = "";
+
+            string type = "MAIN";
+            string status = "";
+
+            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'MAIN\'";
+            mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
+
+            string cond = "LogID LIKE \'%%\'";
+
+            string temp = type + "!_!" + activeUser.location + "!_!" + status + "!_!" + cond + "!_!" + mainLogPageActive.ToString();
+            await CashierLogbookService.getLogData(Base64Encode(temp));
         }
 
         private void shiftSelect(Shift data)

@@ -16,6 +16,7 @@ using BPIWebApplication.Shared.MainModel.Mailing;
 using BPIWebApplication.Shared.MainModel.CashierLogbook;
 using BPIWebApplication.Shared.PagesModel.CashierLogbook;
 using Microsoft.Extensions.Configuration;
+using BPIWebApplication.Shared.MainModel.Standarizations;
 
 namespace BPIWebApplication.Server.Controllers
 {
@@ -2825,6 +2826,52 @@ namespace BPIWebApplication.Server.Controllers
             return actionResult;
         }
 
+        [HttpPost("editBrankasDocumentStatus")]
+        public async Task<IActionResult> updateBrankasDocumentStatusDataTable(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<string>>($"api/Facade/CashierLogbook/editBrankasDocumentStatus", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<string>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fail settle from editBrankasDocumentStatus Facade";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
         [HttpGet("getLogData/{locPage}")]
         public async Task<IActionResult> getLogDataTable(string locPage)
         {
@@ -3093,4 +3140,292 @@ namespace BPIWebApplication.Server.Controllers
 
         //
     }
+
+    [Route("api/endUser/Standarization")]
+    [ApiController]
+    public class StandarizationController : ControllerBase
+    {
+        private readonly HttpClient _http;
+        private readonly IConfiguration _configuration;
+
+        public StandarizationController(HttpClient http, IConfiguration config)
+        {
+            _http = http;
+            _configuration = config;
+            _http.BaseAddress = new Uri(_configuration.GetValue<string>("ConnectionStrings:BpiFacade"));
+        }
+
+        [HttpPost("createStandarizationData")]
+        public async Task<IActionResult> createStandarizationDataTable(StandarizationStream data)
+        {
+            ResultModel<QueryModel<Standarizations>> res = new ResultModel<QueryModel<Standarizations>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<StandarizationStream>($"api/Facade/Standarization/createStandarizationData", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<Standarizations>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Fail settle from createStandarizationData Facade";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("editStandarizationData")]
+        public async Task<IActionResult> editStandarizationDataTable(StandarizationStream data)
+        {
+            ResultModel<QueryModel<Standarizations>> res = new ResultModel<QueryModel<Standarizations>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<StandarizationStream>($"api/Facade/Standarization/editStandarizationData", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<Standarizations>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Fail settle from editStandarizationData Facade";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("deleteStandarizationData")]
+        public async Task<IActionResult> deleteStandarizationDataTable(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<string>>($"api/Facade/Standarization/deleteStandarizationData", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<string>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Fail settle from deleteStandarizationData Facade";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationTypes")]
+        public async Task<IActionResult> getStandarizationTypesDataTable()
+        {
+            ResultModel<List<StandarizationType>> res = new ResultModel<List<StandarizationType>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<List<StandarizationType>>>("api/Facade/Standarization/getStandarizationTypes");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationData/{param}")]
+        public async Task<IActionResult> getStandarizationDataTable(string param)
+        {
+            ResultModel<List<Standarizations>> res = new ResultModel<List<Standarizations>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Standarizations>>>($"api/Facade/Standarization/getStandarizationData/{param}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationAttachment/{param}")]
+        public async Task<IActionResult> getAttachFileStream(string param)
+        {
+            ResultModel<List<BPIWebApplication.Shared.MainModel.Stream.FileStream>> res = new ResultModel<List<BPIWebApplication.Shared.MainModel.Stream.FileStream>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<List<BPIWebApplication.Shared.MainModel.Stream.FileStream>>>($"api/Facade/Standarization/getStandarizationAttachment/{param}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        //
+    }
+
 }

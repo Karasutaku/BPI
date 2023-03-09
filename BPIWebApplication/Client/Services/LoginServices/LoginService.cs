@@ -16,7 +16,7 @@ namespace BPIWebApplication.Client.Services.LoginServices
             _http = http;
         }
 
-        public ActiveUser activeUser { get; set; } = new();
+        public ActiveUser? activeUser { get; set; } = new();
 
         //public async Task<ResultModel<ActiveUser<LoginUser>>> GetUserAuthentication(LoginUser data)
         //{

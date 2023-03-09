@@ -5,7 +5,7 @@ namespace BPIWebApplication.Client.Services.LoginServices
 {
     public interface ILoginService
 	{
-		ActiveUser activeUser { get; set; }
+		ActiveUser? activeUser { get; set; }
 
 		//Task<ResultModel<ActiveUser<LoginUser>>> GetUserAuthentication(LoginUser data);
 

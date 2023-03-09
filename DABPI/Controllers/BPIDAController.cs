@@ -15,6 +15,7 @@ using BPIDA.Models.MainModel.Mailing;
 using Microsoft.IdentityModel.Tokens;
 using BPIDA.Models.MainModel.CashierLogbook;
 using System.Reflection;
+using BPIDA.Models.MainModel.Standarizations;
 
 namespace BPIDA.Controllers
 {
@@ -6410,7 +6411,42 @@ namespace BPIDA.Controllers
             }
         }
 
-        internal DataTable getLogData(string logType, string loc, string statValue, string filterType, string filterVal, int pageNo, int rowPerPage)
+        internal void updateBrankasDocumentStatusData(string logId, string loc, string statVal, string user, string act, DateTime actDate)
+        {
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editBrankasDocumentStatus]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LogID", logId);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@StatusValue", statVal);
+                    command.Parameters.AddWithValue("@AuditUser", user);
+                    command.Parameters.AddWithValue("@AuditAction", act);
+                    command.Parameters.AddWithValue("@AuditActionDate", actDate);
+
+                    command.ExecuteNonQuery();
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+        }
+
+        internal DataTable getLogData(string logType, string loc, string statValue, string conditions, int pageNo, int rowPerPage)
         {
             DataTable dt = new DataTable("Data");
 
@@ -6430,8 +6466,7 @@ namespace BPIDA.Controllers
                     command.Parameters.AddWithValue("@LogType", logType);
                     command.Parameters.AddWithValue("@LocationID", loc);
                     command.Parameters.AddWithValue("@StatusValue", statValue);
-                    command.Parameters.AddWithValue("@FilterType", filterType);
-                    command.Parameters.AddWithValue("@FilterValue", filterVal);
+                    command.Parameters.AddWithValue("@Conditions", conditions);
                     command.Parameters.AddWithValue("@PageNo", pageNo);
                     command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
 
@@ -6604,7 +6639,7 @@ namespace BPIDA.Controllers
             return dt;
         }
 
-        internal int getModuleNumberOfPage(string TbName, string loc,string type, string filValue, int rowPerPage)
+        internal int getModuleNumberOfPage(string TbName, string loc, string conditions, int rowPerPage)
         {
             int conInt = 0;
 
@@ -6623,8 +6658,7 @@ namespace BPIDA.Controllers
                     command.Parameters.Clear();
                     command.Parameters.AddWithValue("@TbName", TbName);
                     command.Parameters.AddWithValue("@LocationID", loc);
-                    command.Parameters.AddWithValue("@FilterType", type);
-                    command.Parameters.AddWithValue("@FilterValue", filValue);
+                    command.Parameters.AddWithValue("@Conditions", conditions);
                     command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
 
                     var data = command.ExecuteScalar();
@@ -6809,7 +6843,7 @@ namespace BPIDA.Controllers
                         CreateUser = apv.CreateUser,
                         CreateDate = apv.CreateDate,
                         ConfirmUser = apv.ConfirmUser,
-                        ConfirmDate = DateTime.Now,
+                        ConfirmDate = apv.ConfirmDate,
                         ApproveNote = apv.ApproveNote
                     });
                 }
@@ -7037,7 +7071,7 @@ namespace BPIDA.Controllers
                         CreateUser = apv.CreateUser,
                         CreateDate = apv.CreateDate,
                         ConfirmUser = apv.ConfirmUser,
-                        ConfirmDate = DateTime.Now,
+                        ConfirmDate = apv.ConfirmDate,
                         ApproveNote = apv.ApproveNote
                     });
                 }
@@ -7104,15 +7138,21 @@ namespace BPIDA.Controllers
             return actionResult;
         }
 
-        [HttpPost("editLogDocumentStatus")]
-        public async Task<IActionResult> editLogDocumentStatusTable(QueryModel<string> data)
+        [HttpPost("editBrankasDocumentStatus")]
+        public async Task<IActionResult> updateBrankasDocumentStatusDataTable(QueryModel<string> data)
         {
             ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
             IActionResult actionResult = null;
 
             try
             {
-                
+                string temp = Base64Decode(data.Data);
+
+                string logid = temp.Split("!_!")[0];
+                string loc = temp.Split("!_!")[1].Equals("") ? "HO" : temp.Split("!_!")[1];
+                string statVal = temp.Split("!_!")[2];
+
+                updateBrankasDocumentStatusData(logid, loc, statVal, data.userEmail, data.userAction, data.userActionDate);
 
                 res.Data = data;
                 res.isSuccess = true;
@@ -7150,11 +7190,10 @@ namespace BPIDA.Controllers
                 string type = temp.Split("!_!")[0];
                 string loc = temp.Split("!_!")[1].Equals("") ? "HO" : temp.Split("!_!")[1];
                 string status = temp.Split("!_!")[2];
-                string filType = temp.Split("!_!")[3];
-                string filVal = temp.Split("!_!")[4];
-                int page = Convert.ToInt32(temp.Split("!_!")[5]);
+                string cond = temp.Split("!_!")[3];
+                int page = Convert.ToInt32(temp.Split("!_!")[4]);
 
-                dtCashierLogbook = getLogData(type, loc, status, filType, filVal, page, _rowPerPage);
+                dtCashierLogbook = getLogData(type, loc, status, cond, page, _rowPerPage);
 
                 if (dtCashierLogbook.Rows.Count > 0)
                 {
@@ -7496,10 +7535,9 @@ namespace BPIDA.Controllers
             {
                 string tbname = Base64Decode(Table).Split("!_!")[0];
                 string loc = Base64Decode(Table).Split("!_!")[1];
-                string tp = Base64Decode(Table).Split("!_!")[2];
-                string filVal = Base64Decode(Table).Split("!_!")[3];
+                string cond = Base64Decode(Table).Split("!_!")[2];
 
-                res.Data = getModuleNumberOfPage(tbname, loc, tp, filVal, _rowPerPage);
+                res.Data = getModuleNumberOfPage(tbname, loc, cond, _rowPerPage);
 
                 res.isSuccess = true;
                 res.ErrorCode = "00";
@@ -7553,4 +7591,901 @@ namespace BPIDA.Controllers
         //
     }
 
+    [Route("api/DA/Standarization")]
+    [ApiController]
+    public class StandarizationController : ControllerBase
+    {
+        private readonly IConfiguration _configuration;
+        private readonly string _conString;
+        private readonly int _rowPerPage;
+
+        public StandarizationController(IConfiguration config)
+        {
+            _configuration = config;
+            _conString = _configuration.GetValue<string>("ConnectionStrings:Bpi");
+            _rowPerPage = _configuration.GetValue<int>("Paging:Standarization:RowPerPage");
+        }
+
+        public static DataTable ListToDataTable<T>(List<T> list, string auditUser, string auditAction, DateTime auditDate, string _tableName)
+        {
+            DataTable dt = new DataTable(_tableName);
+
+            foreach (PropertyInfo info in typeof(T).GetProperties())
+            {
+                dt.Columns.Add(new DataColumn(info.Name, Nullable.GetUnderlyingType(info.PropertyType) ?? info.PropertyType));
+            }
+
+            dt.Columns.Add(new DataColumn("AuditUser", Nullable.GetUnderlyingType(auditUser.GetType()) ?? auditUser.GetType()));
+            dt.Columns.Add(new DataColumn("AuditAction", Nullable.GetUnderlyingType(auditAction.GetType()) ?? auditAction.GetType()));
+            dt.Columns.Add(new DataColumn("AuditActionDate", Nullable.GetUnderlyingType(auditDate.GetType()) ?? auditDate.GetType()));
+
+            foreach (T t in list)
+            {
+                DataRow row = dt.NewRow();
+
+                foreach (PropertyInfo info in typeof(T).GetProperties())
+                {
+                    row[info.Name] = info.GetValue(t, null) ?? DBNull.Value;
+                }
+                row["AuditUser"] = auditUser;
+                row["AuditAction"] = auditAction;
+                row["AuditActionDate"] = auditDate;
+
+                dt.Rows.Add(row);
+            }
+            return dt;
+        }
+
+        private static string Base64Decode(string base64EncodedData)
+        {
+            var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
+            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
+        private static string Base64Encode(string plainText)
+        {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return Convert.ToBase64String(plainTextBytes);
+        }
+
+        internal DataTable createIDData(string docType)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createID]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@DocumentName", docType);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return dt;
+        }
+
+        internal bool createStandarizationData(QueryModel<Standarizations> data)
+        {
+            bool flag = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createStandarizationData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@TypeID", data.Data.TypeID);
+                    command.Parameters.AddWithValue("@StandarizationID", data.Data.StandarizationID);
+                    command.Parameters.AddWithValue("@StandarizationDetails", data.Data.StandarizationDetails);
+                    command.Parameters.AddWithValue("@StandarizationDate", data.Data.StandarizationDate);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret >= 0)
+                        flag = true;
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        internal bool createStandarizationTagData(DataTable data)
+        {
+            bool flag = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createStandarizationTags]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@StandarizationTags", data);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret >= 0)
+                        flag = true;
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        internal bool createStandarizationAttachmentData(DataTable data)
+        {
+            bool flag = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createStandarizationAttachment]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@StandarizationAttachments", data);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret >= 0)
+                        flag = true;
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        internal bool editStandarizationData(QueryModel<Standarizations> data)
+        {
+            bool flag = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editStandarizationData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@TypeID", data.Data.TypeID);
+                    command.Parameters.AddWithValue("@StandarizationID", data.Data.StandarizationID);
+                    command.Parameters.AddWithValue("@StandarizationDetails", data.Data.StandarizationDetails);
+                    command.Parameters.AddWithValue("@StandarizationDate", data.Data.StandarizationDate);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret >= 0)
+                        flag = true;
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        internal bool editStandarizationTagData(DataTable data)
+        {
+            bool flag = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editStandarizationTags]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@StandarizationTags", data);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret >= 0)
+                        flag = true;
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        internal bool editStandarizationAttachmentData(DataTable data)
+        {
+            bool flag = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[editStandarizationAttachment]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@StandarizationAttachments", data);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret >= 0)
+                        flag = true;
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        internal DataTable getStandarizationTypeData()
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getStandarizationsData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return dt;
+        }
+
+        internal DataTable getStandarizationData(string conditions, int pageNo, int rowPerPage)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getStandarizationDetailsData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    //command.Parameters.AddWithValue("@TypeID", type);
+                    command.Parameters.AddWithValue("@Condition", conditions);
+                    command.Parameters.AddWithValue("@PageNo", pageNo);
+                    command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return dt;
+        }
+
+        internal DataTable getStandarizationTagData(string id)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getStandarizationTagsData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@StandarizationID", id);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return dt;
+        }
+
+        internal DataTable getStandarizationAttachmentData(string id)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getStandarizationAttachmentData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@StandarizationID", id);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return dt;
+        }
+
+        internal bool deleteStandarizationData(string id, string user, string act, DateTime actDate)
+        {
+            bool flag = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[deleteStandarizationData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@StandarizationID", id);
+                    command.Parameters.AddWithValue("@AuditUser", user);
+                    command.Parameters.AddWithValue("@AuditAction", act);
+                    command.Parameters.AddWithValue("@AuditActionDate", actDate);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret >= 0)
+                        flag = true;
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        [HttpPost("createStandarizationData")]
+        public async Task<IActionResult> createStandarizationDataTable(QueryModel<Standarizations> data)
+        {
+            ResultModel<QueryModel<Standarizations>> res = new ResultModel<QueryModel<Standarizations>>();
+            //DataTable dtMainIdentity = new("Identity");
+            //string standarizationId = string.Empty;
+            IActionResult actionResult = null;
+
+            try
+            {
+                //dtMainIdentity = createIDData("CashierLogbook");
+
+                //if (dtMainIdentity.Rows.Count > 0)
+                //{
+                //    foreach (DataRow dt in dtMainIdentity.Rows)
+                //    {
+                //        string zero = string.Empty;
+
+                //        for (int i = 0; i < 16 - (Convert.ToInt32(dt["IDLength"]) + dt["Code"].ToString().Length); i++)
+                //        {
+                //            zero = zero + "0";
+                //        }
+
+                //        standarizationId = dt["Code"].ToString() + DateTime.Now.Year.ToString() + DateTime.Now.ToString("MM") + DateTime.Now.ToString("dd") + zero + dt["DocNumber"].ToString() + dt["Parity"].ToString();
+
+                //    }
+                //}
+
+                //data.Data.StandarizationID = standarizationId;
+
+                bool success = createStandarizationData(data);
+
+                if (!success)
+                    throw new Exception("Fail Create Standarization Header");
+
+                success = createStandarizationTagData(ListToDataTable<StandarizationTag>(data.Data.Tags, data.userEmail, data.userAction, data.userActionDate, "Tags"));
+
+                if (!success)
+                    throw new Exception("Fail Create Standarization Tags");
+
+                success = createStandarizationAttachmentData(ListToDataTable<StandarizationAttachment>(data.Data.Attachments, data.userEmail, data.userAction, data.userActionDate, "Attachments"));
+
+                if (!success)
+                    throw new Exception("Fail Create Standarization Attachment");
+
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("editStandarizationData")]
+        public async Task<IActionResult> editStandarizationDataTable(QueryModel<Standarizations> data)
+        {
+            ResultModel<QueryModel<Standarizations>> res = new ResultModel<QueryModel<Standarizations>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                bool success = editStandarizationData(data);
+
+                if (!success)
+                    throw new Exception("Fail Create Standarization Header");
+
+                success = editStandarizationTagData(ListToDataTable<StandarizationTag>(data.Data.Tags, data.userEmail, data.userAction, data.userActionDate, "Tags"));
+
+                if (!success)
+                    throw new Exception("Fail Create Standarization Tags");
+
+                success = editStandarizationAttachmentData(ListToDataTable<StandarizationAttachment>(data.Data.Attachments, data.userEmail, data.userAction, data.userActionDate, "Attachments"));
+
+                if (!success)
+                    throw new Exception("Fail Create Standarization Attachment");
+
+
+                res.Data = data;
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("deleteStandarizationData")]
+        public async Task<IActionResult> deleteStandarizationDataTable(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                string temp = Base64Decode(data.Data);
+
+                bool flag = deleteStandarizationData(temp.Split("!_!")[1], data.userEmail, data.userAction, data.userActionDate);
+
+                if (flag)
+                {
+                    res.Data = data;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = data;
+                    res.isSuccess = false;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fail Delete Data to DB";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationTypes")]
+        public async Task<IActionResult> getStandarizationTypesDataTable()
+        {
+            ResultModel<List<StandarizationType>> res = new ResultModel<List<StandarizationType>>();
+            List<StandarizationType> typeLines = new List<StandarizationType>();
+            DataTable dtType = new DataTable("Shift");
+            IActionResult actionResult = null;
+
+            try
+            {
+                dtType = getStandarizationTypeData();
+
+                if (dtType.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtType.Rows)
+                    {
+                        StandarizationType temp = new StandarizationType();
+
+                        temp.TypeID = dt["TypeID"].ToString();
+                        temp.Descriptions = dt["Descriptions"].ToString();
+
+                        typeLines.Add(temp);
+                    }
+
+                    res.Data = typeLines;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fetch Empty";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationData/{param}")]
+        public async Task<IActionResult> getStandarizationDataTable(string param)
+        {
+            ResultModel<List<Standarizations>> res = new ResultModel<List<Standarizations>>();
+            List<Standarizations> standarizationLines = new List<Standarizations>();
+            List<StandarizationTag> tagLines = new List<StandarizationTag>();
+            List<StandarizationAttachment> attachLines = new List<StandarizationAttachment>();
+            DataTable dtStandarization = new DataTable("Standarizations");
+            DataTable dtTag = new DataTable("Tags");
+            DataTable dtAttach = new DataTable("Attachments");
+            IActionResult actionResult = null;
+
+            try
+            {
+                string temp = Base64Decode(param);
+
+                //string id = temp.Split("!_!")[0];
+                string cond = temp.Split("!_!")[0];
+                int pageNo = Convert.ToInt32(temp.Split("!_!")[1]);
+
+                dtStandarization = getStandarizationData(cond, pageNo, _rowPerPage);
+
+                if (dtStandarization.Rows.Count > 0)
+                {
+                    foreach (DataRow dt in dtStandarization.Rows)
+                    {
+                        Standarizations temp1 = new Standarizations();
+
+                        temp1.TypeID = dt["TypeID"].ToString();
+                        temp1.StandarizationID = dt["StandarizationID"].ToString();
+                        temp1.StandarizationDetails = dt["StandarizationDetails"].ToString();
+                        temp1.StandarizationDate = Convert.ToDateTime(dt["StandarizationDate"]);
+                        //temp1.StandarizationCategory = dt["StandarizationCategory"].ToString();
+                        //temp1.PathFile = dt["PathFile"].ToString();
+
+                        temp1.Tags = new();
+                        temp1.Attachments = new();
+
+                        dtTag = getStandarizationTagData(dt["StandarizationID"].ToString());
+
+                        if (dtTag.Rows.Count > 0)
+                        {
+                            foreach (DataRow rTag in dtTag.Rows)
+                            {
+                                StandarizationTag temp2 = new();
+
+                                temp2.StandarizationID = rTag["StandarizationID"].ToString();
+                                temp2.TagDescriptions = rTag["TagDescriptions"].ToString();
+
+                                temp1.Tags.Add(temp2);
+                            }
+                        }
+
+                        dtAttach = getStandarizationAttachmentData(dt["StandarizationID"].ToString());
+
+                        if (dtAttach.Rows.Count > 0)
+                        {
+                            foreach (DataRow rAttach in dtAttach.Rows)
+                            {
+                                StandarizationAttachment temp3 = new();
+
+                                temp3.StandarizationID = rAttach["StandarizationID"].ToString();
+                                temp3.Descriptions = rAttach["Descriptions"].ToString();
+                                temp3.UploadDate = Convert.ToDateTime(rAttach["UploadDate"]);
+                                temp3.FileExtention = rAttach["FileExtention"].ToString();
+                                temp3.FilePath = rAttach["FilePath"].ToString();
+
+                                temp1.Attachments.Add(temp3);
+                            }
+                        }
+
+                        standarizationLines.Add(temp1);
+                    }
+
+                    res.Data = standarizationLines;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fetch Empty";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationAttachment/{param}")]
+        public async Task<IActionResult> getStandarizationAttachmentDataTable(string param)
+        {
+            ResultModel<List<StandarizationAttachment>> res = new ResultModel<List<StandarizationAttachment>>();
+            List<StandarizationAttachment> standarizationLines = new List<StandarizationAttachment>();
+            DataTable dtAttach = new DataTable("Attachment");
+            IActionResult actionResult = null;
+
+            try
+            {
+                string temp = Base64Decode(param);
+
+                dtAttach = getStandarizationAttachmentData(temp.Split("!_!")[0]);
+
+                if (dtAttach.Rows.Count > 0)
+                {
+                    foreach (DataRow rAttach in dtAttach.Rows)
+                    {
+                        StandarizationAttachment temp1 = new();
+
+                        temp1.StandarizationID = rAttach["StandarizationID"].ToString();
+                        temp1.Descriptions = rAttach["Descriptions"].ToString();
+                        temp1.UploadDate = Convert.ToDateTime(rAttach["UploadDate"]);
+                        temp1.FileExtention = rAttach["FileExtention"].ToString();
+                        temp1.FilePath = rAttach["FilePath"].ToString();
+
+                        standarizationLines.Add(temp1);
+                    }
+
+                    res.Data = standarizationLines;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+                    res.isSuccess = true;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fetch Empty";
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        //
+    }
 }

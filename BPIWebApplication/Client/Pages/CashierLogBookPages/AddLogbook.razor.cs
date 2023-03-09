@@ -134,18 +134,40 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                     uploadData.Data = new();
 
                     uploadData.Data = logbook;
+                    uploadData.Data.approvals = new();
 
-                    uploadData.Data.approvals = new() { new CashierLogApproval
+                    foreach (var x in logbook.header)
                     {
-                        LocationID = activeUser.location,
-                        LogID = "",
-                        ShiftID = selectedShiftID,
-                        CreateUser = activeUser.userName,
-                        CreateDate = DateTime.Now,
-                        ConfirmUser = "",
-                        ConfirmDate = DateTime.MinValue,
-                        ApproveNote = ""
-                    }};
+                        foreach (var y in x.lines)
+                        {
+                            if (uploadData.Data.approvals.FirstOrDefault(n => n.ShiftID.Equals(y.ShiftID)) == null)
+                            {
+                                uploadData.Data.approvals.Add(new CashierLogApproval
+                                {
+                                    LocationID = activeUser.location,
+                                    LogID = "",
+                                    ShiftID = y.ShiftID,
+                                    CreateUser = activeUser.userName,
+                                    CreateDate = DateTime.Now,
+                                    ConfirmUser = "",
+                                    ConfirmDate = DateTime.Now,
+                                    ApproveNote = ""
+                                });
+                            }
+                        }
+                    }
+
+                    //uploadData.Data.approvals = new() { new CashierLogApproval
+                    //{
+                    //    LocationID = activeUser.location,
+                    //    LogID = "",
+                    //    ShiftID = selectedShiftID,
+                    //    CreateUser = activeUser.userName,
+                    //    CreateDate = DateTime.Now,
+                    //    ConfirmUser = "",
+                    //    ConfirmDate = DateTime.MinValue,
+                    //    ApproveNote = ""
+                    //}};
 
                     uploadData.userEmail = activeUser.userName;
                     uploadData.userAction = "I";
@@ -197,37 +219,79 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                     uploadData.Data = new();
 
                     uploadData.Data = logbook;
+                    //uploadData.Data.approvals = new();
 
-                    List<int?> sft = new();
-
-                    foreach (var x in uploadData.Data.header)
+                    foreach (var x in logbook.header)
                     {
                         foreach (var y in x.lines)
                         {
-                            if (sft.FirstOrDefault(sf => sf.Equals(y.ShiftID)) == null)
+                            if (uploadData.Data.approvals.FirstOrDefault(n => n.ShiftID.Equals(y.ShiftID)) == null)
                             {
-                                uploadData.Data.approvals.Add(new CashierLogApproval
+                                var updateItem = logbook.approvals.FirstOrDefault(z => z.ShiftID.Equals(y.ShiftID));
+
+                                if (updateItem != null)
                                 {
-                                    LocationID = activeUser.location,
-                                    LogID = "",
-                                    ShiftID = selectedShiftID,
-                                    CreateUser = activeUser.userName,
-                                    CreateDate = DateTime.Now,
-                                    ConfirmUser = "",
-                                    ConfirmDate = DateTime.Now,
-                                    ApproveNote = ""
-                                });
-                            }
-                            else
-                            {
-                                if (uploadData.Data.approvals.FirstOrDefault(x => x.ShiftID.Equals(y.ShiftID)).ConfirmUser.Equals(""))
-                                {
-                                    uploadData.Data.approvals.SingleOrDefault(x => x.ShiftID.Equals(y.ShiftID)).CreateUser = activeUser.userName;
-                                    uploadData.Data.approvals.SingleOrDefault(x => x.ShiftID.Equals(y.ShiftID)).CreateDate = DateTime.Now;
+                                    if (updateItem.ConfirmUser.Equals(""))
+                                    {
+                                        updateItem.CreateUser = activeUser.userName;
+                                        updateItem.CreateDate = DateTime.Now;
+                                    }
+
+                                    uploadData.Data.approvals.Add(updateItem);
                                 }
+                                else
+                                {
+                                    uploadData.Data.approvals.Add(new CashierLogApproval
+                                    {
+                                        LocationID = activeUser.location,
+                                        LogID = "",
+                                        ShiftID = y.ShiftID,
+                                        CreateUser = activeUser.userName,
+                                        CreateDate = DateTime.Now,
+                                        ConfirmUser = "",
+                                        ConfirmDate = DateTime.Now,
+                                        ApproveNote = ""
+                                    });
+                                }
+                            }
+                            else if (uploadData.Data.approvals.FirstOrDefault(x => x.ShiftID.Equals(y.ShiftID)).ConfirmUser.Equals(""))
+                            {
+                                uploadData.Data.approvals.SingleOrDefault(x => x.ShiftID.Equals(y.ShiftID)).CreateUser = activeUser.userName;
+                                uploadData.Data.approvals.SingleOrDefault(x => x.ShiftID.Equals(y.ShiftID)).CreateDate = DateTime.Now;
                             }
                         }
                     }
+
+                    //List<int?> sft = new();
+
+                    //foreach (var x in uploadData.Data.header)
+                    //{
+                    //    foreach (var y in x.lines)
+                    //    {
+                    //        if (sft.FirstOrDefault(sf => sf.Equals(y.ShiftID)) == null)
+                    //        {
+                    //            uploadData.Data.approvals.Add(new CashierLogApproval
+                    //            {
+                    //                LocationID = activeUser.location,
+                    //                LogID = "",
+                    //                ShiftID = selectedShiftID,
+                    //                CreateUser = activeUser.userName,
+                    //                CreateDate = DateTime.Now,
+                    //                ConfirmUser = "",
+                    //                ConfirmDate = DateTime.Now,
+                    //                ApproveNote = ""
+                    //            });
+                    //        }
+                    //        else
+                    //        {
+                    //            if (uploadData.Data.approvals.FirstOrDefault(x => x.ShiftID.Equals(y.ShiftID)).ConfirmUser.Equals(""))
+                    //            {
+                    //                uploadData.Data.approvals.SingleOrDefault(x => x.ShiftID.Equals(y.ShiftID)).CreateUser = activeUser.userName;
+                    //                uploadData.Data.approvals.SingleOrDefault(x => x.ShiftID.Equals(y.ShiftID)).CreateDate = DateTime.Now;
+                    //            }
+                    //        }
+                    //    }
+                    //}
 
                     uploadData.userEmail = activeUser.userName;
                     uploadData.userAction = "U";
@@ -341,7 +405,9 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
                         if (res.isSuccess)
                         {
-                            line.LineAmount = res.Data.outstandingBalance.reimbursementApvOutstandingAmount;
+                            balanceData = res.Data;
+
+                            line.LineAmount = res.Data.outstandingBalance.reimbursementApvOutstandingAmount + res.Data.outstandingBalance.reimbursementReqOutstandingAmount;
 
                             isFetchBalanceActive = false;
                         }
@@ -355,7 +421,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                     }
                     else
                     {
-                        line.LineAmount = balanceData.outstandingBalance.reimbursementApvOutstandingAmount;
+                        line.LineAmount = balanceData.outstandingBalance.reimbursementApvOutstandingAmount + balanceData.outstandingBalance.reimbursementReqOutstandingAmount;
                     }
                 }
 

@@ -493,6 +493,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             {
                 if (isAdvanceActive)
                 {
+                    isLoading = true;
+
                     string param = "Advance!_!" + advance.AdvanceID + "!_!" + action + "!_!";
 
                     QueryModel<string> statData = new();
@@ -614,7 +616,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                         advance.AdvanceStatus = action;
                         PettyCashService.advances.SingleOrDefault(a => a.AdvanceID.Equals(advance.AdvanceID)).AdvanceStatus = action;
-                        
+
+                        isLoading = false;
                         //await _jsModule.InvokeVoidAsync("showAlert", "");
                     }
                     else
@@ -624,7 +627,9 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 }
                 else if (isExpenseActive)
                 {
-                    string param = "Expense!_!" + expense.ExpenseID + "!_!" + action + "!_!";
+                    isLoading = true;
+
+                    string param = "Expense!_!" + expense.ExpenseID + "!_!" + action + "!_!!_!" + expense.ExpenseStatus;
 
                     QueryModel<string> statData = new();
 
@@ -736,6 +741,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                         expense.ExpenseStatus = action;
                         PettyCashService.expenses.SingleOrDefault(a => a.ExpenseID.Equals(expense.ExpenseID)).ExpenseStatus = action;
 
+                        isLoading = false;
                         //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
                     }
                     else
@@ -745,6 +751,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 }
                 else if (isReimburseActive)
                 {
+                    isLoading = true;
+
                     string param = "Reimburse!_!" + reimburse.ReimburseID + "!_!" + action + "!_!" + reimburse.ReimburseNote;
 
                     QueryModel<string> statData = new();
@@ -805,6 +813,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                                             //await _jsModule.InvokeVoidAsync("showAlert", "Approval Status Success Updated, Please Reload Your Page !");
                                         }
 
+                                        isLoading = false;
                                     }
                                     catch (Exception ex)
                                     {
@@ -824,6 +833,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     }
                     else
                     {
+                        isLoading = true;
+
                         var res = await PettyCashService.updateDocumentStatus(statData);
 
                         if (res.isSuccess)
@@ -984,6 +995,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                         {
                             await _jsModule.InvokeVoidAsync("showAlert", "Status Might've Updated from Another User, Please Refresh Your Page !");
                         }
+
+                        isLoading = false;
                     }
                     
                 }
@@ -1003,6 +1016,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         {
             transacType = type;
             showModal = true;
+            isLoading = true;
 
             if (type.Contains("advance"))
             {
@@ -1080,6 +1094,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 
             }
 
+            isLoading = false;
             StateHasChanged();
 
         }
@@ -1164,6 +1179,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private async Task advancePageSelect(int currPage)
         {
             advancePageActive = currPage;
+            isLoading = true;
 
             if (isAdvanceFilterActive)
             {
@@ -1183,12 +1199,13 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 string advlocPage = "MASTER!_!" + activeUser.location + "!_!" + advStatus + "!_!" + advFilType + "!_!" + advFilValue + "!_!" + advancePageActive.ToString();
                 await PettyCashService.getAdvanceDatabyLocation(Base64Encode(advlocPage));
             }
-
+            isLoading = false;
         }
 
         private async Task expensePageSelect(int currPage)
         {
             expensePageActive = currPage;
+            isLoading = true;
 
             if (isExpenseFilterActive)
             {
@@ -1208,12 +1225,14 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 string explocPage = "MASTER!_!" + activeUser.location + "!_!" + expStatus + "!_!" + expFilType + "!_!" + expFilValue + "!_!" + expensePageActive.ToString();
                 await PettyCashService.getExpenseDatabyLocation(Base64Encode(explocPage));
             }
+            isLoading = false;
 
         }
 
         private async Task reimbursePageSelect(int currPage)
         {
             reimbursePageActive = currPage;
+            isLoading = true;
 
             if (isReimburseFilterActive)
             {
@@ -1233,6 +1252,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 string rbslocPage = "MASTER!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + reimbursePageActive.ToString();
                 await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
             }
+            isLoading = false;
 
         }
 
@@ -1240,6 +1260,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private async Task padvancePageSelect(int currPage)
         {
             padvancePageActive = currPage;
+            isLoading = true;
 
             if (ispAdvanceFilterActive)
             {
@@ -1259,12 +1280,14 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 string advlocPage = "POSTED!_!" + activeUser.location + "!_!" + advStatus + "!_!" + advFilType + "!_!" + advFilValue + "!_!" + padvancePageActive.ToString();
                 await PettyCashService.getAdvanceDatabyLocation(Base64Encode(advlocPage));
             }
+            isLoading = false;
 
         }
 
         private async Task pexpensePageSelect(int currPage)
         {
             pexpensePageActive = currPage;
+            isLoading = true;
 
             if (ispExpenseFilterActive)
             {
@@ -1284,12 +1307,14 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 string explocPage = "POSTED!_!" + activeUser.location + "!_!" + expStatus + "!_!" + expFilType + "!_!" + expFilValue + "!_!" + pexpensePageActive.ToString();
                 await PettyCashService.getExpenseDatabyLocation(Base64Encode(explocPage));
             }
+            isLoading = false;
 
         }
 
         private async Task preimbursePageSelect(int currPage)
         {
             preimbursePageActive = currPage;
+            isLoading = true;
 
             if (ispReimburseFilterActive)
             {
@@ -1309,6 +1334,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 string rbslocPage = "POSTED!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + preimbursePageActive.ToString();
                 await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
             }
+            isLoading = false;
 
         }
 
@@ -1319,6 +1345,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             {
                 advancePageActive = 1;
                 isAdvanceFilterActive = true;
+                isLoading = true;
 
                 string advStatus = "";
                 string advFilType = advFilterType;
@@ -1331,6 +1358,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                 string advlocPage = "MASTER!_!" + activeUser.location + "!_!" + advStatus + "!_!" + advFilType + "!_!" + advFilValue + "!_!" + advancePageActive.ToString();
                 await PettyCashService.getAdvanceDatabyLocation(Base64Encode(advlocPage));
+                isLoading = false;
             }
             else
             {
@@ -1341,6 +1369,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private async Task advanceFilterReset()
         {
+            isLoading = true;
             advancePageActive = 1;
             isAdvanceFilterActive = false;
             advFilterType = "";
@@ -1356,6 +1385,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             string advlocPage = "MASTER!_!" + activeUser.location + "!_!" + advStatus + "!_!" + advFilType + "!_!" + advFilValue + "!_!" + advancePageActive.ToString();
             await PettyCashService.getAdvanceDatabyLocation(Base64Encode(advlocPage));
+            isLoading = false;
 
         }
 
@@ -1365,6 +1395,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             {
                 expensePageActive = 1;
                 isExpenseFilterActive = true;
+                isLoading = true;
 
                 string expStatus = "";
                 string expFilType = expFilterType;
@@ -1377,6 +1408,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                 string explocPage = "MASTER!_!" + activeUser.location + "!_!" + expStatus + "!_!" + expFilType + "!_!" + expFilValue + "!_!" + expensePageActive.ToString();
                 await PettyCashService.getExpenseDatabyLocation(Base64Encode(explocPage));
+                isLoading = false;
             }
             else
             {
@@ -1387,6 +1419,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private async Task expenseFilterReset()
         {
+            isLoading = true;
             expensePageActive = 1;
             isExpenseFilterActive = false;
             expFilterType = "";
@@ -1402,6 +1435,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             string exppz = "Expense!_!ExpenseID!_!" + expStatus + "!_!" + expFilType + "!_!" + expFilValue + "!_!" + activeUser.location;
             expenseNumberofPage = await PettyCashService.getModulePageSize(Base64Encode(exppz));
+            isLoading = false;
         }
 
         private async Task reimburseFilter()
@@ -1410,6 +1444,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             {
                 reimbursePageActive = 1;
                 isReimburseFilterActive = true;
+                isLoading = true;
 
                 string remStatus = "";
                 string remFilType = remFilterType;
@@ -1422,6 +1457,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                 string rbslocPage = "MASTER!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + reimbursePageActive.ToString();
                 await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
+                isLoading = false;
             }
             else
             {
@@ -1432,6 +1468,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private async Task reimburseFilterReset()
         {
+            isLoading = true;
             reimbursePageActive = 1;
             isReimburseFilterActive = false;
             remFilterType = "";
@@ -1447,6 +1484,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             string rbslocPage = "MASTER!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + reimbursePageActive.ToString();
             await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
+            isLoading = false;
         }
 
         // posted
@@ -1456,6 +1494,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             {
                 padvancePageActive = 1;
                 ispAdvanceFilterActive = true;
+                isLoading = true;
 
                 string advStatus = "";
                 string advFilType = padvFilterType;
@@ -1468,6 +1507,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                 string advlocPage = "POSTED!_!" + activeUser.location + "!_!" + advStatus + "!_!" + advFilType + "!_!" + advFilValue + "!_!" + padvancePageActive.ToString();
                 await PettyCashService.getAdvanceDatabyLocation(Base64Encode(advlocPage));
+                isLoading = false;
             }
             else
             {
@@ -1478,6 +1518,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private async Task padvanceFilterReset()
         {
+            isLoading = true;
             padvancePageActive = 1;
             ispAdvanceFilterActive = false;
             padvFilterType = "";
@@ -1493,6 +1534,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             string advlocPage = "POSTED!_!" + activeUser.location + "!_!" + advStatus + "!_!" + advFilType + "!_!" + advFilValue + "!_!" + padvancePageActive.ToString();
             await PettyCashService.getAdvanceDatabyLocation(Base64Encode(advlocPage));
+            isLoading = false;
 
         }
 
@@ -1502,6 +1544,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             {
                 pexpensePageActive = 1;
                 ispExpenseFilterActive = true;
+                isLoading = true;
 
                 string expStatus = "";
                 string expFilType = pexpFilterType;
@@ -1514,6 +1557,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                 string explocPage = "POSTED!_!" + activeUser.location + "!_!" + expStatus + "!_!" + expFilType + "!_!" + expFilValue + "!_!" + pexpensePageActive.ToString();
                 await PettyCashService.getExpenseDatabyLocation(Base64Encode(explocPage));
+                isLoading = false;
             }
             else
             {
@@ -1524,6 +1568,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private async Task pexpenseFilterReset()
         {
+            isLoading = true;
             pexpensePageActive = 1;
             ispExpenseFilterActive = false;
             pexpFilterType = "";
@@ -1539,6 +1584,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             string exppz = "PostedExpense!_!ExpenseID!_!" + expStatus + "!_!" + expFilType + "!_!" + expFilValue + "!_!" + activeUser.location;
             pexpenseNumberofPage = await PettyCashService.getModulePageSize(Base64Encode(exppz));
+            isLoading = false;
         }
 
         private async Task preimburseFilter()
@@ -1547,6 +1593,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             {
                 preimbursePageActive = 1;
                 ispReimburseFilterActive = true;
+                isLoading = true;
 
                 string remStatus = "";
                 string remFilType = premFilterType;
@@ -1559,6 +1606,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                 string rbslocPage = "POSTED!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + preimbursePageActive.ToString();
                 await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
+                isLoading = false;
             }
             else
             {
@@ -1569,6 +1617,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private async Task preimburseFilterReset()
         {
+            isLoading = true;
             preimbursePageActive = 1;
             ispReimburseFilterActive = false;
             premFilterType = "";
@@ -1584,6 +1633,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             string rbslocPage = "POSTED!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + preimbursePageActive.ToString();
             await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
+            isLoading = false;
         }
 
         // master

@@ -1,0 +1,196 @@
+﻿@page "/standarization/dashboard"
+@inject IStandarizationService StandarizationService
+@inject ILoginService LoginService
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject IJSRuntime JS
+
+<PageTitle>Standarizations - Dashboard</PageTitle>
+
+@if (LoginService.activeUser == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    @if (LoginService.activeUser.userPrivileges != null)
+    {        
+        @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
+        {
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <h3>User Require Elevation</h3>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col col-md-12">
+                        <div class="d-flex flex-column align-items-start">
+
+                            <h3>Standarizations</h3>
+                            <small><i>Dashboard</i></small>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+
+                    <div class="table-responsive my-3">
+                        <table class="table table-sm table-hover" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="align-middle text-center" style="width: 15%;">Type</th>
+                                    <th scope="col" class="align-middle text-center" style="width: 12%;">Nomor Dokumen</th>
+                                    <th scope="col" class="align-middle text-center" style="width: 20%;">Nama Dokumen</th>
+                                    <th scope="col" class="d-none d-sm-table-cell align-middle text-center" style="width: 12%;">Tanggal Dokumen</th>
+                                    <th scope="col" class="d-none d-sm-table-cell align-middle text-center" style="width: 31%;">Tag(s)</th>
+                                    <th scope="col" class="align-middle text-center" style="width: 10%;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var stdData in StandarizationService.standarizations)
+                                {
+
+                                    <tr>
+                                        <td class="align-middle text-center" style="font-size:14px;">@StandarizationService.standarizationTypes.SingleOrDefault(x => x.TypeID.Equals(stdData.TypeID)).Descriptions</td>
+                                        <th role="row" class="align-middle text-center" style="font-size:14px;">@stdData.StandarizationID</th>
+                                        <td class="align-middle text-center" style="font-size:14px;">@stdData.StandarizationDetails</td>
+                                        <td class="d-none d-sm-table-cell align-middle text-center" style="font-size:14px;">@stdData.StandarizationDate.ToString("dd / MM / yyyy")</td>
+                                        <td class="d-none d-sm-table-cell align-middle text-center text-wrap">
+                                            @if (stdData.Tags.Count > 0)
+                                            {
+                                                @foreach (var tags in stdData.Tags)
+                                                {
+                                                    <label class="badge bg-secondary mx-1" style="font-size: 13px;">@tags.TagDescriptions</label>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <label class="badge bg-danger mx-1" style="font-size: 13px;">Tag Empty !</label>
+                                            }
+                                        </td>
+
+                                        <td class="align-middle text-center"><button class="btn btn-sm btn-primary-cus" @onclick="(() => previewStandarization(stdData))"><span class="oi oi-magnifying-glass"></span></button></td>
+                                        
+                                    </tr>
+
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+        @if (showPreviewModal && !isLoading)
+        {
+            
+            <div class="modal fade show" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header cus-bg">
+                            <h5 class="modal-title fw-bold text-white">Preview Standarization @previewData.StandarizationID</h5>
+
+                            <button type="button" class="close border-0" @onclick="(() => showPreviewModal = false)">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div class="row">
+                                <div class="col">Document Type</div>
+                                <div class="col">: @previewData.TypeID</div>
+                            </div>
+                            <div class="row">
+                                <div class="col">Document No</div>
+                                <div class="col">: <b>@previewData.StandarizationID</b></div>
+                            </div>
+                            <div class="row">
+                                <div class="col">Document Date</div>
+                                <div class="col">: @previewData.StandarizationDate.ToString("dd MMMM yyyy")</div>
+                            </div>
+                            <div class="row">
+                                <div class="col">Document Date</div>
+                                <div class="col">: @previewData.StandarizationDetails</div>
+                            </div>
+
+                            <div class="separator my-2">Tag(s)</div>
+
+                            @if (previewData.Tags.Count > 0)
+                            {
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="d-flex">
+                                        </div>
+                                        @foreach (var tag in previewData.Tags)
+                                        {
+                                            <label class="badge bg-secondary mx-1" style="font-size: 13px;">@tag.TagDescriptions</label>
+                                            @*<span class="badge badge-secondary text-black">@tag.TagDescriptions</span>*@
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="separator my-2">File(s)</div>
+
+                            @if (previewData.Attachments.Count > 0)
+                            {
+                                <div class="row">
+                                    <div class="col">
+                                        @foreach (var file in previewData.Attachments)
+                                        {
+                                            @*<span title="click to preview" class="badge badge-secondary text-black">@file.FilePath.Split("!_!")[1]</span>*@
+
+                                            <div id="attachCard" class="card border-dark">
+                                                <div class="card-body" @onclick="(() => downloadStandarizationFile(file))">
+                                                    <h6 class="card-title"><b>@file.FilePath.Split("!_!")[1]</b></h6>
+                                                    <small><b>@file.Descriptions</b></small>
+                                                    <br />
+                                                    <small><i>Click To View</i></small>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                        </div>
+                        <div class="modal-footer cus-bg">
+
+                            <button type="button" class="btn btn-danger mx-2" @onclick="(() => showPreviewModal = false)">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col align-middle text-center">
+                    <h3>Fetch Data Privileges in Process</h3>
+                    <small>Refresh Page Using Button Below If There is No Response</small>
+                    <br />
+                    <button type="button" class="btn btn-primary my-4" @onclick="(() => StateHasChanged())"><b>Refresh Page</b></button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@if (isLoading)
+{
+    <div class="modal show" id="splashLoading" tabindex="-5" role="dialog" aria-labelledby="splashLoadingDialog" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+        <BPIWebApplication.Client.Shared.CustomLayout.SplashScreen></BPIWebApplication.Client.Shared.CustomLayout.SplashScreen>
+    </div>
+}
+

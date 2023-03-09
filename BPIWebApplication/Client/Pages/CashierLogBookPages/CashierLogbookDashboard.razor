@@ -34,6 +34,42 @@
 
         <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade show active" id="utama" role="tabpanel" aria-labelledby="list-tab">
+
+                <div class="row my-3">
+
+                    <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                        <select class="form-select w-100 h-100" @bind="mainLogFilterType">
+                            <option hidden disabled value="">Filter By</option>
+                            <option value="LogID">Log ID</option>
+                            <option value="Applicant">Applicant</option>
+                            <option value="LogDate">Date</option>
+                            <option value="LogStatus">Status</option>
+                        </select>
+                    </div>
+
+                    @if (mainLogFilterType.Equals("LogDate"))
+                    {
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="datetime-local" class="form-control w-100 h-100" @bind-value="mainLogFilterDateValue" disabled="@(checkMainLogPresent() ? null : "disabled")" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="text" class="form-control w-100 h-100" @bind-value="mainLogFilterValue" disabled="@(checkMainLogPresent() ? null : "disabled")" />
+                        </div>
+                    }
+
+                    <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                        <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkMainLogPresent() ? null : "disabled")" @onclick="mainLogFilter">Filter</button>
+                    </div>
+
+                    <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                        <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!isMainLogFilterActive.Equals(false) ? null : "disabled")" @onclick="mainLogFilterReset">Reset</button>
+                    </div>
+                            
+                </div>
+
                 @if (checkMainLogPresent())
                 {
                     <div class="mb-3">
@@ -109,6 +145,41 @@
                 }
             </div>
             <div class="tab-pane fade" id="transit" role="tabpanel" aria-labelledby="list-tab">
+
+                <div class="row my-3">
+
+                    <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                        <select class="form-select w-100 h-100" @bind="transitLogFilterType">
+                            <option hidden disabled value="">Filter By</option>
+                            <option value="LogID">Log ID</option>
+                            <option value="Applicant">Applicant</option>
+                            <option value="LogDate">Date</option>
+                            <option value="LogStatus">Status</option>
+                        </select>
+                    </div>
+
+                    @if (mainLogFilterType.Equals("LogDate"))
+                    {
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="datetime-local" class="form-control w-100 h-100" @bind-value="transitLogFilterDateValue" disabled="@(checkTransitLogPresent() ? null : "disabled")" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="text" class="form-control w-100 h-100" @bind-value="transitLogFilterValue" disabled="@(checkTransitLogPresent() ? null : "disabled")" />
+                        </div>
+                    }
+
+                    <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                        <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkTransitLogPresent() ? null : "disabled")" @onclick="@(() => { isTransitLogFilterActive = true; transitLogPageSelect(transitLogPageActive); })">Filter</button>
+                    </div>
+                    <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                        <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!isTransitLogFilterActive.Equals(false) ? null : "disabled")" @onclick="(() => { transitLogPageActive = 1; isTransitLogFilterActive = false; transitLogFilterType = string.Empty; transitLogFilterValue = string.Empty; transitLogPageSelect(1); })">Reset</button>
+                    </div>
+                            
+                </div>
+
                 @if (checkTransitLogPresent())
                 {
                     <div class="mb-3">
@@ -396,7 +467,7 @@
                                                             </div>
                                                             <div class="col">
                                                                 <label class="fw-bold" for="cf_date">Confirm Date :</label>
-                                                                <input type="text" id="cf_date" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).ConfirmDate.ToString("dd MMMM yyyy HH:mm:ss")" class="form-control-sm w-100 border-1" readonly />
+                                                                <input type="text" id="cf_date" value="@(activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).ConfirmUser.Equals("") ? "" : activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).ConfirmDate.ToString("dd MMMM yyyy HH:mm:ss"))" class="form-control-sm w-100 border-1" readonly />
                                                             </div>
                                                         </div>
                                                         <div class="row">
@@ -554,7 +625,7 @@
                                                 </tr>
 
                                                 <tr>
-                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Difference</td>
+                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>Difference</b></td>
                                                     @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
                                                     {
                                                         var isbreak = false;
@@ -563,7 +634,30 @@
                                                         {
                                                             @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
                                                             {
-                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @((dt.ActualAmount - dt.HeaderAmount).ToString("N0")) ,-</td>
+                                                                <td class="text-center align-middle @(!Decimal.Subtract(dt.ActualAmount, dt.HeaderAmount).Equals(decimal.Zero) ? "bg-danger text-white" : "bg-success text-white")" style="width: 25%; font-size: 15px;">Rp. @((dt.ActualAmount - dt.HeaderAmount).ToString("N0")) ,-</td>
+
+                                                                isbreak = true;
+                                                            }
+                                                        }
+
+                                                        @if (!isbreak)
+                                                        {
+                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                        }
+                                                    }
+                                                </tr>
+
+                                                <tr>
+                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>Note</b></td>
+                                                    @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                    {
+                                                        var isbreak = false;
+
+                                                        @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                        {
+                                                            @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                            {
+                                                                <td class="text-center align-middle text-wrap" style="width: 25%; font-size: 15px;">@dt.CategoryNote</td>
 
                                                                 isbreak = true;
                                                             }
@@ -589,8 +683,9 @@
                 </div>
 
                 <div class="modal-footer cus-bg">
-                    <button type="button" class="btn btn-sm btn-success fw-bold" @onclick="(() => confirmModal = true)">Confirm</button>
-                    <button type="button" class="btn btn-sm btn-dark fw-bold" @onclick="(() => editDocument(activeLog))">Edit</button>
+                    <button type="button" class="btn btn-sm btn-success fw-bold" disabled="@(!activeLog.approvals.Any(x => x.ConfirmUser.Equals("")) && activeLog.LogStatus.Equals("Partial") ? null : "disabled")" @onclick="@(() => updateBrankasStatus("Done"))">Archive Data</button>
+                    <button type="button" class="btn btn-sm btn-warning fw-bold" disabled="@(activeLog.approvals.FirstOrDefault(y => y.ShiftID.Equals(activeShift.FirstOrDefault(x => x.isActive.Equals(true)).ShiftID) && y.ConfirmUser.Equals("")) != null ? null : "disabled")" @onclick="(() => confirmModal = true)">Confirm</button>
+                    <button type="button" class="btn btn-sm btn-dark fw-bold" disabled="@(!activeLog.LogStatus.Equals("Done") ? null : "disabled")" @onclick="(() => editDocument(activeLog))">Edit</button>
                     <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="hideModal">Close</button>
                 </div>
 

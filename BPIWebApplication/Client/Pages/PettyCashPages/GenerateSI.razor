@@ -183,8 +183,26 @@ else
                     </div>
                 </div>
             }
-
         }
-
     }
+    else
+    {
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col align-middle text-center">
+                    <h3>Fetch Data Privileges in Process</h3>
+                    <small>Refresh Page Using Button Below If There is No Response</small>
+                    <br />
+                    <button type="button" class="btn btn-primary my-4" @onclick="(() => StateHasChanged())"><b>Refresh Page</b></button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@if (isLoading)
+{
+    <div class="modal show" id="splashLoading" tabindex="-5" role="dialog" aria-labelledby="splashLoadingDialog" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+        <BPIWebApplication.Client.Shared.CustomLayout.SplashScreen></BPIWebApplication.Client.Shared.CustomLayout.SplashScreen>
+    </div>
 }

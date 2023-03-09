@@ -17,6 +17,8 @@ using BPIBR.Models.MainModel.Mailing;
 using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
 using BPIBR.Models.MainModel.CashierLogbook;
+using BPIBR.Models.MainModel.Standarizations;
+using DocumentFormat.OpenXml.Office2010.Excel;
 
 namespace BPIBR.Controllers
 {
@@ -1356,6 +1358,11 @@ namespace BPIBR.Controllers
             _mailHost = _configuration.GetValue<string>("AutoEmailCreds:Host");
             _mailPort = _configuration.GetValue<int>("AutoEmailCreds:Port");
         }
+        private static string Base64Encode(string plainText)
+        {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return Convert.ToBase64String(plainTextBytes);
+        }
 
         private static string Base64Decode(string base64EncodedData)
         {
@@ -1385,6 +1392,20 @@ namespace BPIBR.Controllers
             string path = Path.Combine(_uploadPath, "ExpenseAttach", Convert.ToInt32(id.Substring(1, 4)).ToString(), Convert.ToInt32(id.Substring(5, 2)).ToString(), Convert.ToInt32(id.Substring(7, 2)).ToString(), id, Path.GetFileName(filename));
 
             return System.IO.File.ReadAllBytes(path);
+        }
+
+        internal bool deleteFilefromDirectory(string id, string filename)
+        {
+            string path = Path.Combine(_uploadPath, "ExpenseAttach", Convert.ToInt32(id.Substring(1, 4)).ToString(), Convert.ToInt32(id.Substring(5, 2)).ToString(), Convert.ToInt32(id.Substring(7, 2)).ToString(), id, Path.GetFileName(filename));
+
+            if (System.IO.File.Exists(path))
+            {
+                System.IO.File.Delete(path);
+
+                return true;
+            }
+
+            return false;
         }
 
         // http
@@ -2176,6 +2197,21 @@ namespace BPIBR.Controllers
 
             try
             {
+                if (data.Data.Split("!_!")[1].Contains("E") && data.Data.Split("!_!")[4].Equals("Open") && data.Data.Split("!_!")[2].Equals("Rejected"))
+                {
+                    string temp = data.Data.Split("!_!")[1] + "!_!MASTER";
+
+                    var result1 = await _http.GetFromJsonAsync<ResultModel<List<AttachmentLine>>>($"api/DA/PettyCash/getAttachmentLines/{Base64Encode(temp)}");
+
+                    if (result1.isSuccess)
+                    {
+                        foreach (var dt in result1.Data)
+                        {
+                            deleteFilefromDirectory(data.Data.Split("!_!")[1], dt.PathFile);
+                        }
+                    }
+                }
+
                 var result = await _http.PostAsJsonAsync<QueryModel<string>>($"api/DA/PettyCash/editDocumentStatus", data);
 
                 if (result.IsSuccessStatusCode)
@@ -3169,6 +3205,52 @@ namespace BPIBR.Controllers
             return actionResult;
         }
 
+        [HttpPost("editBrankasDocumentStatus")]
+        public async Task<IActionResult> updateBrankasDocumentStatusDataTable(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<string>>($"api/DA/CashierLogbook/editBrankasDocumentStatus", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<string>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Fail settle from editBrankasDocumentStatus DA";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
         [HttpGet("getLogData/{locPage}")]
         public async Task<IActionResult> getLogDataTable(string locPage)
         {
@@ -3432,6 +3514,409 @@ namespace BPIBR.Controllers
 
                 actionResult = BadRequest(res);
             }
+            return actionResult;
+        }
+
+        //
+    }
+
+    [Route("api/BR/Standarization")]
+    [ApiController]
+    public class StandarizationController : ControllerBase
+    {
+        private readonly HttpClient _http;
+        private readonly IConfiguration _configuration;
+        private readonly string _uploadPath;
+
+        public StandarizationController(HttpClient http, IConfiguration config)
+        {
+            _http = http;
+            _configuration = config;
+            _http.BaseAddress = new Uri(_configuration.GetValue<string>("BaseUri:BpiDA"));
+            _uploadPath = _configuration.GetValue<string>("File:Standarizations:UploadPath");
+        }
+
+        private static string Base64Encode(string plainText)
+        {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return Convert.ToBase64String(plainTextBytes);
+        }
+
+        private static string Base64Decode(string base64EncodedData)
+        {
+            var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
+            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
+        // save file
+        internal async Task saveFiletoDirectory(string path, Byte[] content)
+        {
+            string dir = Path.GetDirectoryName(path);
+
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            await using FileStream fs = new(path, FileMode.Create);
+            Stream stream = new MemoryStream(content);
+            await stream.CopyToAsync(fs);
+        }
+
+        internal Byte[] getFileStream(string type, string filename, DateTime date)
+        {
+            string path = Path.Combine(_uploadPath, type, date.Year.ToString(), date.Month.ToString(), date.Day.ToString(), Path.GetFileName(filename));
+
+            return System.IO.File.ReadAllBytes(path);
+        }
+
+        internal bool deleteFilefromDirectory(string type, string filename, DateTime date)
+        {
+            string path = Path.Combine(_uploadPath, type, date.Year.ToString(), date.Month.ToString(), date.Day.ToString(), Path.GetFileName(filename));
+
+            if (System.IO.File.Exists(path))
+            {
+                System.IO.File.Delete(path);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        [HttpPost("createStandarizationData")]
+        public async Task<IActionResult> createStandarizationDataTable(StandarizationStream data)
+        {
+            ResultModel<QueryModel<Standarizations>> res = new ResultModel<QueryModel<Standarizations>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<Standarizations>>($"api/DA/Standarization/createStandarizationData", data.standarizationDetails);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<Standarizations>>>();
+
+                    foreach (var file in data.files)
+                    {
+                        string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
+
+                        await saveFiletoDirectory(path, file.content);
+                    }
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Fail Create from createStandarizationData DA";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("editStandarizationData")]
+        public async Task<IActionResult> editStandarizationDataTable(StandarizationStream data)
+        {
+            ResultModel<QueryModel<Standarizations>> res = new ResultModel<QueryModel<Standarizations>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                string param = Base64Encode(data.standarizationDetails.Data.TypeID + "!_!" + data.standarizationDetails.Data.StandarizationID);
+
+                var result1 = await _http.GetFromJsonAsync<ResultModel<List<StandarizationAttachment>>>($"api/DA/Standarization/getStandarizationAttachment/{param}");
+
+                if (result1.isSuccess)
+                {
+                    res.Data = new();
+
+                    foreach (var dt in result1.Data)
+                    {
+                        deleteFilefromDirectory(data.standarizationDetails.Data.TypeID, dt.FilePath, dt.UploadDate);
+                    }
+                }
+                else
+                {
+                    throw new Exception("Fail Fetch File Data Path");
+                }
+
+                var result = await _http.PostAsJsonAsync<QueryModel<Standarizations>>($"api/DA/Standarization/editStandarizationData", data.standarizationDetails);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<Standarizations>>>();
+
+                    foreach (var file in data.files)
+                    {
+                        string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
+
+                        await saveFiletoDirectory(path, file.content);
+                    }
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Fail settle from editStandarizationData DA";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("deleteStandarizationData")]
+        public async Task<IActionResult> deleteStandarizationDataTable(QueryModel<string> data)
+        {
+            ResultModel<QueryModel<string>> res = new ResultModel<QueryModel<string>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result1 = await _http.GetFromJsonAsync<ResultModel<List<StandarizationAttachment>>>($"api/DA/Standarization/getStandarizationAttachment/{data.Data}");
+
+                if (result1.isSuccess)
+                {
+                    res.Data = new();
+
+                    string tp = Base64Decode(data.Data);
+
+                    foreach (var dt in result1.Data)
+                    {
+                        deleteFilefromDirectory(tp.Split("!_!")[0], dt.FilePath, dt.UploadDate);
+                    }
+                }
+                else
+                {
+                    throw new Exception("Fail Fetch File Data Path");
+                }
+
+                var result = await _http.PostAsJsonAsync<QueryModel<string>>($"api/DA/Standarization/deleteStandarizationData", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<string>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Fail settle from deleteStandarizationData DA";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationTypes")]
+        public async Task<IActionResult> getStandarizationTypesDataTable()
+        {
+            ResultModel<List<StandarizationType>> res = new ResultModel<List<StandarizationType>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<List<StandarizationType>>>("api/DA/Standarization/getStandarizationTypes");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationData/{param}")]
+        public async Task<IActionResult> getStandarizationDataTable(string param)
+        {
+            ResultModel<List<Standarizations>> res = new ResultModel<List<Standarizations>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Standarizations>>>($"api/DA/Standarization/getStandarizationData/{param}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationAttachment/{param}")]
+        public async Task<IActionResult> getAttachFileStream(string param)
+        {
+            ResultModel<List<BPIBR.Models.MainModel.Stream.FileStream>> res = new ResultModel<List<BPIBR.Models.MainModel.Stream.FileStream>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                string dcParam = Base64Decode(param);
+
+                var result = await _http.GetFromJsonAsync<ResultModel<List<StandarizationAttachment>>>($"api/DA/Standarization/getStandarizationAttachment/{param}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = new();
+
+                    foreach (var dt in result.Data)
+                    {
+                        BPIBR.Models.MainModel.Stream.FileStream temp = new BPIBR.Models.MainModel.Stream.FileStream();
+
+                        temp.type = dt.StandarizationID;
+                        temp.fileName = dt.FilePath;
+                        temp.fileDesc = dt.Descriptions;
+                        temp.fileType = dt.FileExtention;
+                        temp.fileSize = 0;
+                        temp.content = getFileStream(dcParam.Split("!_!")[1], dt.FilePath, dt.UploadDate);
+
+                        res.Data.Add(temp);
+                    }
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
             return actionResult;
         }
 
