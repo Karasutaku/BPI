@@ -1,9 +1,12 @@
 ﻿@inherits LayoutComponentBase
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject ILoginService LoginService
+@using BPIWebApplication.Shared.MainModel.Login
 
 @code {
     private bool sessionActive;
-    private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+    //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+    private ActiveUser activeUser = new();
 
     private static string Base64Decode(string base64EncodedData)
     {
@@ -17,12 +20,14 @@
         {
             sessionActive = true;
 
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = "";
-            activeUser.UserLogin.password = "";
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = "";
+            //activeUser.UserLogin.password = "";
 
-            activeUser.Name = Base64Decode(sessionStorage.GetItem<string>("userName"));
-            activeUser.role = Base64Decode(sessionStorage.GetItem<string>("role"));
+            //activeUser.Name = Base64Decode(sessionStorage.GetItem<string>("userName"));
+            //activeUser.role = Base64Decode(sessionStorage.GetItem<string>("role"));
+
+            activeUser.userName = Base64Decode(sessionStorage.GetItem<string>("userName"));
         }
     }
 }
@@ -35,16 +40,24 @@
 } else
 {
     <div class="page">
+        @*@if(showSidebar) {
+            <div class="sidebar">
+                <NavMenu />
+            </div>
+        }*@
         <div class="sidebar">
             <NavMenu />
         </div>
 
         <main>
             <div class="top-row px-4">
-                <div class="float-start">
-
+                @*<div class="navTrigger" @onclick="triggerSidebar">
+                    <button type="button" class="border-0"><i class="oi oi-menu" ></i></button>
+                </div>*@
+                <div class="userDetailNav">
+                    Welcome, @activeUser.userName
                 </div>
-                 Welcome, @activeUser.Name
+                
             </div>
 
             <article class="content px-4">

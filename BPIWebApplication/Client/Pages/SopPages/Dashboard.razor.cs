@@ -1,5 +1,4 @@
-﻿using BPIWebApplication.Shared;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using System.Runtime.InteropServices;
 using Microsoft.JSInterop;
 using System.Buffers.Text;
@@ -8,6 +7,8 @@ using BPIWebApplication.Shared.DbModel;
 using BPIWebApplication.Shared.PagesModel.Dashboard;
 using Microsoft.AspNetCore.Components.Web;
 using System.Diagnostics;
+using BPIWebApplication.Shared.MainModel.Login;
+using BPIWebApplication.Shared.MainModel.Procedure;
 
 namespace BPIWebApplication.Client.Pages.SopPages
 {
@@ -62,7 +63,8 @@ namespace BPIWebApplication.Client.Pages.SopPages
         //    return false;
         //}
 
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        private ActiveUser activeUser = new();
 
         private IJSObjectReference _jsModule;
         private int pageActive, numberofPage;
@@ -80,6 +82,21 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
         protected override async Task OnInitializedAsync()
         {
+            activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+
             await ManagementService.GetAllBisnisUnit();
             await ManagementService.GetAllDepartment();
             pageActive = 1;
@@ -89,12 +106,8 @@ namespace BPIWebApplication.Client.Pages.SopPages
             filterActive = false;
             filterDetails = new DashboardFilter();
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
-
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
+
         }
 
         private string? param;
@@ -110,14 +123,13 @@ namespace BPIWebApplication.Client.Pages.SopPages
             return fileStream;
         }
 
-        private async void handleDownload(string path, string procNo, string procName)
+        private async Task handleDownload(string path, string procNo, string procName)
         {
             var temp = path + "!_!" + procNo;
 
             var dt = await ProcedureService.GetFile(temp);
 
-            Thread.Sleep(700);
-            showModal = true;
+            streamdata = new Byte[0];
 
             if (!dt.isSuccess)
             {
@@ -127,10 +139,12 @@ namespace BPIWebApplication.Client.Pages.SopPages
             {
                 // download file
 
-                var filestream = GetFileStream(dt.Data.content);
-                string filename = procNo + ".pdf";
+                //var filestream = GetFileStream(dt.Data.content);
+                //string filename = procNo + ".pdf";
 
                 streamdata = dt.Data.content;
+
+                showModal = true;
 
                 StateHasChanged();
 
@@ -148,9 +162,9 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
                     historyData.Data.ProcedureNo = procNo;
                     historyData.Data.ProcedureName = procName;
-                    historyData.Data.UserEmail = activeUser.UserLogin.userName;
+                    historyData.Data.UserEmail = activeUser.userName;
                     historyData.Data.HistoryAccessDate = DateTime.Now;
-                    historyData.userEmail = activeUser.UserLogin.userName;
+                    historyData.userEmail = activeUser.userName;
                     historyData.userAction = "I";
                     historyData.userActionDate = DateTime.Now;
 

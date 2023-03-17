@@ -4,7 +4,7 @@
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject NavigationManager navigate
 
-@if (!activeUser.role.Contains("admin"))
+@*@if (!activeUser.role.Contains("admin"))
 {
     <div class="container-fluid">
         <div class="d-flex align-items-center">
@@ -13,7 +13,7 @@
     </div>
 }
 else
-{
+{*@
     <div class="container-fluid">
         <div class="row">
             <div class="col col-md-12">
@@ -144,5 +144,5 @@ else
 
 
     </div>
-}
+@*}*@
 

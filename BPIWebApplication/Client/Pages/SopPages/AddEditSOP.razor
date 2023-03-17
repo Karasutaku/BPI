@@ -1,11 +1,14 @@
 ﻿@page "/procedure/addsop"
 @page "/procedure/editsop/{param}"
 @inject IProcedureService ProcedureService
+@inject ILoginService LoginService
 @inject IConfiguration config
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject IJSRuntime JS
 
-@if (!activeUser.role.Contains("admin"))
+
+
+@if (LoginService.activeUser.userPrivileges == null || !LoginService.activeUser.userPrivileges.Contains("VW"))
 {
     <div class="container-fluid">
         <div class="d-flex align-items-center">
@@ -15,6 +18,7 @@
 }
 else
 {
+
     <div class="container-fluid">
         <div class="row">
             <div class="col col-md-12">
@@ -268,5 +272,8 @@ else
         </div>
 
     </div>
+
+
 }
+
 

@@ -1,10 +1,10 @@
-﻿using BPIWebApplication.Shared;
+﻿using BPIWebApplication.Shared.MainModel.Login;
 
 namespace BPIWebApplication.Client.Pages
 {
     public partial class Index
     {
-        ActiveUser<LoginUser> activeUser = new();
+        //ActiveUser<LoginUser> activeUser = new();
 
         private static string Base64Encode(string plainText)
         {
@@ -21,24 +21,24 @@ namespace BPIWebApplication.Client.Pages
         {
             await ManagementService.GetAllProject();
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
         }
 
         private void redirectEditProject(string projectName)
         {
-            if (activeUser.role.Contains("admin"))
-            {
-                string temp = Base64Encode(projectName);
+            //if (activeUser.role.Contains("admin"))
+            //{
+            //    string temp = Base64Encode(projectName);
 
-                navigate.NavigateTo($"management/editproject/{temp}");
-            }
-            else
-            {
-                // do nothing
-            }
+            //    navigate.NavigateTo($"management/editproject/{temp}");
+            //}
+            //else
+            //{
+            //    // do nothing
+            //}
             
         }
 

@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Pages\SopPages\AddEditSOP.razor.cs~RF58daad6.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="wwwroot\css\bootstrap\bootstrap.min.css.map" />
     <None Include="wwwroot\css\open-iconic\FONT-LICENSE" />
     <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.svg" />
@@ -18,8 +22,10 @@
   <ItemGroup>
     <PackageReference Include="Blazored.SessionStorage" Version="2.2.0" />
     <PackageReference Include="ClosedXML" Version="0.97.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.10" PrivateAssets="all" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.25.1" />
   </ItemGroup>
 
   <ItemGroup>

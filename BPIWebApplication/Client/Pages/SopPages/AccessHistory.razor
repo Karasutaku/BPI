@@ -1,14 +1,19 @@
 ﻿@page "/procedure/accesshistory"
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject IProcedureService ProcedureService
+@inject ILoginService LoginService
 @inject IJSRuntime JS
 
 <PageTitle>SOP - History</PageTitle>
 
 
-@if (!(activeUser.role.Contains("admin") || !activeUser.role.Contains("guest")))
+@if (LoginService.activeUser.userPrivileges == null || !LoginService.activeUser.userPrivileges.Contains("VW"))
 {
-    <h3>User Require Elevation</h3>
+    <div class="container-fluid">
+        <div class="d-flex align-items-center">
+            <h3>User Require Elevation</h3>
+        </div>
+    </div>
 }
 else
 {

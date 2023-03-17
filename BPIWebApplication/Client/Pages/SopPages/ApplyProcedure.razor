@@ -1,10 +1,11 @@
 ﻿@page "/procedure/applyprocedure"
 @inject IProcedureService ProcedureService
 @inject IManagementService ManagementService
+@inject ILoginService LoginService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 
 
-@if (!activeUser.role.Contains("admin"))
+@if (LoginService.activeUser.userPrivileges == null || !LoginService.activeUser.userPrivileges.Contains("VW"))
 {
     <div class="container-fluid">
         <div class="d-flex align-items-center">
@@ -81,7 +82,8 @@ else
             @* department selected here *@
             <p class="dept-selected">@deptSelected.Count DEPARTMENT(s) SELECTED</p>
 
-            @if (procedureSelected) {
+            @if (procedureSelected && LoginService.activeUser.userPrivileges.Contains("CR"))
+            {
                 <button class="btn btn-sm btn-warning-cus" type="button" @onclick="modalShow">Select Department</button>
                 <p></p>
                 <button class="btn btn-sm btn-primary-cus" type="button" @onclick="handleSubmit">Submit</button>
@@ -94,6 +96,7 @@ else
             }
 
         </div>
+        
     
         @*
         <div class="separator">Uploaded Files</div>

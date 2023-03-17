@@ -1,4 +1,5 @@
-﻿using BPIWebApplication.Shared.PagesModel.AddEditUser;
+﻿using BPIWebApplication.Shared.MainModel.Login;
+using BPIWebApplication.Shared.PagesModel.AddEditUser;
 using Microsoft.AspNetCore.Components;
 
 namespace BPIWebApplication.Client.Pages.ManagementPages
@@ -18,7 +19,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
         private bool successAlert = false;
         private bool syncProgress = false;
 
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
 
         private static string Base64Decode(string base64EncodedData)
         {
@@ -37,10 +38,10 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
             //await ManagementService.GetAllBisnisUnit();
             //await ManagementService.GetAllDepartment();
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
 
             // _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
 

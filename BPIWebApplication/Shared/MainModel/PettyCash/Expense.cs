@@ -1,21 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using BPIWebApplication.Shared.MainModel.Procedure;
 
 namespace BPIWebApplication.Shared.MainModel.PettyCash
 {
     public class Expense
     {
         public string ExpenseID { get; set; } = string.Empty;
-        public string AdvanceID { get; set; } = string.Empty; // can be empty
+        public string AdvanceID { get; set; } = string.Empty;
+        public DateTime ExpenseDate { get; set; } = DateTime.Now;
         public string ExpenseStatus { get; set; } = string.Empty;
+        public string ExpenseNIK { get; set; } = string.Empty;
+        public string ExpenseNote { get; set; } = string.Empty;
+        public string ExpenseType { get; set; } = string.Empty;
+        public string TypeAccount { get; set; } = string.Empty;
 
-        public string LocationID { get; set;} = string.Empty;
-        public Location Location { get; set; } = new Location();
-        
+        public string DepartmentID { get; set; } = string.Empty;
+        public Department Department { get; set; } = new();
+
+        public string LocationID { get; set; } = string.Empty;
+        public string Approver { get; set; } = string.Empty;
         public string Applicant { get; set; } = string.Empty; // from audit
-        public DateTime ExpenseDate { get; set; } = DateTime.Now; // from audit
+
+        public List<ExpenseLine> lines { get; set; } = new();
+        public ExpenseDocumentStatus statusDetails { get; set; } = new();
     }
 }

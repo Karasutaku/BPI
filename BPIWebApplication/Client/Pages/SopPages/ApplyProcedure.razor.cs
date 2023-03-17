@@ -1,7 +1,9 @@
-﻿using BPIWebApplication.Shared;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using BPIWebApplication.Shared.PagesModel.ApplyProcedure;
 using BPIWebApplication.Shared.DbModel;
+using BPIWebApplication.Shared.MainModel.Login;
+using BPIWebApplication.Shared.MainModel;
+using BPIWebApplication.Shared.MainModel.Procedure;
 
 namespace BPIWebApplication.Client.Pages.SopPages
 {
@@ -12,7 +14,8 @@ namespace BPIWebApplication.Client.Pages.SopPages
         List<DeptSelected> deptSelected = new List<DeptSelected>();
         List<DeptSelected> deptDeleted = new List<DeptSelected>();
 
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        private ActiveUser activeUser = new();
 
         // filter
         private string procNoFilter = string.Empty;
@@ -30,10 +33,20 @@ namespace BPIWebApplication.Client.Pages.SopPages
             await ManagementService.GetAllDepartment();
             await ProcedureService.GetAllDepartmentProcedure();
 
-            activeUser.UserLogin = new LoginUser();
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+
+            activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
         }
 
         // modal trigger
@@ -148,7 +161,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
                 procedureSelected = true;
                 previewProcedure = ProcedureService.procedures.FirstOrDefault(a => a.ProcedureNo == procNoFilter);
 
-                List <DepartmentProcedure> temp = ProcedureService.departmentProcedures.Where(a => a.ProcedureNo == previewProcedure.ProcedureNo).ToList();
+                List<DepartmentProcedure> temp = ProcedureService.departmentProcedures.Where(a => a.ProcedureNo == previewProcedure.ProcedureNo).ToList();
 
                 foreach (var deptApplied in temp)
                 {
@@ -176,61 +189,86 @@ namespace BPIWebApplication.Client.Pages.SopPages
                 //} 
                 //else
                 //{
-                    QueryModel<ApplyProcedureMultiDept> applyData = new QueryModel<ApplyProcedureMultiDept>();
-                    applyData.Data = new ApplyProcedureMultiDept();
 
-                    applyData.Data.ProcedureNo = procNoFilter;
-                    applyData.Data.listDepartment = deptSelected;
-                    applyData.userEmail = activeUser.UserLogin.userName;
-                    applyData.userAction = "I";
-                    applyData.userActionDate = DateTime.Now;
+                    //QueryModel<ApplyProcedureMultiDept> applyData = new QueryModel<ApplyProcedureMultiDept>();
+                    //applyData.Data = new ApplyProcedureMultiDept();
 
-                    ResultModel<QueryModel<ApplyProcedureMultiDept>> res1 = await ProcedureService.createDepartmentProcedure(applyData);
+                QueryModel<List<DepartmentProcedure>> applyData = new QueryModel<List<DepartmentProcedure>>();
+                applyData.Data = new();
 
-                    if (res1.isSuccess)
+                foreach (var dept in deptSelected)
+                {
+                    applyData.Data.Add(new DepartmentProcedure
                     {
-                        if (deptDeleted.Count > 0)
+                        ProcedureNo = procNoFilter,
+                        DepartmentID = dept.DepartmentID
+                    });
+                }
+
+                //applyData.Data.ProcedureNo = procNoFilter;
+                //applyData.Data.listDepartment = deptSelected;
+                applyData.userEmail = activeUser.userName;
+                applyData.userAction = "I";
+                applyData.userActionDate = DateTime.Now;
+
+                ResultModel<QueryModel<List<DepartmentProcedure>>> res1 = await ProcedureService.createDepartmentProcedure(applyData);
+
+                if (res1.isSuccess)
+                {
+                    if (deptDeleted.Count > 0)
+                    {
+                        //QueryModel<ApplyProcedureMultiDept> applyDelData = new QueryModel<ApplyProcedureMultiDept>();
+                        //applyDelData.Data = new ApplyProcedureMultiDept();
+
+                        QueryModel<List<DepartmentProcedure>> applyDelData = new QueryModel<List<DepartmentProcedure>>();
+                        applyDelData.Data = new List<DepartmentProcedure>();
+
+                        foreach (var dept in deptDeleted)
                         {
-                            QueryModel<ApplyProcedureMultiDept> applyDelData = new QueryModel<ApplyProcedureMultiDept>();
-                            applyDelData.Data = new ApplyProcedureMultiDept();
-
-                            applyDelData.Data.ProcedureNo = procNoFilter;
-                            applyDelData.Data.listDepartment = deptDeleted;
-                            applyDelData.userEmail = activeUser.UserLogin.userName;
-                            applyDelData.userAction = "D";
-                            applyDelData.userActionDate = DateTime.Now;
-
-                            await ProcedureService.deleteDepartmentProcedure(applyDelData);
+                            applyDelData.Data.Add(new DepartmentProcedure
+                            {
+                                ProcedureNo = procNoFilter,
+                                DepartmentID = dept.DepartmentID
+                            });
                         }
 
-                        alertMessage = "Success Applying Department !";
-                        alertBody = "";
-                        successAlert = true;
-                        procedureSelected = false;
+                        //applyDelData.Data.ProcedureNo = procNoFilter;
+                        //applyDelData.Data.listDepartment = deptDeleted;
+                        applyDelData.userEmail = activeUser.userName;
+                        applyDelData.userAction = "D";
+                        applyDelData.userActionDate = DateTime.Now;
 
-                        deptSelected.Clear();
-                        deptDeleted.Clear();
-                        procNoFilter = "";
-                        previewProcedure = new Procedure();
-
-                        await ProcedureService.GetAllDepartmentProcedure();
-                        StateHasChanged();
+                        await ProcedureService.deleteDepartmentProcedure(applyDelData);
                     }
-                    else
-                    {
-                        alertMessage = "Failed Applying Department !";
-                        alertBody = "Please retry your action";
-                        alertTrigger = true;
-                        procedureSelected = false;
 
-                        deptSelected.Clear();
-                        deptDeleted.Clear();
-                        procNoFilter = "";
-                        previewProcedure = new Procedure();
+                    alertMessage = "Success Applying Department !";
+                    alertBody = "";
+                    successAlert = true;
+                    procedureSelected = false;
 
-                        await ProcedureService.GetAllDepartmentProcedure();
-                        StateHasChanged();
-                    }
+                    deptSelected.Clear();
+                    deptDeleted.Clear();
+                    procNoFilter = "";
+                    previewProcedure = new Procedure();
+
+                    await ProcedureService.GetAllDepartmentProcedure();
+                    StateHasChanged();
+                }
+                else
+                {
+                    alertMessage = "Failed Applying Department !";
+                    alertBody = "Please retry your action";
+                    alertTrigger = true;
+                    procedureSelected = false;
+
+                    deptSelected.Clear();
+                    deptDeleted.Clear();
+                    procNoFilter = "";
+                    previewProcedure = new Procedure();
+
+                    await ProcedureService.GetAllDepartmentProcedure();
+                    StateHasChanged();
+                }
 
                 //}
             }

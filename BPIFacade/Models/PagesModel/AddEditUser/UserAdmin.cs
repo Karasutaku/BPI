@@ -1,4 +1,4 @@
-﻿namespace BPBPIFacadeIBR.Models.PagesModel.AddEditUser
+﻿namespace BPIFacade.Models.PagesModel.AddEditUser
 {
     public class UserAdmin
     {

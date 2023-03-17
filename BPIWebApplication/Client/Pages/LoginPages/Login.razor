@@ -1,5 +1,6 @@
 ﻿@page "/login"
 @inject ILoginService loginService
+@inject IManagementService ManagementService
 @inject NavigationManager navigate
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
 @inject IJSRuntime JS
@@ -17,24 +18,70 @@
 
                                 <div class="text-center">
                                     <img src="/img/mitra10.png" style="width: 185px;" alt="logo">
-                                    <h4 class="mt-1 mb-5 pb-1">Welcome to BPI Application</h4>
+                                    <h4 class="mt-1 mb-3 pb-1">Welcome to BPI Application</h4>
                                 </div>
 
                                 <EditForm Model="@user" OnValidSubmit="@checkLogin">
                                     <p>Please login to your Mitra10 account</p>
 
-                                    <div class="form-outline mb-4">
-                                        <label class="form-label" for="emailInput"><b>Username</b></label>
-                                        <input @bind="user.userName" type="email" id="emailInput" class="form-control" placeholder="Email" />
+                                    <div class="row mb-2">
+                                        <div class="col-sm-12 col-md-4">
+                                            <label class="form-label" ><b>Username</b></label>
+                                        </div>
+                                        <div class="col-sm-12 col-md-8">
+                                            <input @bind="user.userName" type="email" id="emailInput" class="form-control-sm w-100" placeholder="example@mitra10.com" />
+                                        </div>
                                     </div>
 
-                                    <div class="form-outline mb-4">
-                                        <label class="form-label" for="passwordInput"><b>Password</b></label>
-                                        <input @bind="user.password" type="password" id="passwordInput" class="form-control" placeholder="Password" />
+                                    <div class="row mb-2">
+                                        <div class="col-sm-12 col-md-4">
+                                            <label class="form-label" ><b>Password</b></label>
+                                        </div>
+                                        <div class="col-sm-12 col-md-8">
+                                            <input @bind="user.password" type="password" id="passwordInput" class="form-control-sm w-100" placeholder="Password" />
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-2">
+                                        <div class="col-sm-12 col-md-4">
+                                            <label class="form-label" ><b>Company</b></label>
+                                        </div>
+                                        <div class="col-sm-12 col-md-8">
+                                            <select id="form_comp" class="form-select-sm w-100" @onchange="getLocationsByCompany">
+                                                <option hidden>Select Company</option>
+                                                <option value="1">PT. Catur Mitra Sejati Sentosa</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-2">
+                                        <div class="col-sm-12 col-md-4">
+                                            <label class="form-label" ><b>Site</b></label>
+                                        </div>
+                                        <div class="col-sm-12 col-md-8">
+                                            <InputSelect @bind-Value="user.locationId" id="form_loc" class="form-select-sm w-100" >
+                                                <option hidden value="99999">Select Location</option>
+                                                @if (ManagementService.locations.Any())
+                                                {
+                                                    <option value="">HO - HEAD OFFICE</option>
+                                                    foreach (var loc in ManagementService.locations)
+                                                    {
+                                                        <option value="@loc.locationId">@loc.locationId - @loc.locationName</option>
+                                                    }
+                                                }
+                                            </InputSelect>
+                                            @if (isFetchLocationProgress)
+                                            {
+                                                <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                            }
+                                        </div>
+                                        
+                                        
                                     </div>
 
                                     <div class="text-center pt-1 mb-5 pb-1">
-                                        <button class="btn btn-primary btn-block fa-lg mb-3" type="submit">
+                                        <button class="btn btn-sm btn-outline-dark btn-block fa-lg mb-3" type="button" @onclick="formClear">Clear</button>
+                                        <button class="btn btn-sm btn-primary btn-block fa-lg mb-3" type="submit">
                                             Log in 
                                             @if (isLoginProgress)
                                             {

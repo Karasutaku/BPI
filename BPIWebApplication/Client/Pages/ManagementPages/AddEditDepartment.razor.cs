@@ -1,5 +1,6 @@
-﻿using BPIWebApplication.Shared;
-using BPIWebApplication.Shared.DbModel;
+﻿using BPIWebApplication.Shared.DbModel;
+using BPIWebApplication.Shared.MainModel.Login;
+using BPIWebApplication.Shared.MainModel.Procedure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
@@ -21,7 +22,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
 
         private Department department = new Department();
         private Department editDepartment = new Department();
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
 
         private static string Base64Decode(string base64EncodedData)
         {
@@ -45,10 +46,10 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
             await ManagementService.GetAllBisnisUnit();
             await ManagementService.GetAllDepartment();
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
 
             // _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
 
@@ -84,7 +85,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
                     insertData.Data = new Department();
 
                     insertData.Data = department;
-                    insertData.userEmail = activeUser.UserLogin.userName;
+                    //insertData.userEmail = activeUser.UserLogin.userName;
                     insertData.userAction = "I";
                     insertData.userActionDate = DateTime.Now;
 
@@ -118,7 +119,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
                 updateData.Data = new Department();
 
                 updateData.Data = editDepartment;
-                updateData.userEmail = activeUser.UserLogin.userName;
+                //updateData.userEmail = activeUser.UserLogin.userName;
                 updateData.userAction = "U";
                 updateData.userActionDate = DateTime.Now;
 
