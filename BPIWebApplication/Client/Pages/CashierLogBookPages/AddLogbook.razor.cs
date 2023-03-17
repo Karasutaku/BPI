@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using BPIWebApplication.Shared.MainModel.PettyCash;
 using BPIWebApplication.Shared.DbModel;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 {
@@ -37,6 +38,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
         private bool isFetchBalanceActive = false;
         private bool isLoading = false;
         private bool isSuccessUpload = false;
+        private bool isActiveDocumentExist = false;
 
         private IJSObjectReference _jsModule;
 
@@ -66,11 +68,23 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             await CashierLogbookService.getShiftData("CashierLogbook");
             await CashierLogbookService.getLogbookCategories();
 
-            logbook.LogType = "MAIN";
+            logbook.LogType = "UTAMA";
             logbook.Applicant = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             logbook.LocationID = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1].Equals("") ? "HO" : Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
             logbook.LogStatus = "Create";
             logbook.LogStatusDate = DateTime.Now;
+
+            string param = $"WHERE LogDate BETWEEN \'{logbook.LogStatusDate.ToString("yyyyMMdd")}\' AND \'{logbook.LogStatusDate.ToString("yyyyMMdd")}\'";
+            var res = await CashierLogbookService.getNumberofLogExisting(Base64Encode(param));
+
+            if (res > 0)
+            {
+                isActiveDocumentExist = true;
+            }
+            else
+            {
+                isActiveDocumentExist = false;
+            }
 
             selectedCategoryID = CashierLogbookService.categories.OrderBy(x => x.AmountCategoryName).First().AmountCategoryID;
             selectedShiftID = CashierLogbookService.Shifts.OrderBy(x => x.ShiftID).First().ShiftID;
@@ -83,14 +97,15 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             if (param != null)
             {
                 isSuccessUpload = false;
+                isLoading = true;
                 string temp = Base64Decode(param);
 
-                if (temp.Split("!_!")[1].Equals("MAIN"))
+                if (temp.Split("!_!")[1].Equals("UTAMA"))
                 {
                     if (CashierLogbookService.mainLogs.SingleOrDefault(a => a.LogID.Equals(temp.Split("!_!")[0])) != null)
                     {
                         logbook = CashierLogbookService.mainLogs.SingleOrDefault(a => a.LogID.Equals(temp.Split("!_!")[0]));
-                        logbook.LogType = "MAIN";
+                        logbook.LogType = "UTAMA";
                     }
                     else
                     {
@@ -110,6 +125,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                     }
                 }
 
+                isLoading = false;
                 StateHasChanged();
             }
         }
@@ -331,97 +347,100 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
             try
             {
-                if (e.Value.Equals("AD"))
+                if (logbook.LogType.Equals("UTAMA"))
                 {
-                    if (balanceData == null)
+                    if (e.Value.Equals("AD"))
                     {
-                        isFetchBalanceActive = true;
-
-                        string temp = activeUser.location.Equals("") ? "HO" : activeUser.location;
-
-                        var res = await PettyCashService.getPettyCashOutstandingAmount(temp);
-
-                        if (res.isSuccess)
+                        if (balanceData == null)
                         {
-                            balanceData = res.Data;
+                            isFetchBalanceActive = true;
 
-                            line.LineAmount = res.Data.outstandingBalance.advanceApprovedAmount;
+                            string temp = activeUser.location.Equals("") ? "HO" : activeUser.location;
 
-                            isFetchBalanceActive = false;
+                            var res = await PettyCashService.getPettyCashOutstandingAmount(temp);
+
+                            if (res.isSuccess)
+                            {
+                                balanceData = res.Data;
+
+                                line.LineAmount = res.Data.outstandingBalance.advanceApprovedAmount;
+
+                                isFetchBalanceActive = false;
+                            }
+                            else
+                            {
+                                line.LineAmount = decimal.Zero;
+
+                                await _jsModule.InvokeVoidAsync("showAlert", "Fetch Data Failed, Please Check Your Connection !");
+                                isFetchBalanceActive = false;
+                            }
                         }
                         else
                         {
-                            line.LineAmount = decimal.Zero;
-
-                            await _jsModule.InvokeVoidAsync("showAlert", "Fetch Data Failed, Please Check Your Connection !");
-                            isFetchBalanceActive = false;
+                            line.LineAmount = balanceData.outstandingBalance.advanceApprovedAmount;
                         }
                     }
-                    else
+                    else if (e.Value.Equals("EX"))
                     {
-                        line.LineAmount = balanceData.outstandingBalance.advanceApprovedAmount;
-                    }
-                }
-                else if (e.Value.Equals("EX"))
-                {
-                    if (balanceData == null)
-                    {
-                        isFetchBalanceActive = true;
-
-                        string temp = activeUser.location.Equals("") ? "HO" : activeUser.location;
-
-                        var res = await PettyCashService.getPettyCashOutstandingAmount(temp);
-
-                        if (res.isSuccess)
+                        if (balanceData == null)
                         {
-                            balanceData = res.Data;
+                            isFetchBalanceActive = true;
 
-                            line.LineAmount = res.Data.outstandingBalance.expenseApprovedAmount;
+                            string temp = activeUser.location.Equals("") ? "HO" : activeUser.location;
 
-                            isFetchBalanceActive = false;
+                            var res = await PettyCashService.getPettyCashOutstandingAmount(temp);
+
+                            if (res.isSuccess)
+                            {
+                                balanceData = res.Data;
+
+                                line.LineAmount = res.Data.outstandingBalance.expenseApprovedAmount;
+
+                                isFetchBalanceActive = false;
+                            }
+                            else
+                            {
+                                line.LineAmount = decimal.Zero;
+
+                                await _jsModule.InvokeVoidAsync("showAlert", "Fetch Data Failed, Please Check Your Connection !");
+                                isFetchBalanceActive = false;
+                            }
                         }
                         else
                         {
-                            line.LineAmount = decimal.Zero;
-
-                            await _jsModule.InvokeVoidAsync("showAlert", "Fetch Data Failed, Please Check Your Connection !");
-                            isFetchBalanceActive = false;
+                            line.LineAmount = balanceData.outstandingBalance.expenseApprovedAmount;
                         }
                     }
-                    else
+                    else if (e.Value.Equals("RB"))
                     {
-                        line.LineAmount = balanceData.outstandingBalance.expenseApprovedAmount;
-                    }
-                }
-                else if (e.Value.Equals("RB"))
-                {
-                    if (balanceData == null)
-                    {
-                        isFetchBalanceActive = true;
-
-                        string temp = activeUser.location.Equals("") ? "HO" : activeUser.location;
-
-                        var res = await PettyCashService.getPettyCashOutstandingAmount(temp);
-
-                        if (res.isSuccess)
+                        if (balanceData == null)
                         {
-                            balanceData = res.Data;
+                            isFetchBalanceActive = true;
 
-                            line.LineAmount = res.Data.outstandingBalance.reimbursementApvOutstandingAmount + res.Data.outstandingBalance.reimbursementReqOutstandingAmount;
+                            string temp = activeUser.location.Equals("") ? "HO" : activeUser.location;
 
-                            isFetchBalanceActive = false;
+                            var res = await PettyCashService.getPettyCashOutstandingAmount(temp);
+
+                            if (res.isSuccess)
+                            {
+                                balanceData = res.Data;
+
+                                line.LineAmount = res.Data.outstandingBalance.reimbursementApvOutstandingAmount + res.Data.outstandingBalance.reimbursementReqOutstandingAmount;
+
+                                isFetchBalanceActive = false;
+                            }
+                            else
+                            {
+                                line.LineAmount = decimal.Zero;
+
+                                await _jsModule.InvokeVoidAsync("showAlert", "Fetch Data Failed, Please Check Your Connection !");
+                                isFetchBalanceActive = false;
+                            }
                         }
                         else
                         {
-                            line.LineAmount = decimal.Zero;
-
-                            await _jsModule.InvokeVoidAsync("showAlert", "Fetch Data Failed, Please Check Your Connection !");
-                            isFetchBalanceActive = false;
+                            line.LineAmount = balanceData.outstandingBalance.reimbursementApvOutstandingAmount + balanceData.outstandingBalance.reimbursementReqOutstandingAmount;
                         }
-                    }
-                    else
-                    {
-                        line.LineAmount = balanceData.outstandingBalance.reimbursementApvOutstandingAmount + balanceData.outstandingBalance.reimbursementReqOutstandingAmount;
                     }
                 }
 
@@ -512,6 +531,11 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
             if (logbook.header.Any(x => x.lines.Any(y => y.LineAmount < 1)))
                 return false;
+
+            if (logbook.header.Any(x => !x.lines.Sum(y => y.LineAmount).Equals(x.ActualAmount) && x.CategoryNote.IsNullOrEmpty()))
+            {
+                return false;
+            }
 
             return true;
         }

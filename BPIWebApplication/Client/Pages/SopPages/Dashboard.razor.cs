@@ -82,15 +82,6 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
         protected override async Task OnInitializedAsync()
         {
-            await ManagementService.GetAllBisnisUnit();
-            await ManagementService.GetAllDepartment();
-            pageActive = 1;
-            await ProcedureService.GetDepartmentProcedurewithPaging(pageActive);
-            numberofPage = await ProcedureService.getDepartmentProcedureNumberofPage();
-
-            filterActive = false;
-            filterDetails = new DashboardFilter();
-
             activeUser.token = await sessionStorage.GetItemAsync<string>("token");
             activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
@@ -105,6 +96,15 @@ namespace BPIWebApplication.Client.Pages.SopPages
             //activeUser.UserLogin = new LoginUser();
             //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
             //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+
+            await ManagementService.GetAllBisnisUnit();
+            await ManagementService.GetAllDepartment();
+            pageActive = 1;
+            await ProcedureService.GetDepartmentProcedurewithPaging(pageActive);
+            numberofPage = await ProcedureService.getDepartmentProcedureNumberofPage();
+
+            filterActive = false;
+            filterDetails = new DashboardFilter();
 
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
 

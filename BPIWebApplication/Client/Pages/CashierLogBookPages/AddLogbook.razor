@@ -44,7 +44,7 @@
                 <div class="col">
                     <label for="log_type">Log Type :</label>
                     <InputSelect id="log_type" @bind-Value="logbook.LogType" class="form-select" disabled="@((isSuccessUpload.Equals(true) || param != null) ? "disabled" : null)">
-                        <option value="MAIN">UTAMA</option>
+                        <option value="UTAMA">UTAMA</option>
                         <option value="TRANSIT">TRANSIT</option>
                     </InputSelect>
                 </div>
@@ -57,7 +57,7 @@
                 </div>
                 <div class="col">
                     <label for="log_date">Log Date :</label>
-                    <InputDate id="log_date" @bind-Value="logbook.LogDate" class="form-control" readonly></InputDate>
+                    <InputDate id="log_date" @bind-Value="logbook.LogDate" class="form-control" readonly="@((param != null) ? "readonly" : null)"></InputDate>
                 </div>
             </div>
 
@@ -110,9 +110,9 @@
                     <div class="row mt-3 mb-1">
                         <div class="col">
                             <div class="d-flex justify-content-between align-middle">
-                                <button type="submit" title="Previous Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.First().AmountCategoryID) ? "disabled" : null)" @onclick="@(() => { selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) - 1].AmountCategoryID; try { if (logbook.header.Where(x => x.AmountCategoryID.Equals(selectedCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)) != null) { previewActualAmount = logbook.header.Where(x => x.AmountCategoryID.Equals(selectedCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).ActualAmount.ToString("N0"); } else { previewActualAmount = ""; } } catch (Exception ex) { previewActualAmount = ""; } })"><span class="oi oi-chevron-left"></span> Prev</button>
+                                <button type="button" title="Previous Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.First().AmountCategoryID) ? "disabled" : null)" @onclick="@(() => { selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) - 1].AmountCategoryID; try { if (logbook.header.Where(x => x.AmountCategoryID.Equals(selectedCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)) != null) { previewActualAmount = logbook.header.Where(x => x.AmountCategoryID.Equals(selectedCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).ActualAmount.ToString("N0"); } else { previewActualAmount = ""; } } catch (Exception ex) { previewActualAmount = ""; } })"><span class="oi oi-chevron-left"></span> Prev</button>
                                 <p><span>&lt; <b>@(CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) + 1)</b> of @CashierLogbookService.categories.Count() &gt;</span></p>
-                                <button type="submit" title="Next Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.Last().AmountCategoryID) ? "disabled" : null)" @onclick="@(() => { selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) + 1].AmountCategoryID; try { if (logbook.header.Where(x => x.AmountCategoryID.Equals(selectedCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)) != null) { previewActualAmount = logbook.header.Where(x => x.AmountCategoryID.Equals(selectedCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).ActualAmount.ToString("N0"); } else { previewActualAmount = ""; } } catch (Exception ex) { previewActualAmount = ""; } })">Next <span class="oi oi-chevron-right"></span></button>
+                                <button type="button" title="Next Category" class="btn btn-sm btn-outline-info text-black fw-bold" disabled="@(amtCat.AmountCategoryID.Equals(CashierLogbookService.categories.Last().AmountCategoryID) ? "disabled" : null)" @onclick="@(() => { selectedCategoryID = CashierLogbookService.categories[CashierLogbookService.categories.FindIndex(x => x.AmountCategoryID.Equals(selectedCategoryID)) + 1].AmountCategoryID; try { if (logbook.header.Where(x => x.AmountCategoryID.Equals(selectedCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)) != null) { previewActualAmount = logbook.header.Where(x => x.AmountCategoryID.Equals(selectedCategoryID)).Where(y => y.lines.All(z => z.ShiftID.Equals(selectedShiftID))).FirstOrDefault(x => x.AmountCategoryID.Equals(selectedCategoryID)).ActualAmount.ToString("N0"); } else { previewActualAmount = ""; } } catch (Exception ex) { previewActualAmount = ""; } })">Next <span class="oi oi-chevron-right"></span></button>
                             </div>
                         </div>
                     </div>

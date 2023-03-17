@@ -168,7 +168,7 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
 
                 if (result.isSuccess)
                 {
-                    if (Base64Decode(locPage).Split("!_!")[0].Contains("MAIN"))
+                    if (Base64Decode(locPage).Split("!_!")[0].Contains("UTAMA"))
                     {
                         mainLogs = result.Data;
                     }
@@ -320,6 +320,40 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
             return resData.Data;
         }
 
+        public async Task<int> getNumberofLogExisting(string param)
+        {
+            ResultModel<int> resData = new ResultModel<int>();
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/endUser/CashierLogbook/getNumberofLogExisting/{param}");
+
+                if (result.isSuccess)
+                {
+                    resData.Data = result.Data;
+                    resData.isSuccess = result.isSuccess;
+                    resData.ErrorCode = result.ErrorCode;
+                    resData.ErrorMessage = result.ErrorMessage;
+
+                }
+                else
+                {
+                    resData.Data = result.Data;
+                    resData.isSuccess = result.isSuccess;
+                    resData.ErrorCode = result.ErrorCode;
+                    resData.ErrorMessage = result.ErrorMessage;
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = 0;
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
+
+            return resData.Data;
+        }
 
         //
     }

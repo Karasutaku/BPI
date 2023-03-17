@@ -17,6 +17,7 @@
 
     public class StandarizationTag
     {
+        public Guid rowGuid { get; set; } = Guid.Empty;
         public string StandarizationID { get; set; } = string.Empty;
         public string TagDescriptions { get; set; } = string.Empty;
     }

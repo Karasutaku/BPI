@@ -5,6 +5,7 @@ using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.MainModel.Standarizations;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
 
@@ -23,6 +24,9 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
         private bool successUpload = false;
         private bool isLoading = false;
         private bool isConfirmationActive = false;
+        private bool isConfirmationDeletion = false;
+
+        private int maxFileSize = 0;
 
         private Standarizations standarizationData = new();
         private List<StandarizationTag> tags = new();
@@ -58,7 +62,116 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
             await StandarizationService.getStandarizationTypes();
 
+            maxFileSize = await StandarizationService.getStandarizationMaxFileSize();
+
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/StandarizationPages/AddEditStandarization.razor.js");
+        }
+
+        private void hideConfirmationModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { isConfirmationActive = false; } } catch (Exception exc) { } }
+
+        protected override async Task OnParametersSetAsync()
+        {
+            try
+            {
+                if (param != null)
+                {
+                    string temp = Base64Decode(param);
+                    var data = StandarizationService.standarizations.SingleOrDefault(x => x.StandarizationID.Equals(temp));
+
+                    if (data != null)
+                    {
+                        isLoading = true;
+                        StandarizationService.fileStreams.Clear();
+
+                        standarizationData = data;
+
+                        string temp1 = data.StandarizationID + "!_!" + data.TypeID;
+
+                        await Task.Run(async () => { await StandarizationService.getFileStream(Base64Encode(temp1)); });
+
+                        tags.Clear();
+                        fileLines.Clear();
+
+                        foreach (var tag in standarizationData.Tags)
+                        {
+                            tags.Add(new StandarizationTag
+                            {
+                                StandarizationID = tag.StandarizationID,
+                                TagDescriptions = tag.TagDescriptions
+                            });
+                        }
+
+                        foreach (var file in standarizationData.Attachments)
+                        {
+                            fileLines.Add(new BPIWebApplication.Shared.MainModel.Stream.FileStream
+                            {
+                                type = file.StandarizationID,
+                                fileName = file.FilePath,
+                                fileDesc = file.Descriptions,
+                                fileType = file.FileExtention,
+                                fileSize = 0,
+                                content = new Byte[0]
+                            });
+                        }
+                    }
+                    else
+                    {
+                        await _jsModule.InvokeVoidAsync("showAlert", "Data Not Found !");
+                    }
+                }
+
+                isLoading = false;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                isLoading = false;
+                await _jsModule.InvokeVoidAsync("showAlert", $"Fetch Data Failed : Error {ex.Message} ");
+            }
+        }
+
+        private Stream GetFileStream(byte[] data)
+        {
+            var fileBinData = data;
+            var fileStream = new MemoryStream(fileBinData);
+
+            return fileStream;
+        }
+
+        private async Task HandleDownloadDocument(Byte[] content, string filename)
+        {
+            var filestream = GetFileStream(content);
+
+            using var streamRef = new DotNetStreamReference(stream: filestream);
+
+            await _jsModule.InvokeVoidAsync("exportStream", filename, streamRef);
+        }
+
+        private async Task downloadStandarizationFile(StandarizationAttachment data)
+        {
+            try
+            {
+                if (StandarizationService.fileStreams.SingleOrDefault(x => x.type.Equals(data.StandarizationID) && x.fileName.Equals(data.FilePath)) != null)
+                {
+                    isLoading = true;
+
+                    var content = StandarizationService.fileStreams.SingleOrDefault(x => x.type.Equals(data.StandarizationID) && x.fileName.Equals(data.FilePath)).content;
+                    string filename = data.FilePath.Split("!_!")[1] + data.FileExtention;
+
+                    await HandleDownloadDocument(content, filename);
+
+                    isLoading = false;
+                }
+                else
+                {
+                    await _jsModule.InvokeVoidAsync("showAlert", "Fetch Data Failed - Refresh Your Page and Try Again !");
+                }
+            }
+            catch (Exception ex)
+            {
+                isLoading = false;
+                await _jsModule.InvokeVoidAsync("showAlert", $"Error : {ex.Message}");
+            }
         }
 
         IReadOnlyList<IBrowserFile>? listFileUpload;
@@ -103,6 +216,9 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             if (fileLines.Any(x => x.fileDesc.IsNullOrEmpty()))
                 return false;
 
+            if (fileLines.Any(x => x.fileSize > (1024 * 1024 * maxFileSize)))
+                return false;
+
             return true;
         }
 
@@ -136,9 +252,9 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
                         stream.Close();
 
-                        line.type = "";
+                        //line.type = "";
                         line.fileName = Path.GetRandomFileName() + "!_!" + fi.Name;
-                        line.fileDesc = "";
+                        //line.fileDesc = "";
                         line.fileType = ext;
                         line.fileSize = Convert.ToInt32(file.Size);
                         line.content = ms.ToArray();
@@ -157,13 +273,26 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                 {
                     successAlert = false;
                     alertTrigger = true;
-                    alertMessage = "Blank Input Field !";
+                    alertMessage = "Blank Input Field / Max File Size !";
                     alertBody = "Please Recheck and Fill the blank Field";
 
                     StateHasChanged();
                 }
                 else
                 {
+                    if (maxFileSize == 0)
+                    {
+                        successAlert = false;
+                        alertTrigger = true;
+                        alertMessage = "Fail Fetch Max File Size !";
+                        alertBody = "Please Check Your Connection";
+
+                        StateHasChanged();
+
+                        throw new Exception("Fail Fetch Max File Size ! Please Check Your Connection");
+                    }
+
+
                     if (LoginService.activeUser.userPrivileges.Contains("CR"))
                     {
                         isLoading = true;
@@ -184,6 +313,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                         {
                             temp.Data.Tags.Add(new StandarizationTag
                             {
+                                rowGuid = Guid.Empty,
                                 StandarizationID = standarizationData.StandarizationID,
                                 TagDescriptions = tag.TagDescriptions
                             });
@@ -220,7 +350,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                             isLoading = false;
                             alertTrigger = false;
                             successAlert = true;
-                            alertMessage = "Create Expense Success !";
+                            alertMessage = "Create Document Success !";
                             alertBody = $"Your Document ID is {res.Data.Data.StandarizationID}";
 
                             StateHasChanged();
@@ -233,7 +363,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                             isLoading = false;
                             alertTrigger = true;
                             successAlert = false;
-                            alertMessage = "Create Expense Failed !";
+                            alertMessage = "Create Document Failed !";
                             alertBody = "";
 
                             StateHasChanged();
@@ -245,6 +375,170 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             catch (Exception ex)
             {
                 await _jsModule.InvokeVoidAsync("showAlert", $"Create Document Failed, Error : {ex.Message}");
+            }
+        }
+
+        private async void editStandarization()
+        {
+            try
+            {
+                if (!validateInput())
+                {
+                    successAlert = false;
+                    alertTrigger = true;
+                    alertMessage = "Blank Input Field !";
+                    alertBody = "Please Recheck and Fill the blank Field";
+
+                    StateHasChanged();
+                }
+                else
+                {
+                    if (LoginService.activeUser.userPrivileges.Contains("ED"))
+                    {
+                        isLoading = true;
+
+                        StandarizationStream uploadData = new();
+
+                        uploadData.standarizationDetails = new();
+                        uploadData.files = new();
+
+                        QueryModel<Standarizations> temp = new();
+                        temp.Data = new();
+                        temp.Data = standarizationData;
+
+                        temp.Data.Tags = new();
+                        temp.Data.Attachments = new();
+
+                        foreach (var tag in tags)
+                        {
+                            temp.Data.Tags.Add(new StandarizationTag
+                            {
+                                rowGuid = Guid.Empty,
+                                StandarizationID = standarizationData.StandarizationID,
+                                TagDescriptions = tag.TagDescriptions
+                            });
+                        }
+
+                        foreach (var f in fileLines)
+                        {
+                            FileInfo fi = new FileInfo(f.fileName);
+
+                            temp.Data.Attachments.Add(new StandarizationAttachment
+                            {
+                                StandarizationID = standarizationData.StandarizationID,
+                                Descriptions = f.fileDesc,
+                                FileExtention = fi.Extension,
+                                FilePath = f.fileName,
+                                UploadDate = DateTime.Now
+                            });
+                        }
+
+                        temp.userEmail = activeUser.userName;
+                        temp.userAction = "U";
+                        temp.userActionDate = DateTime.Now;
+
+                        uploadData.standarizationDetails = temp;
+                        uploadData.files = fileLines;
+
+                        var res = await StandarizationService.updateStandarizations(uploadData);
+
+                        if (res.isSuccess)
+                        {
+                            await _jsModule.InvokeVoidAsync("showAlert", "Edit Document Success !");
+
+                            successUpload = true;
+                            isLoading = false;
+                            alertTrigger = false;
+                            successAlert = true;
+                            alertMessage = "Edit Document Success !";
+                            alertBody = $"Your Document ID is {res.Data.Data.StandarizationID}";
+
+                            StateHasChanged();
+                        }
+                        else
+                        {
+                            await _jsModule.InvokeVoidAsync("showAlert", "Edit Document Failed, Please Check Your Connection !");
+
+                            successUpload = false;
+                            isLoading = false;
+                            alertTrigger = true;
+                            successAlert = false;
+                            alertMessage = "Edit Document Failed !";
+                            alertBody = "";
+
+                            StateHasChanged();
+                        }
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _jsModule.InvokeVoidAsync("showAlert", $"Create Document Failed, Error : {ex.Message}");
+            }
+        }
+
+        private async void deleteStandarization()
+        {
+            try
+            {
+                if (param == null)
+                {
+                    successAlert = false;
+                    alertTrigger = true;
+                    alertMessage = "Parameter Data Empty !";
+                    alertBody = "Please Reselect your Document";
+
+                    StateHasChanged();
+                }
+                else
+                {
+                    isLoading = true;
+
+                    string temp = standarizationData.StandarizationID + "!_!" + standarizationData.TypeID;
+
+                    QueryModel<string> deleteData = new();
+
+                    deleteData.Data = Base64Encode(temp);
+                    deleteData.userEmail = activeUser.userName;
+                    deleteData.userAction = "D";
+                    deleteData.userActionDate = DateTime.Now;
+
+                    var res = await StandarizationService.deleteStandarizations(deleteData);
+
+                    if (res.isSuccess)
+                    {
+                        
+                        await _jsModule.InvokeVoidAsync("showAlert", "Delete Document Success !");
+
+                        successUpload = true;
+                        isLoading = false;
+                        alertTrigger = false;
+                        successAlert = true;
+                        alertMessage = "Delete Document Success !";
+                        alertBody = "";
+
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        await _jsModule.InvokeVoidAsync("showAlert", "Delete Document Failed, Please Check Your Connection !");
+                        
+                        successUpload = false;
+                        isLoading = false;
+                        alertTrigger = true;
+                        successAlert = false;
+                        alertMessage = "Delete Document Failed !";
+                        alertBody = "";
+
+                        StateHasChanged();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                isLoading = false;
+                await _jsModule.InvokeVoidAsync("showAlert", $"Delete Document Failed, Error : {ex.Message}");
             }
         }
 

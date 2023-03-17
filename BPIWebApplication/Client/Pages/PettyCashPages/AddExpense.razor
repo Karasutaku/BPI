@@ -251,7 +251,7 @@ else
 
                         <div class="separator">File(s)</div>
 
-                        <button type="button" class="btn btn-sm btn-warning my-2" @onclick="addFileLine"><b>Add</b></button>
+                        <button type="button" class="btn btn-sm btn-warning my-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="addFileLine"><b>Add</b></button>
 
                         @if (fileLines.Any())
                         {

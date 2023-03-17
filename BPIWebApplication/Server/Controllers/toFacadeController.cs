@@ -17,6 +17,7 @@ using BPIWebApplication.Shared.MainModel.CashierLogbook;
 using BPIWebApplication.Shared.PagesModel.CashierLogbook;
 using Microsoft.Extensions.Configuration;
 using BPIWebApplication.Shared.MainModel.Standarizations;
+using System.IO.Compression;
 
 namespace BPIWebApplication.Server.Controllers
 {
@@ -3092,6 +3093,50 @@ namespace BPIWebApplication.Server.Controllers
             return actionResult;
         }
 
+        [HttpGet("getNumberofLogExisting/{param}")]
+        public async Task<IActionResult> getNumberofLogExisting(string param)
+        {
+            ResultModel<int> res = new ResultModel<int>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/Facade/CashierLogbook/getNumberofLogExisting/{param}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = 0;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = 0;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
         [HttpPost("editBrankasApproveLogOnConfirm")]
         public async Task<IActionResult> editBrankasApproveLogOnConfirm(QueryModel<CashierLogApproval> data)
         {
@@ -3147,12 +3192,59 @@ namespace BPIWebApplication.Server.Controllers
     {
         private readonly HttpClient _http;
         private readonly IConfiguration _configuration;
+        private readonly int _maxFileSize;
+        private readonly string _compressionPath;
 
         public StandarizationController(HttpClient http, IConfiguration config)
         {
             _http = http;
             _configuration = config;
             _http.BaseAddress = new Uri(_configuration.GetValue<string>("ConnectionStrings:BpiFacade"));
+            _maxFileSize = config.GetValue<int>("File:Standarization:MaxUpload");
+            _compressionPath = config.GetValue<string>("File:Standarization:CompressionPath");
+        }
+
+        // save file
+        private async Task<Byte[]> originalToZipBinary(byte[] data, string filename)
+        {
+            byte[] compressedData = new byte[0];
+
+            using (var compressedFileStream = new MemoryStream())
+            {
+                using (ZipArchive zipArchive = new ZipArchive(compressedFileStream, ZipArchiveMode.Update, false))
+                {
+                    var zipEntry = zipArchive.CreateEntry(filename);
+
+                    using (Stream originalStream = new MemoryStream(data))
+                    {
+                        using (Stream compressedStream = zipEntry.Open())
+                        {
+                            await originalStream.CopyToAsync(compressedStream);
+                        }
+                    }
+                }
+                compressedData = compressedFileStream.ToArray();
+            }
+
+            return compressedData;
+        }
+
+        private async Task<Byte[]> zipBinaryToOriginal(byte[] data, string filename)
+        {
+            byte[] compressedData = new byte[0];
+            Stream stream = new MemoryStream(data);
+            ZipArchive archive = new ZipArchive(stream);
+
+            var entryData = archive.GetEntry(filename);
+            var content = entryData.Open();
+
+            using (var ms = new MemoryStream())
+            {
+                await content.CopyToAsync(ms);
+                compressedData = ms.ToArray();
+            }
+
+            return compressedData;
         }
 
         [HttpPost("createStandarizationData")]
@@ -3163,6 +3255,8 @@ namespace BPIWebApplication.Server.Controllers
 
             try
             {
+                // compress file
+
                 var result = await _http.PostAsJsonAsync<StandarizationStream>($"api/Facade/Standarization/createStandarizationData", data);
 
                 if (result.IsSuccessStatusCode)
@@ -3425,7 +3519,81 @@ namespace BPIWebApplication.Server.Controllers
             return actionResult;
         }
 
+        [HttpGet("getModulePageSize/{Table}")]
+        public async Task<IActionResult> getModulePageSize(string Table)
+        {
+            ResultModel<int> res = new ResultModel<int>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/Facade/Standarization/getModulePageSize/{Table}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = 0;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = 0;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getStandarizationMaxSizeUpload")]
+        public async Task<IActionResult> getProcedureMaxSizeUpload()
+        {
+            ResultModel<int> res = new ResultModel<int>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                
+                res.Data = _maxFileSize;
+
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = 0;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
         //
     }
-
 }

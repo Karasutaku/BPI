@@ -31,6 +31,7 @@ namespace BPIWebApplication.Client.Services.CashierLogbookServices
         public Task<ResultModel<QueryModel<string>>> updateBrankasDocumentStatusData(QueryModel<string> data);
 
         // other
-        Task<int> getModulePageSize(string Table);
+        public Task<int> getModulePageSize(string Table);
+        public Task<int> getNumberofLogExisting(string param);
     }
 }

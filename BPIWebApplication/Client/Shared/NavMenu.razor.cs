@@ -63,6 +63,12 @@ namespace BPIWebApplication.Client.Shared
             return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
+        private static string Base64Encode(string plainText)
+        {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return Convert.ToBase64String(plainTextBytes);
+        }
+
         private async Task getUserModule()
         {
             // module
@@ -281,6 +287,12 @@ namespace BPIWebApplication.Client.Shared
 
         private async void ToggleNavMenu(FacadeUserModuleResp menu)
         {
+            //if (await sessionStorage.ContainKeyAsync("ModuleId"))
+            //{
+            //    await sessionStorage.RemoveItemAsync("ModuleId");
+            //}
+            //await sessionStorage.SetItemAsync<string>("ModuleId", Base64Encode(Convert.ToInt32(menu.moduleId).ToString()));
+
             collapseNavMenu = !collapseNavMenu;
 
             //if (await sessionStorage.ContainKeyAsync("PagePrivileges"))

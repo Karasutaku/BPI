@@ -13,6 +13,23 @@ td {
     background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,0.41789215686274506) 35%, rgba(27,66,138,0.6643907563025211) 100%);
 }
 
+.wrap-card {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(84,132,219,0.879);
+}
+
+#balanceCard {
+    width: 180px;
+    min-height: 140px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+
 .separator {
     display: flex;
     align-items: center;

@@ -17,5 +17,8 @@ namespace BPIWebApplication.Client.Services.StandarizationServices
         Task<ResultModel<QueryModel<Standarizations>>> updateStandarizations(StandarizationStream data);
         Task<ResultModel<QueryModel<string>>> deleteStandarizations(QueryModel<string> data);
 
+        Task<int> getModulePageSize(string Table);
+        Task<int> getStandarizationMaxFileSize();
+
     }
 }

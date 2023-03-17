@@ -19,6 +19,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using BPIBR.Models.MainModel.CashierLogbook;
 using BPIBR.Models.MainModel.Standarizations;
 using DocumentFormat.OpenXml.Office2010.Excel;
+using System.IO.Compression;
 
 namespace BPIBR.Controllers
 {
@@ -3113,6 +3114,7 @@ namespace BPIBR.Controllers
             _http.BaseAddress = new Uri(_configuration.GetValue<string>("BaseUri:BpiDA"));
         }
 
+
         [HttpPost("createLogData")]
         public async Task<IActionResult> createLogData(QueryModel<CashierLogData> data)
         {
@@ -3471,6 +3473,50 @@ namespace BPIBR.Controllers
             return actionResult;
         }
 
+        [HttpGet("getNumberofLogExisting/{param}")]
+        public async Task<IActionResult> getNumberofLogExisting(string param)
+        {
+            ResultModel<int> res = new ResultModel<int>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/DA/CashierLogbook/getNumberofLogExisting/{param}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = 0;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = 0;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
         [HttpPost("editBrankasApproveLogOnConfirm")]
         public async Task<IActionResult> editBrankasApproveLogOnConfirm(QueryModel<CashierLogApproval> data)
         {
@@ -3563,11 +3609,44 @@ namespace BPIBR.Controllers
             await stream.CopyToAsync(fs);
         }
 
-        internal Byte[] getFileStream(string type, string filename, DateTime date)
+        internal async void saveZipBinaryDatatoDirectory(byte[] data, string path)
+        {
+            string dir = Path.GetDirectoryName(path);
+
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            using (var compressedStream = new MemoryStream())
+            {
+                using (ZipArchive archive = new ZipArchive(compressedStream, ZipArchiveMode.Create, false))
+                {
+                    string filename = Path.GetFileName(path);
+                    var entry = archive.CreateEntry(filename);
+
+                    using (var original = new MemoryStream(data))
+                    {
+                        using (var zipEntryStream = entry.Open())
+                        {
+                            await original.CopyToAsync(zipEntryStream);
+                        }
+                    }
+                }
+
+                await using FileStream fs = new(path, FileMode.Create);
+                Stream stream = new MemoryStream(compressedStream.ToArray());
+                await stream.CopyToAsync(fs);
+            }
+
+            //archive.ExtractToDirectory(path);
+        }
+
+        internal async Task<Byte[]> getFileStream(string type, string filename, DateTime date)
         {
             string path = Path.Combine(_uploadPath, type, date.Year.ToString(), date.Month.ToString(), date.Day.ToString(), Path.GetFileName(filename));
 
-            return System.IO.File.ReadAllBytes(path);
+            return await System.IO.File.ReadAllBytesAsync(path);
         }
 
         internal bool deleteFilefromDirectory(string type, string filename, DateTime date)
@@ -3603,6 +3682,15 @@ namespace BPIBR.Controllers
                         string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
 
                         await saveFiletoDirectory(path, file.content);
+
+                        //string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), "ZipPath", file.fileName);
+
+                        //await saveFiletoDirectory(path, file.content);
+
+                        //string zipPath = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), "ZipPath");
+                        //string zipOutPath = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
+
+                        //ZipFile.CreateFromDirectory(zipPath, zipOutPath + ".zip");
                     }
 
                     res.Data = respBody.Data;
@@ -3645,11 +3733,11 @@ namespace BPIBR.Controllers
 
             try
             {
-                string param = Base64Encode(data.standarizationDetails.Data.TypeID + "!_!" + data.standarizationDetails.Data.StandarizationID);
+                string param = Base64Encode(data.standarizationDetails.Data.StandarizationID + "!_!" + data.standarizationDetails.Data.TypeID);
 
                 var result1 = await _http.GetFromJsonAsync<ResultModel<List<StandarizationAttachment>>>($"api/DA/Standarization/getStandarizationAttachment/{param}");
 
-                if (result1.isSuccess)
+                if (result1.isSuccess && result1.ErrorCode.Equals("00"))
                 {
                     res.Data = new();
 
@@ -3726,7 +3814,7 @@ namespace BPIBR.Controllers
 
                     foreach (var dt in result1.Data)
                     {
-                        deleteFilefromDirectory(tp.Split("!_!")[0], dt.FilePath, dt.UploadDate);
+                        deleteFilefromDirectory(tp.Split("!_!")[1], dt.FilePath, dt.UploadDate);
                     }
                 }
                 else
@@ -3885,7 +3973,7 @@ namespace BPIBR.Controllers
                         temp.fileDesc = dt.Descriptions;
                         temp.fileType = dt.FileExtention;
                         temp.fileSize = 0;
-                        temp.content = getFileStream(dcParam.Split("!_!")[1], dt.FilePath, dt.UploadDate);
+                        temp.content = await getFileStream(dcParam.Split("!_!")[1], dt.FilePath, dt.UploadDate);
 
                         res.Data.Add(temp);
                     }
@@ -3910,6 +3998,50 @@ namespace BPIBR.Controllers
             catch (Exception ex)
             {
                 res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getModulePageSize/{Table}")]
+        public async Task<IActionResult> getModulePageSize(string Table)
+        {
+            ResultModel<int> res = new ResultModel<int>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/DA/Standarization/getModulePageSize/{Table}");
+
+                if (result.isSuccess)
+                {
+                    res.Data = result.Data;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = 0;
+
+                    res.isSuccess = result.isSuccess;
+                    res.ErrorCode = result.ErrorCode;
+                    res.ErrorMessage = result.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Data = 0;
                 res.isSuccess = false;
                 res.ErrorCode = "99";
                 res.ErrorMessage = ex.Message;

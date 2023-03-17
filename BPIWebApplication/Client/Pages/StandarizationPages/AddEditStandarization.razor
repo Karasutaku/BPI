@@ -181,11 +181,12 @@ else
                                     @*<button type="button" class="btn btn-danger" @onclick="ClearFiles">Reset</button>*@
                                     @if (param == null)
                                     {
-                                        <button type="button" class="btn btn-primary" @onclick="(() => isConfirmationActive = true)"><b>Add</b></button>
+                                        <button type="button" class="btn btn-primary" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="@(async () => { isConfirmationActive = true; })"><b>Add</b></button>
                                     }
                                     else
                                     {
-                                        <button type="button" class="btn btn-primary"><b>Edit</b></button>
+                                        <button type="button" class="btn btn-primary mx-1" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="@(async () => { isConfirmationActive = true; })"><b>Edit</b></button>
+                                        <button type="button" class="btn btn-danger mx-1" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="@(async () => { isConfirmationActive = true; isConfirmationDeletion = true; })"><b>Delete</b></button>
                                     }
                                 </div>
                             </div>
@@ -194,12 +195,33 @@ else
                     </div>
                 </div>
 
+                <div class="my-4">
+
+                    <div class="row flex-row flex-nowrap wrap-card overflow-auto">
+
+                        @foreach (var file in standarizationData.Attachments)
+                        {
+                            <div style="width: 190px;">
+                                <div class="card" id="balanceCard" @onclick="@(() => downloadStandarizationFile(file))">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-wrap"><b> @file.Descriptions </b></h6>
+                                    </div>
+                                    <div class="card-footer">
+                                        <small class="text-muted"><i>Click To Download File</i></small>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
             </div>
         }
 
         @if (isConfirmationActive)
         {
-            <div class="modal fade show" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+            <div class="modal fade show" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideConfirmationModalonESC">
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header cus-bg">
@@ -214,7 +236,7 @@ else
 
                             <div class="row">
                                 <div class="col align-middle text-center">
-                                    <p class="fw-bold">Confirm Document Creation ?</p>
+                                    <p class="fw-bold">Confirm Document ?</p>
                                 </div>
                             </div>
                             <div class="row">
@@ -267,16 +289,39 @@ else
 
                         </div>
                         <div class="modal-footer cus-bg">
-                            <button type="button" title="Submit" class="btn btn-sm btn-primary" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="createStandarization">
-                                Yes
-                                @if (isLoading)
+                            @if (param == null)
+                            {
+                                <button type="button" title="Submit" class="btn btn-sm btn-primary fw-bold" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="createStandarization">
+                                    Yes
+                                    @if (isLoading)
+                                    {
+                                        <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                    }
+                                </button>
+                            }
+                            else
+                            {
+                                @if (!isConfirmationDeletion)
                                 {
-                                    <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                    <button type="button" title="Submit" class="btn btn-sm btn-primary fw-bold" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="editStandarization">
+                                        Yes
+                                        @if (isLoading)
+                                        {
+                                            <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                        }
+                                    </button>
                                 }
-                            </button>
-                            <button type="button" class="btn btn-danger mx-2" @onclick="(() => isConfirmationActive = false)">
-                                Cancel
-                            </button>
+                                else
+                                {
+                                    <button type="button" title="Delete" class="btn btn-sm btn-danger fw-bold" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="deleteStandarization">
+                                        Yes
+                                        @if (isLoading)
+                                        {
+                                            <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                        }
+                                    </button>
+                                }
+                            }
                         </div>
                     </div>
                 </div>

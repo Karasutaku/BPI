@@ -3,6 +3,7 @@
 @inject ILoginService LoginService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
 @inject IJSRuntime JS
+@inject NavigationManager navigate
 
 <PageTitle>Standarizations - Dashboard</PageTitle>
 
@@ -25,7 +26,7 @@ else
         else
         {
             <div class="container-fluid">
-                <div class="row">
+                <div class="row mb-4">
                     <div class="col col-md-12">
                         <div class="d-flex flex-column align-items-start">
 
@@ -36,51 +37,146 @@ else
                     </div>
                 </div>
 
+                <div class="row mt-3">
+
+                    <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                        <select class="form-select w-100 h-100" @bind="standarizationFilterType">
+                            <option hidden disabled value="">Filter By</option>
+                            <option value="TypeID">Type</option>
+                            <option value="StandarizationID">Nomor Dokumen</option>
+                            <option value="StandarizationDetails">Nama Dokumen</option>
+                            <option value="TagDescriptions">Tags Dokumen</option>
+                        </select>
+                    </div>
+
+                    @if (standarizationFilterType.Equals("TypeID"))
+                    {
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <select id="doc_type" @bind="standarizationFilterSelectValue" class="form-select">
+                                <option hidden value="">Select Type</option>
+
+                                @if (checkStandarizationTypesDataPresent())
+                                {
+                                    @foreach (var type in StandarizationService.standarizationTypes)
+                                    {
+                                        <option value="@type.TypeID">@type.Descriptions</option>
+                                    }
+                                }
+
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                            <input type="text" class="form-control w-100 h-100" @bind-value="standarizationFilterValue" disabled="@(checkStandarizationPresent() ? null : "disabled")" />
+                        </div>
+                    }
+
+                    <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                        <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkStandarizationPresent() ? null : "disabled")" @onclick="standarizationFilter">Filter</button>
+                    </div>
+
+                    <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                        <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!isFilterActive.Equals(false) ? null : "disabled")" @onclick="standarizationFilterReset">Reset</button>
+                    </div>
+
+                </div>
+
                 <div class="row">
 
-                    <div class="table-responsive my-3">
-                        <table class="table table-sm table-hover" style="width: 100%;">
-                            <thead>
-                                <tr>
-                                    <th scope="col" class="align-middle text-center" style="width: 15%;">Type</th>
-                                    <th scope="col" class="align-middle text-center" style="width: 12%;">Nomor Dokumen</th>
-                                    <th scope="col" class="align-middle text-center" style="width: 20%;">Nama Dokumen</th>
-                                    <th scope="col" class="d-none d-sm-table-cell align-middle text-center" style="width: 12%;">Tanggal Dokumen</th>
-                                    <th scope="col" class="d-none d-sm-table-cell align-middle text-center" style="width: 31%;">Tag(s)</th>
-                                    <th scope="col" class="align-middle text-center" style="width: 10%;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var stdData in StandarizationService.standarizations)
-                                {
-
+                    @if (checkStandarizationPresent())
+                    {
+                        <div class="table-responsive my-3">
+                            <table class="table table-sm table-hover" style="width: 100%;">
+                                <thead>
                                     <tr>
-                                        <td class="align-middle text-center" style="font-size:14px;">@StandarizationService.standarizationTypes.SingleOrDefault(x => x.TypeID.Equals(stdData.TypeID)).Descriptions</td>
-                                        <th role="row" class="align-middle text-center" style="font-size:14px;">@stdData.StandarizationID</th>
-                                        <td class="align-middle text-center" style="font-size:14px;">@stdData.StandarizationDetails</td>
-                                        <td class="d-none d-sm-table-cell align-middle text-center" style="font-size:14px;">@stdData.StandarizationDate.ToString("dd / MM / yyyy")</td>
-                                        <td class="d-none d-sm-table-cell align-middle text-center text-wrap">
-                                            @if (stdData.Tags.Count > 0)
-                                            {
-                                                @foreach (var tags in stdData.Tags)
-                                                {
-                                                    <label class="badge bg-secondary mx-1" style="font-size: 13px;">@tags.TagDescriptions</label>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <label class="badge bg-danger mx-1" style="font-size: 13px;">Tag Empty !</label>
-                                            }
-                                        </td>
-
-                                        <td class="align-middle text-center"><button class="btn btn-sm btn-primary-cus" @onclick="(() => previewStandarization(stdData))"><span class="oi oi-magnifying-glass"></span></button></td>
-                                        
+                                        <th scope="col" class="align-middle text-center" style="width: 15%;">Type</th>
+                                        <th scope="col" class="align-middle text-center" style="width: 12%;">Nomor Dokumen</th>
+                                        <th scope="col" class="align-middle text-center" style="width: 20%;">Nama Dokumen</th>
+                                        <th scope="col" class="d-none d-sm-table-cell align-middle text-center" style="width: 12%;">Tanggal Dokumen</th>
+                                        <th scope="col" class="d-none d-sm-table-cell align-middle text-center" style="width: 31%;">Tag(s)</th>
+                                        <th scope="col" class="align-middle text-center" style="width: 10%;">Action</th>
                                     </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var stdData in StandarizationService.standarizations)
+                                    {
 
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                                        <tr>
+                                            <td class="align-middle text-center" style="font-size:14px;">@StandarizationService.standarizationTypes.SingleOrDefault(x => x.TypeID.Equals(stdData.TypeID)).Descriptions</td>
+                                            <th role="row" class="align-middle text-center" style="font-size:14px;">@stdData.StandarizationID</th>
+                                            <td class="align-middle text-center" style="font-size:14px;">@stdData.StandarizationDetails</td>
+                                            <td class="d-none d-sm-table-cell align-middle text-center" style="font-size:14px;">@stdData.StandarizationDate.ToString("dd / MM / yyyy")</td>
+                                            <td class="d-none d-sm-table-cell align-middle text-center text-wrap">
+                                                @if (stdData.Tags.Count > 0)
+                                                {
+                                                    @foreach (var tags in stdData.Tags)
+                                                    {
+                                                        <label class="badge bg-secondary mx-1" style="font-size: 13px;">@tags.TagDescriptions</label>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <label class="badge bg-danger mx-1" style="font-size: 13px;">Tag Empty !</label>
+                                                }
+                                            </td>
+
+                                            <td class="align-middle text-center">
+                                                <button class="btn btn-sm btn-primary-cus" @onclick="(() => previewStandarization(stdData))"><span class="oi oi-magnifying-glass"></span></button>
+
+                                                @if (LoginService.activeUser.userPrivileges != null || LoginService.activeUser.userPrivileges.Contains("ED"))
+                                                {
+                                                    <button class="btn btn-sm btn-primary-cus mx-1" @onclick="(() => editDocument(stdData))"><span class="oi oi-pencil"></span></button>
+                                                }
+
+                                            </td>
+
+                                        </tr>
+
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <ul class="pagination pagination-sm justify-content-center my-2">
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                            @if ((standarizationPageActive - 1) > 0)
+                            {
+                                <li class="page-item px-1 paging-style" @onclick="(() => standarizationPageSelect((standarizationPageActive - 1)))"><span class="page-link">Previous</span></li>
+                                <li class="page-item paging-style" @onclick="(() => standarizationPageSelect((standarizationPageActive - 1)))"><span class="page-link">@(standarizationPageActive - 1)</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            }
+
+                            <li class="page-item active paging-style" @onclick="(() => standarizationPageSelect(standarizationPageActive))"><span class="page-link">@standarizationPageActive</span></li>
+
+                            @if (standarizationPageActive < standarizationNumberofPage)
+                            {
+                                <li class="page-item paging-style" @onclick="(() => standarizationPageSelect((standarizationPageActive + 1)))"><span class="page-link">@(standarizationPageActive + 1)</span></li>
+                                <li class="page-item px-1 paging-style" @onclick="(() => standarizationPageSelect((standarizationPageActive + 1)))"><span class="page-link">Next</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                            }
+
+                            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col align-middle text-center">
+                                <p>. . . There is no Document . . .</p>
+                            </div>
+                        </div>
+                    }
 
                 </div>
 
@@ -124,7 +220,7 @@ else
 
                             @if (previewData.Tags.Count > 0)
                             {
-                                <div class="row">
+                                <div class="row mb-1">
                                     <div class="col">
                                         <div class="d-flex">
                                         </div>
@@ -147,7 +243,7 @@ else
                                         {
                                             @*<span title="click to preview" class="badge badge-secondary text-black">@file.FilePath.Split("!_!")[1]</span>*@
 
-                                            <div id="attachCard" class="card border-dark">
+                                            <div id="attachCard" class="card border-dark mb-1">
                                                 <div class="card-body" @onclick="(() => downloadStandarizationFile(file))">
                                                     <h6 class="card-title"><b>@file.FilePath.Split("!_!")[1]</b></h6>
                                                     <small><b>@file.Descriptions</b></small>

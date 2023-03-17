@@ -60,24 +60,26 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             string temp = activeUser.userName + "!_!MASTER";
 
-            var res = await PettyCashService.getAdvanceDatabyUser(Base64Encode(temp));
+            isUserHaventSettled = false;
 
-            if (res.isSuccess)
-            {
-                if (res.ErrorCode.Contains("01"))
-                {
-                    isUserHaventSettled = false;
-                }
-                else
-                {
-                    isUserHaventSettled = true;
-                }
+            //var res = await PettyCashService.getAdvanceDatabyUser(Base64Encode(temp));
 
-            }
-            else
-            {
-                isUserHaventSettled = true;
-            }
+            //if (res.isSuccess)
+            //{
+            //    if (res.ErrorCode.Contains("01"))
+            //    {
+            //        isUserHaventSettled = false;
+            //    }
+            //    else
+            //    {
+            //        isUserHaventSettled = true;
+            //    }
+
+            //}
+            //else
+            //{
+            //    isUserHaventSettled = true;
+            //}
 
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/PettyCashPages/AddAdvance.razor.js");
         }

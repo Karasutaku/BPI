@@ -75,22 +75,22 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/PettyCashPages/AddReimbursment.razor.js");
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                activeUser.token = await sessionStorage.GetItemAsync<string>("token");
-                activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-                activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
-                activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
-                activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
-                activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-                activeUser.userPrivileges = new();
-                activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+        //protected override async Task OnAfterRenderAsync(bool firstRender)
+        //{
+        //    if (firstRender)
+        //    {
+        //        activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+        //        activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+        //        activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+        //        activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+        //        activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+        //        activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+        //        activeUser.userPrivileges = new();
+        //        activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
-                LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
-            }
-        }
+        //        LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+        //    }
+        //}
 
         private bool checkUserPrivilegeViewable()
         {
@@ -294,22 +294,33 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
                     var files = await PettyCashService.getAttachmentFileStream(Base64Encode(temps));
 
-                    List<BPIWebApplication.Shared.MainModel.Stream.FileStream> streams = new();
-
-                    foreach (var f in files.Data)
+                    if (files.isSuccess)
                     {
-                        BPIWebApplication.Shared.MainModel.Stream.FileStream temp = new();
+                        List<BPIWebApplication.Shared.MainModel.Stream.FileStream> streams = new();
 
-                        temp = f;
+                        foreach (var f in files.Data)
+                        {
+                            BPIWebApplication.Shared.MainModel.Stream.FileStream temp = new();
 
-                        streams.Add(temp);
+                            temp = f;
+
+                            streams.Add(temp);
+                        }
+
+                        expenses.Add(new ReimbursementExpense
+                        {
+                            expense = exp,
+                            filestreams = streams
+                        });
                     }
-
-                    expenses.Add(new ReimbursementExpense
+                    else
                     {
-                        expense = exp,
-                        filestreams = streams
-                    });
+                        expenses.Add(new ReimbursementExpense
+                        {
+                            expense = exp,
+                            filestreams = new()
+                        });
+                    }
 
                     settlingExpense.Add(exp.ExpenseID);
 
@@ -333,6 +344,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             }
             catch (Exception ex)
             {
+                triggerModal = false;
+                isLoading = false;
+                selectedExpense.Clear();
+
                 throw new Exception(ex.Message);
             }
             

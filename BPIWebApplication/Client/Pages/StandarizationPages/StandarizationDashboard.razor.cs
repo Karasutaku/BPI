@@ -1,4 +1,5 @@
-﻿using BPIWebApplication.Shared.MainModel.Login;
+﻿using BPIWebApplication.Client.Services.CashierLogbookServices;
+using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.MainModel.Standarizations;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -16,6 +17,11 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
         private bool showPreviewModal = false;
         private bool isLoading = false;
+        private bool isFilterActive = false;
+
+        private string standarizationFilterType { get; set; } = string.Empty;
+        private string standarizationFilterValue { get; set; } = string.Empty;
+        private string standarizationFilterSelectValue { get; set; } = string.Empty;
 
         private IJSObjectReference _jsModule;
 
@@ -47,8 +53,9 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
             standarizationPageActive = 1;
             string conditions = "!_!" + standarizationPageActive.ToString();
-            standarizationNumberofPage = 1;
+            string mainpz = "StandarizationDetails!_!" + activeUser.location + "!_!";
 
+            standarizationNumberofPage = await StandarizationService.getModulePageSize(Base64Encode(mainpz));
             await StandarizationService.getStandarizations(Base64Encode(conditions));
 
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/StandarizationPages/StandarizationDashboard.razor.js");
@@ -98,6 +105,13 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             }
         }
 
+        private void editDocument(Standarizations data)
+        {
+            string param = Base64Encode(data.StandarizationID);
+
+            navigate.NavigateTo($"standarization/editstandarization/{param}");
+        }
+
         private async Task previewStandarization(Standarizations data)
         {
             try
@@ -119,6 +133,132 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             {
                 isLoading = false;
                 await _jsModule.InvokeVoidAsync("showAlert", $"Error : {ex.Message}");
+            }
+        }
+
+        private async Task standarizationPageSelect(int currPage)
+        {
+            standarizationPageActive = currPage;
+            isLoading = true;
+
+            if (isFilterActive)
+            {
+                string conditions = "";
+                string temp = conditions+ "!_!" + standarizationPageActive.ToString();
+
+                await StandarizationService.getStandarizations(Base64Encode(temp));
+            }
+            else
+            {
+                string temp = "!_!" + standarizationPageActive.ToString();
+
+                await StandarizationService.getStandarizations(Base64Encode(temp));
+            }
+
+            isLoading = false;
+        }
+
+        private async Task standarizationFilter()
+        {
+            if (standarizationFilterType.Length > 0)
+            {
+                standarizationPageActive = 1;
+                isFilterActive = true;
+                isLoading = true;
+
+                string conditions = "";
+                string temp = "";
+                string mainpz = "";
+
+                if (standarizationFilterType.Equals("TypeID"))
+                {
+                    conditions = $"WHERE {standarizationFilterType} LIKE \'%{standarizationFilterSelectValue}%\'";
+                    temp = conditions + "!_!" + standarizationPageActive.ToString();
+
+                    mainpz = "StandarizationDetails!_!" + activeUser.location + $"!_!WHERE {standarizationFilterType} LIKE \'%{standarizationFilterSelectValue}%\'";
+                }
+                else if (standarizationFilterType.Equals("TagDescriptions"))
+                {
+                    conditions = $"WHERE StandarizationID IN (SELECT StandarizationID FROM StandarizationTags WHERE CONTAINS({standarizationFilterType}, \'{standarizationFilterValue}\'))";
+                    temp = conditions + "!_!" + standarizationPageActive.ToString();
+
+                    mainpz = "StandarizationDetails!_!" + activeUser.location + $"!_!WHERE StandarizationID IN (SELECT StandarizationID FROM StandarizationTags WHERE CONTAINS({standarizationFilterType}, \'{standarizationFilterValue}\'))";
+                }
+                else
+                {
+                    conditions = $"WHERE {standarizationFilterType} LIKE \'%{standarizationFilterValue}%\'";
+                    temp = conditions + "!_!" + standarizationPageActive.ToString();
+
+                    mainpz = "StandarizationDetails!_!" + activeUser.location + $"!_!WHERE {standarizationFilterType} LIKE \'%{standarizationFilterValue}%\'";
+                }
+
+                StandarizationService.standarizations.Clear();
+                standarizationNumberofPage = await StandarizationService.getModulePageSize(Base64Encode(mainpz));
+                await StandarizationService.getStandarizations(Base64Encode(temp));
+
+                isLoading = false;
+                StateHasChanged();
+            }
+            else
+            {
+                await _jsModule.InvokeVoidAsync("showAlert", "Please Select Filter Type !");
+            }
+        }
+
+        private async Task standarizationFilterReset()
+        {
+            isLoading = true;
+            standarizationPageActive = 1;
+            isFilterActive = false;
+            standarizationFilterType = "";
+            standarizationFilterValue = "";
+            standarizationFilterSelectValue = "";
+
+            string conditions = "!_!" + standarizationPageActive.ToString();
+            string mainpz = "StandarizationDetails!_!" + activeUser.location + "!_!";
+
+            standarizationNumberofPage = await StandarizationService.getModulePageSize(Base64Encode(mainpz));
+            await StandarizationService.getStandarizations(Base64Encode(conditions));
+
+            isLoading = false;
+            StateHasChanged();
+        }
+
+        private bool checkStandarizationPresent()
+        {
+            try
+            {
+                if (StandarizationService.standarizations.Any())
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        private bool checkStandarizationTypesDataPresent()
+        {
+            try
+            {
+                if (StandarizationService.standarizationTypes.Any())
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
             }
         }
 

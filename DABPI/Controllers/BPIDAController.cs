@@ -6677,6 +6677,42 @@ namespace BPIDA.Controllers
             return conInt;
         }
 
+        internal int getNumberofLogExisting(string loc, string conditions)
+        {
+            int conInt = 0;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getNumberofLogExist]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@Conditions", conditions);
+
+                    var data = command.ExecuteScalar();
+                    conInt = Convert.ToInt32(data);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conInt;
+        }
+
         // http
 
         [HttpPost("createLogData")]
@@ -7154,6 +7190,20 @@ namespace BPIDA.Controllers
 
                 updateBrankasDocumentStatusData(logid, loc, statVal, data.userEmail, data.userAction, data.userActionDate);
 
+                QueryModel<CashierLogAction> logAction = new();
+                logAction.Data = new();
+
+                logAction.Data.LogID = logid;
+                logAction.Data.LocationID = loc;
+                logAction.Data.UserEmail = data.userEmail;
+                logAction.Data.LogAction = "Archived";
+                logAction.Data.ActionDate = DateTime.Now;
+                logAction.userEmail = data.userEmail;
+                logAction.userAction = data.userAction;
+                logAction.userActionDate = data.userActionDate;
+
+                createBrankasActionLogData(logAction);
+
                 res.Data = data;
                 res.isSuccess = true;
                 res.ErrorCode = "00";
@@ -7201,6 +7251,7 @@ namespace BPIDA.Controllers
                     {
                         CashierLogData temp1 = new();
 
+                        temp1.LogType = dt["LogType"].ToString();
                         temp1.LogID = dt["LogID"].ToString();
                         temp1.LocationID = dt["LocationID"].ToString();
                         temp1.Applicant = dt["Applicant"].ToString();
@@ -7494,6 +7545,7 @@ namespace BPIDA.Controllers
                     {
                         CashierLogAction temp1 = new CashierLogAction();
 
+                        temp1.LogType = dt["LogType"].ToString();
                         temp1.LogID = dt["LogID"].ToString();
                         temp1.LocationID = dt["LocationID"].ToString();
                         temp1.UserEmail = dt["UserEmail"].ToString();
@@ -7558,6 +7610,38 @@ namespace BPIDA.Controllers
             return actionResult;
         }
 
+        [HttpGet("getNumberofLogExisting/{param}")]
+        public async Task<IActionResult> getNumberofLogExistingData(string param)
+        {
+            ResultModel<int> res = new ResultModel<int>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                string loc = Base64Decode(param).Split("!_!")[0];
+                string cond = Base64Decode(param).Split("!_!")[1];
+
+                res.Data = getNumberofLogExisting(loc, cond);
+
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+            }
+            catch (Exception ex)
+            {
+                res.Data = 0;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
         [HttpPost("editBrankasApproveLogOnConfirm")]
         public async Task<IActionResult> editBrankasApproveLogOnConfirm(QueryModel<CashierLogApproval> data)
         {
@@ -7567,6 +7651,20 @@ namespace BPIDA.Controllers
             try
             {
                 editBrankasApproveLogOnConfirmData(data);
+
+                QueryModel<CashierLogAction> logAction = new();
+                logAction.Data = new();
+
+                logAction.Data.LogID = data.Data.LogID;
+                logAction.Data.LocationID = data.Data.LocationID;
+                logAction.Data.UserEmail = data.userEmail;
+                logAction.Data.LogAction = "Confirmed";
+                logAction.Data.ActionDate = DateTime.Now;
+                logAction.userEmail = data.userEmail;
+                logAction.userAction = data.userAction;
+                logAction.userActionDate = data.userActionDate;
+
+                createBrankasActionLogData(logAction);
 
                 res.Data = data;
                 res.isSuccess = true;
@@ -8074,6 +8172,44 @@ namespace BPIDA.Controllers
             return dt;
         }
 
+        internal int getModuleNumberOfPage(string TbName, string loc, string conditions, int rowPerPage)
+        {
+            int conInt = 0;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[getStandarizationModulePageSize]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@TbName", TbName);
+                    command.Parameters.AddWithValue("@LocationID", loc);
+                    command.Parameters.AddWithValue("@Conditions", conditions);
+                    command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
+
+                    var data = command.ExecuteScalar();
+                    conInt = Convert.ToInt32(data);
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+            return conInt;
+        }
+
         internal bool deleteStandarizationData(string id, string user, string act, DateTime actDate)
         {
             bool flag = false;
@@ -8144,13 +8280,25 @@ namespace BPIDA.Controllers
                 //}
 
                 //data.Data.StandarizationID = standarizationId;
+                
+                List<StandarizationTag> tags = new();
+
+                foreach (var tag in data.Data.Tags)
+                {
+                    tags.Add(new StandarizationTag
+                    {
+                        rowGuid = Guid.NewGuid(),
+                        StandarizationID = tag.StandarizationID,
+                        TagDescriptions = tag.TagDescriptions
+                    });
+                }
 
                 bool success = createStandarizationData(data);
 
                 if (!success)
                     throw new Exception("Fail Create Standarization Header");
 
-                success = createStandarizationTagData(ListToDataTable<StandarizationTag>(data.Data.Tags, data.userEmail, data.userAction, data.userActionDate, "Tags"));
+                success = createStandarizationTagData(ListToDataTable<StandarizationTag>(tags, data.userEmail, data.userAction, data.userActionDate, "Tags"));
 
                 if (!success)
                     throw new Exception("Fail Create Standarization Tags");
@@ -8189,17 +8337,46 @@ namespace BPIDA.Controllers
 
             try
             {
-                bool success = editStandarizationData(data);
+                deleteStandarizationData(data.Data.StandarizationID, data.userEmail, data.userAction, data.userActionDate);
+
+                //bool success = editStandarizationData(data);
+
+                //if (!success)
+                //    throw new Exception("Fail Create Standarization Header");
+
+                //success = editStandarizationTagData(ListToDataTable<StandarizationTag>(data.Data.Tags, data.userEmail, data.userAction, data.userActionDate, "Tags"));
+
+                //if (!success)
+                //    throw new Exception("Fail Create Standarization Tags");
+
+                //success = editStandarizationAttachmentData(ListToDataTable<StandarizationAttachment>(data.Data.Attachments, data.userEmail, data.userAction, data.userActionDate, "Attachments"));
+
+                //if (!success)
+                //    throw new Exception("Fail Create Standarization Attachment");
+
+                List<StandarizationTag> tags = new();
+
+                foreach (var tag in data.Data.Tags)
+                {
+                    tags.Add(new StandarizationTag
+                    {
+                        rowGuid = Guid.NewGuid(),
+                        StandarizationID = tag.StandarizationID,
+                        TagDescriptions = tag.TagDescriptions
+                    });
+                }
+
+                bool success = createStandarizationData(data);
 
                 if (!success)
                     throw new Exception("Fail Create Standarization Header");
 
-                success = editStandarizationTagData(ListToDataTable<StandarizationTag>(data.Data.Tags, data.userEmail, data.userAction, data.userActionDate, "Tags"));
+                success = createStandarizationTagData(ListToDataTable<StandarizationTag>(tags, data.userEmail, data.userAction, data.userActionDate, "Tags"));
 
                 if (!success)
                     throw new Exception("Fail Create Standarization Tags");
 
-                success = editStandarizationAttachmentData(ListToDataTable<StandarizationAttachment>(data.Data.Attachments, data.userEmail, data.userAction, data.userActionDate, "Attachments"));
+                success = createStandarizationAttachmentData(ListToDataTable<StandarizationAttachment>(data.Data.Attachments, data.userEmail, data.userAction, data.userActionDate, "Attachments"));
 
                 if (!success)
                     throw new Exception("Fail Create Standarization Attachment");
@@ -8235,7 +8412,7 @@ namespace BPIDA.Controllers
             {
                 string temp = Base64Decode(data.Data);
 
-                bool flag = deleteStandarizationData(temp.Split("!_!")[1], data.userEmail, data.userAction, data.userActionDate);
+                bool flag = deleteStandarizationData(temp.Split("!_!")[0], data.userEmail, data.userAction, data.userActionDate);
 
                 if (flag)
                 {
@@ -8251,7 +8428,7 @@ namespace BPIDA.Controllers
                     res.Data = data;
                     res.isSuccess = false;
                     res.ErrorCode = "01";
-                    res.ErrorMessage = "Fail Delete Data to DB";
+                    res.ErrorMessage = "Data Might Already Deleted";
 
                     actionResult = Ok(res);
                 }
@@ -8476,6 +8653,39 @@ namespace BPIDA.Controllers
             catch (Exception ex)
             {
                 res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+
+            return actionResult;
+        }
+
+        [HttpGet("getModulePageSize/{Table}")]
+        public async Task<IActionResult> getModulePageSize(string Table)
+        {
+            ResultModel<int> res = new ResultModel<int>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                string tbname = Base64Decode(Table).Split("!_!")[0];
+                string loc = Base64Decode(Table).Split("!_!")[1];
+                string cond = Base64Decode(Table).Split("!_!")[2];
+
+                res.Data = getModuleNumberOfPage(tbname, loc, cond, _rowPerPage);
+
+                res.isSuccess = true;
+                res.ErrorCode = "00";
+                res.ErrorMessage = "";
+
+                actionResult = Ok(res);
+            }
+            catch (Exception ex)
+            {
+                res.Data = 0;
                 res.isSuccess = false;
                 res.ErrorCode = "99";
                 res.ErrorMessage = ex.Message;

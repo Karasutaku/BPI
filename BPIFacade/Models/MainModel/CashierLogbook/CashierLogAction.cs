@@ -2,6 +2,7 @@
 {
     public class CashierLogAction
     {
+        public string LogType { get; set; } = string.Empty;
         public string LogID { get; set; } = string.Empty;
         public string LocationID { get; set; } = string.Empty;
         public string UserEmail { get; set; } = string.Empty;

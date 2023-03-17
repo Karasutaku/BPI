@@ -71,13 +71,13 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
             //LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
-            string type = "MAIN";
+            string type = "UTAMA";
             string status = "";
             string filType = "LogID";
             string filValue = "";
             mainLogPageActive = 1;
 
-            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'MAIN\'";
+            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'UTAMA\'";
             mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
             string temp = type + "!_!" + activeUser.location + "!_!" + status + $"!_!{filType} LIKE \'%%\'!_!" + mainLogPageActive.ToString();
             await CashierLogbookService.getLogData(Base64Encode(temp));
@@ -90,8 +90,8 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             temp = type + "!_!" + activeUser.location + "!_!" + status + $"!_!{filType} LIKE \'%%\'!_!" + mainLogPageActive.ToString();
             await CashierLogbookService.getLogData(Base64Encode(temp));
 
-            string orderby = "AuditActionDate";
-            filType = "LogID";
+            string orderby = "a.AuditActionDate";
+            filType = "a.LogID";
             filValue = "";
             actionLogPageActive = 1;
 
@@ -112,7 +112,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             isMainLogActive = false;
             isTransitLogActive = false;
 
-            if (tp.Equals("MAIN"))
+            if (tp.Equals("UTAMA"))
             {
                 isMainLogActive = true;
             }
@@ -183,7 +183,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
             if (isMainLogActive)
             {
-                temp = data.LogID + "!_!MAIN";
+                temp = data.LogID + "!_!UTAMA";
             }
             else if (isTransitLogActive)
             {
@@ -220,9 +220,25 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                 {
                     await _jsModule.InvokeVoidAsync("showAlert", "Log Confirm Handover Success !");
 
+                    activeLog.LogStatus = "Partial";
                     activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ApproveNote = confirmNote;
                     activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmUser = activeUser.userName;
                     activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmDate = DateTime.Now;
+
+                    if (activeLog.LogType.Equals("UTAMA"))
+                    {
+                        CashierLogbookService.mainLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).LogStatus = "Partial";
+                        CashierLogbookService.mainLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ApproveNote = confirmNote;
+                        CashierLogbookService.mainLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmUser = activeUser.userName;
+                        CashierLogbookService.mainLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmDate = DateTime.Now;
+                    }
+                    else if (activeLog.LogType.Equals("TRANSIT"))
+                    {
+                        CashierLogbookService.transitLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).LogStatus = "Partial";
+                        CashierLogbookService.transitLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ApproveNote = confirmNote;
+                        CashierLogbookService.transitLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmUser = activeUser.userName;
+                        CashierLogbookService.transitLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).ConfirmDate = DateTime.Now;
+                    }
                 }
                 else
                 {
@@ -235,7 +251,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             }
         }
 
-        private async void updateBrankasStatus(string stat)
+        private async void updateBrankasStatus(string stat, string type)
         {
             try
             {
@@ -252,6 +268,20 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
                 if (res.isSuccess)
                 {
+                    activeLog.LogStatus = stat;
+                    activeLog.LogStatusDate = DateTime.Now;
+
+                    if (type.Equals("UTAMA"))
+                    {
+                        CashierLogbookService.mainLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).LogStatus = stat;
+                        CashierLogbookService.mainLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).LogStatusDate = DateTime.Now;
+                    }
+                    else if (type.Equals("TRANSIT"))
+                    {
+                        CashierLogbookService.transitLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).LogStatus = stat;
+                        CashierLogbookService.transitLogs.SingleOrDefault(z => z.LogID.Equals(activeLog.LogID)).LogStatusDate = DateTime.Now;
+                    }
+
                     await _jsModule.InvokeVoidAsync("showAlert", "Log Data Status Success Updated !");
                 }
                 else
@@ -271,7 +301,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
             if (isMainLogFilterActive)
             {
-                string type = "MAIN";
+                string type = "UTAMA";
                 string status = "";
                 string cond = $"{mainLogFilterType} LIKE \'%{mainLogFilterValue}%\'";
 
@@ -280,7 +310,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             }
             else
             {
-                string type = "MAIN";
+                string type = "UTAMA";
                 string status = "";
                 string cond = "LogID LIKE \'%%\'";
 
@@ -344,7 +374,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                 mainLogPageActive = 1;
                 isMainLogFilterActive = true;
 
-                string type = "MAIN";
+                string type = "UTAMA";
                 string status = "";
                 string filType = mainLogFilterType;
                 string filValue = mainLogFilterValue;
@@ -353,7 +383,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
                 if (mainLogFilterType.Equals("LogDate"))
                 {
-                    string mainpz = "BrankasLog!_!" + activeUser.location + $"!_!LogType = \'MAIN\' AND {filType} LIKE \'%{filValue}%\'";
+                    string mainpz = "BrankasLog!_!" + activeUser.location + $"!_!LogType = \'UTAMA\' AND {filType} LIKE \'%{filValue}%\'";
                     mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
 
                     string cond = $"{mainLogFilterType} BETWEEN \'{mainLogFilterDateValue.ToString("yyyyMMdd")}\' AND \'{mainLogFilterDateValue.ToString("yyyyMMdd")}\'";
@@ -363,7 +393,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                 }
                 else
                 {
-                    string mainpz = "BrankasLog!_!" + activeUser.location + $"!_!LogType = \'MAIN\' AND {filType} LIKE \'%{filValue}%\'";
+                    string mainpz = "BrankasLog!_!" + activeUser.location + $"!_!LogType = \'UTAMA\' AND {filType} LIKE \'%{filValue}%\'";
                     mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
 
                     string cond = $"LogID LIKE \'%%\' AND {filType} LIKE \'%{filValue}%\'";
@@ -385,10 +415,10 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             mainLogFilterType = "";
             mainLogFilterValue = "";
 
-            string type = "MAIN";
+            string type = "UTAMA";
             string status = "";
 
-            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'MAIN\'";
+            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'UTAMA\'";
             mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
 
             string cond = "LogID LIKE \'%%\'";
@@ -445,10 +475,10 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             mainLogFilterType = "";
             mainLogFilterValue = "";
 
-            string type = "MAIN";
+            string type = "TRANSIT";
             string status = "";
 
-            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'MAIN\'";
+            string mainpz = "BrankasLog!_!" + activeUser.location + "!_!LogType = \'TRANSIT\'";
             mainLogPageSize = await CashierLogbookService.getModulePageSize(Base64Encode(mainpz));
 
             string cond = "LogID LIKE \'%%\'";

@@ -204,22 +204,22 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             StateHasChanged();
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                activeUser.token = await sessionStorage.GetItemAsync<string>("token");
-                activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-                activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
-                activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
-                activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
-                activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-                activeUser.userPrivileges = new();
-                activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+        //protected override async Task OnAfterRenderAsync(bool firstRender)
+        //{
+        //    if (firstRender)
+        //    {
+        //        activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+        //        activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+        //        activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+        //        activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+        //        activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+        //        activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+        //        activeUser.userPrivileges = new();
+        //        activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
-                LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
-            }
-        }
+        //        LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+        //    }
+        //}
 
         private void hideDataModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showModal = false; } } catch (Exception exc) { } }
         private void hideBalanceModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showBalanceModal = false; } } catch (Exception exc) { } }
@@ -442,6 +442,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             catch (Exception ex)
             {
                 isLoading = false;
+
                 await _jsModule.InvokeVoidAsync("showAlert", $"Error, {ex.Message} !");
                 throw new Exception(ex.Message);
             }
