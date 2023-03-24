@@ -1,0 +1,732 @@
+﻿@page "/cashierlogbook/dashboard"
+@inject ICashierLogbookService CashierLogbookService
+@inject ILoginService LoginService
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
+@inject NavigationManager navigate
+@inject IJSRuntime JS
+
+<PageTitle>Cashier Logbook - Dashboard</PageTitle>
+
+@if (LoginService.activeUser == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    @if (LoginService.activeUser.userPrivileges != null)
+    {
+        @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
+        {
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <h3>User Require Elevation</h3>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="container-fluid">
+
+                <h3>Cashier Logbook</h3>
+                <small><i>Dashboard</i></small>
+
+
+                <div class="border border-2 p-2 my-3">
+                    <div class="row mb-2">
+                        <div class="col px-3">
+                            <h5><b>Ongoing Logbook Document</b></h5>
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active fw-bold link-muted" id="utama-tab" data-toggle="tab" href="#utama" role="tab" aria-controls="logUtama" aria-selected="true">Utama</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold link-muted" id="transit-tab" data-toggle="tab" href="#transit" role="tab" aria-controls="logTransit" aria-selected="false">Transit</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="utama" role="tabpanel" aria-labelledby="list-tab">
+
+                            <div class="row my-3">
+
+                                <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                                    <select class="form-select w-100 h-100" @bind="mainLogFilterType">
+                                        <option hidden disabled value="">Filter By</option>
+                                        <option value="LogID">Log ID</option>
+                                        <option value="Applicant">Applicant</option>
+                                        <option value="LogDate">Date</option>
+                                        <option value="LogStatus">Status</option>
+                                    </select>
+                                </div>
+
+                                @if (mainLogFilterType.Equals("LogDate"))
+                                {
+                                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                                            <input type="datetime-local" class="form-control w-100 h-100" @bind-value="mainLogFilterDateValue" disabled="@(checkMainLogPresent() ? null : "disabled")" />
+                                        </div>
+                                }
+                                else
+                                {
+                                        <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                                            <input type="text" class="form-control w-100 h-100" @bind-value="mainLogFilterValue" disabled="@(checkMainLogPresent() ? null : "disabled")" />
+                                        </div>
+                                }
+
+                                <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                                    <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkMainLogPresent() ? null : "disabled")" @onclick="mainLogFilter">Filter</button>
+                                </div>
+
+                                <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                                    <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!isMainLogFilterActive.Equals(false) ? null : "disabled")" @onclick="mainLogFilterReset">Reset</button>
+                                </div>
+
+                            </div>
+
+                            @if (checkMainLogPresent())
+                            {
+                                <div class="mb-3">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover" style="width: 100%">
+                                            <thead>
+                                                <tr title="Click to view">
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Log ID</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Log Date</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Location</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Status</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Latest Edit By</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tbodyDashboard">
+                                                @foreach (var mlog in CashierLogbookService.mainLogs)
+                                                {
+                                                    <tr @onclick="@(() => showMainModal(mlog, "UTAMA"))" id="previewRow">
+                                                        <td class="text-center align-middle" style="font-size:14px;">@mlog.LogID</td>
+                                                        <td class="text-center align-middle" style="font-size:14px;">@mlog.LogDate.ToString("dd MMMM yyyy")</td>
+                                                        <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.LocationID</td>
+                                                        <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.LogStatus</td>
+                                                        <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.Applicant</td>
+                                                    </tr>
+                                                }
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+
+                                <ul class="pagination pagination-sm justify-content-center my-2">
+
+                                    @if ((mainLogPageActive - 1) > 0)
+                                    {
+                                        <li class="page-item px-1 paging-style" @onclick="(() => mainLogPageSelect((mainLogPageActive - 1)))"><span class="page-link">Previous</span></li>
+                                        <li class="page-item paging-style" @onclick="(() => mainLogPageSelect((mainLogPageActive - 1)))"><span class="page-link">@(mainLogPageActive - 1)</span></li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                    }
+
+                                    <li class="page-item active paging-style" @onclick="(() => mainLogPageSelect(mainLogPageActive))"><span class="page-link">@mainLogPageActive</span></li>
+
+                                    @if (mainLogPageActive < mainLogPageSize)
+                                    {
+                                        <li class="page-item paging-style" @onclick="(() => mainLogPageSelect((mainLogPageActive + 1)))"><span class="page-link">@(mainLogPageActive + 1)</span></li>
+                                        <li class="page-item px-1 paging-style" @onclick="(() => mainLogPageSelect((mainLogPageActive + 1)))"><span class="page-link">Next</span></li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                                    }
+
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                            }
+                        </div>
+                        <div class="tab-pane fade" id="transit" role="tabpanel" aria-labelledby="list-tab">
+
+                            <div class="row my-3">
+
+                                <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                                    <select class="form-select w-100 h-100" @bind="transitLogFilterType">
+                                        <option hidden disabled value="">Filter By</option>
+                                        <option value="LogID">Log ID</option>
+                                        <option value="Applicant">Applicant</option>
+                                        <option value="LogDate">Date</option>
+                                        <option value="LogStatus">Status</option>
+                                    </select>
+                                </div>
+
+                                @if (mainLogFilterType.Equals("LogDate"))
+                                {
+                                    <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                                        <input type="datetime-local" class="form-control w-100 h-100" @bind-value="transitLogFilterDateValue" disabled="@(checkTransitLogPresent() ? null : "disabled")" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="col-sm-12 col-md-4 col-lg-5 mb-1">
+                                        <input type="text" class="form-control w-100 h-100" @bind-value="transitLogFilterValue" disabled="@(checkTransitLogPresent() ? null : "disabled")" />
+                                    </div>
+                                }
+
+                                <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                                    <button type="button" class="btn btn-sm btn-primary w-100 h-100 fw-bold" disabled="@(checkTransitLogPresent() ? null : "disabled")" @onclick="@(() => { isTransitLogFilterActive = true; transitLogPageSelect(transitLogPageActive); })">Filter</button>
+                                </div>
+                                <div class="col-sm-12 col-md-2 col-lg-1 mb-1">
+                                    <button type="button" class="btn btn-sm btn-dark w-100 h-100 fw-bold" disabled="@(!isTransitLogFilterActive.Equals(false) ? null : "disabled")" @onclick="(() => { transitLogPageActive = 1; isTransitLogFilterActive = false; transitLogFilterType = string.Empty; transitLogFilterValue = string.Empty; transitLogPageSelect(1); })">Reset</button>
+                                </div>
+
+                            </div>
+
+                            @if (checkTransitLogPresent())
+                            {
+                                <div class="mb-3">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover" style="width: 100%">
+                                            <thead>
+                                                <tr title="Click to view">
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Log ID</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Log Date</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Location</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Status</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Latest Edit By</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tbodyDashboard">
+                                                @foreach (var mlog in CashierLogbookService.transitLogs)
+                                                {
+                                                    <tr @onclick="@(() => showMainModal(mlog, "TRANSIT"))" id="previewRow">
+                                                        <td class="text-center align-middle" style="font-size:14px;">@mlog.LogID</td>
+                                                        <td class="text-center align-middle" style="font-size:14px;">@mlog.LogDate.ToString("dd MMMM yyyy")</td>
+                                                        <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.LocationID</td>
+                                                        <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.LogStatus</td>
+                                                        <td class="text-center text-truncate align-middle" style="font-size:14px;">@mlog.Applicant</td>
+                                                    </tr>
+                                                }
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+
+                                <ul class="pagination pagination-sm justify-content-center my-2">
+
+                                    @if ((transitLogPageActive - 1) > 0)
+                                    {
+                                        <li class="page-item px-1 paging-style" @onclick="(() => transitLogPageSelect((transitLogPageActive - 1)))"><span class="page-link">Previous</span></li>
+                                        <li class="page-item paging-style" @onclick="(() => transitLogPageSelect((transitLogPageActive - 1)))"><span class="page-link">@(transitLogPageActive - 1)</span></li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                    }
+
+                                    <li class="page-item active paging-style" @onclick="(() => transitLogPageSelect(transitLogPageActive))"><span class="page-link">@transitLogPageActive</span></li>
+
+                                    @if (transitLogPageActive < transitLogPageSize)
+                                    {
+                                        <li class="page-item paging-style" @onclick="(() => transitLogPageSelect((transitLogPageActive + 1)))"><span class="page-link">@(transitLogPageActive + 1)</span></li>
+                                        <li class="page-item px-1 paging-style" @onclick="(() => transitLogPageSelect((transitLogPageActive + 1)))"><span class="page-link">Next</span></li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                                    }
+
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-2 p-2">
+                    <div class="row mb-2">
+                        <div class="col px-3">
+                            <h5><b>Logbook Action History</b></h5>
+                        </div>
+                    </div>
+
+                    @*Table*@
+                    @if (checkActionLogPresent())
+                    {
+                        <div class="mb-3">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover" style="width: 100%">
+                                    <thead>
+                                        <tr title="Click to view">
+                                            <th scope="col" class="text-center align-middle" style="width: 20%; font-size: 15px;">Action Date</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">User</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Log Type</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Log Action</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Log ID</th>
+                                            <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Location ID</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyDashboard">
+                                        @foreach (var actLog in CashierLogbookService.actionLogs)
+                                        {
+                                            <tr>
+                                                <td class="text-center align-middle" style="font-size:14px;">@actLog.ActionDate.ToString("dd MMMM yyyy HH:mm:ss")</td>
+                                                <td class="text-center align-middle" style="font-size:14px;">@actLog.UserEmail</td>
+                                                <td class="text-center text-truncate align-middle" style="font-size:14px;">@actLog.LogType</td>
+                                                <td class="text-center text-truncate align-middle" style="font-size:14px;">@actLog.LogAction</td>
+                                                <td class="text-center text-truncate align-middle" style="font-size:14px;">@actLog.LogID</td>
+                                                <td class="text-center text-truncate align-middle" style="font-size:14px;">@actLog.LocationID</td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+                        <ul class="pagination pagination-sm justify-content-center my-2">
+
+                            @if ((actionLogPageActive - 1) > 0)
+                            {
+                                <li class="page-item px-1 paging-style" @onclick="(() => actionLogPageSelect((actionLogPageActive - 1)))"><span class="page-link">Previous</span></li>
+                                <li class="page-item paging-style" @onclick="(() => actionLogPageSelect((actionLogPageActive - 1)))"><span class="page-link">@(actionLogPageActive - 1)</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                            }
+
+                            <li class="page-item active paging-style" @onclick="(() => actionLogPageSelect(actionLogPageActive))"><span class="page-link">@actionLogPageActive</span></li>
+
+                            @if (actionLogPageActive < actionLogPageSize)
+                            {
+                                <li class="page-item paging-style" @onclick="(() => actionLogPageSelect((actionLogPageActive + 1)))"><span class="page-link">@(actionLogPageActive + 1)</span></li>
+                                <li class="page-item px-1 paging-style" @onclick="(() => actionLogPageSelect((actionLogPageActive + 1)))"><span class="page-link">Next</span></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                            }
+
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="fw-bold text-center">. . . There is no Document . . .</p>
+                    }
+                </div>
+
+            </div>
+
+            @if (showModal)
+            {
+                <div class="modal fade show" id="mainModal" tabindex="-2" role="dialog" aria-labelledby="mainModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+                        <div class="modal-content">
+                            @* header *@
+                            <div class="modal-header cus-bg">
+                                <h5 class="modal-title fw-bolder text-white">Log @activeLog.LogID Details</h5>
+
+                                <button type="button" class="close border-0" aria-label="Close" @onclick="hideModal">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+
+                                <EditForm Model="activeLog">
+
+                                    <div class="row my-1">
+                                        <div class="col">
+                                            <label class="fw-bold" for="log_type">Log Type :</label>
+                                            <InputText id="log_type" @bind-Value="activeLog.LogType" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label class="fw-bold" for="log_id">Log ID :</label>
+                                            <InputText id="log_id" @bind-Value="activeLog.LogID" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label class="fw-bold" for="log_date">Log Date :</label>
+                                            <InputDate id="log_date" @bind-Value="activeLog.LogDate" class="form-control-sm w-100 border-1" readonly></InputDate>
+                                        </div>
+                                    </div>
+
+                                    <div class="row my-1">
+                                        <div class="col">
+                                            <label class="fw-bold" for="log_loc">Location :</label>
+                                            <InputText id="log_loc" @bind-Value="activeLog.LocationID" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label class="fw-bold" for="log_apl">Latest User Create / Edit :</label>
+                                            <InputText id="log_apl" @bind-Value="activeLog.Applicant" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                    </div>
+
+                                    <div class="row my-1">
+                                        <div class="col">
+                                            <label class="fw-bold" for="log_stat">Log Status :</label>
+                                            <InputText id="log_stat" @bind-Value="activeLog.LogStatus" class="form-control-sm w-100 border-1" readonly></InputText>
+                                        </div>
+                                        <div class="col">
+                                            <label class="fw-bold" for="log_statdate">Log Status Date :</label>
+                                            <InputDate id="log_statdate" @bind-Value="activeLog.LogStatusDate" class="form-control-sm w-100 border-1" readonly></InputDate>
+                                        </div>
+                                    </div>
+
+                                    <div class="separator my-2">Details</div>
+
+                                    <ul class="nav nav-tabs" id="shift" role="tablist">
+                                        @foreach (var shift in activeShift)
+                                        {
+                                            <li class="nav-item" @onclick="(() => shiftSelect(shift))">
+                                                <a class="nav-link @(shift.isActive ? "active" : null) fw-bold link-muted" id="@shift.ShiftDesc-tab" data-toggle="tab" href="#@shift.ShiftDesc" role="tab" aria-controls="@shift.ShiftDesc-log" aria-selected="true">@shift.ShiftDesc</a>
+                                            </li>
+                                        }
+                                    </ul>
+
+                                    <div class="tab-content" id="mypTabContent">
+
+                                        @foreach (var shift in activeShift)
+                                        {
+                                            <div class="tab-pane fade @(shift.isActive ? "show active" : null)" id="@shift.ShiftDesc" role="tabpanel" aria-labelledby="list-tab">
+
+                                                @if (activeLog.approvals != null && activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)) != null)
+                                                {
+                                                    <div id="accordion" style="width: 100%;" class="my-2">
+
+                                                        <div class="card" style="width: 100%;">
+                                                            <div class="card-header" id="header_@shift.ShiftDesc">
+                                                                <div class="input-group border border-1">
+                                                                    <button id="AccordionTitleCard" class="btn" data-toggle="collapse" data-target="#accord_@shift.ShiftDesc" aria-expanded="true" aria-controls="accord_@shift.ShiftDesc">
+                                                                        <b>Shift <b>@shift.ShiftDesc</b> Details</b>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+
+                                                            <div id="accord_@shift.ShiftDesc" class="collapse bg-special" aria-labelledby="accord_@shift.ShiftDesc" data-parent="#accordion">
+                                                                <div class="card-body">
+
+                                                                    <div class="row">
+                                                                        <div class="col">
+                                                                            <label class="fw-bold" for="create_user">Create User :</label>
+                                                                            <input type="text" id="create_user" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).CreateUser" class="form-control-sm w-100 border-1" readonly />
+                                                                        </div>
+                                                                        <div class="col">
+                                                                            <label class="fw-bold" for="create_date">Create Date :</label>
+                                                                            <input type="text" id="create_date" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).CreateDate.ToString("dd MMMM yyyy HH:mm:ss")" class="form-control-sm w-100 border-1" readonly />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="row">
+                                                                        <div class="col">
+                                                                            <label class="fw-bold" for="cf_user">Confirm User :</label>
+                                                                            <input type="text" id="cf_user" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).ConfirmUser" class="form-control-sm w-100 border-1" readonly />
+                                                                        </div>
+                                                                        <div class="col">
+                                                                            <label class="fw-bold" for="cf_date">Confirm Date :</label>
+                                                                            <input type="text" id="cf_date" value="@(activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).ConfirmUser.Equals("") ? "" : activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(shift.ShiftID)).ConfirmDate.ToString("dd MMMM yyyy HH:mm:ss"))" class="form-control-sm w-100 border-1" readonly />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                }
+
+                                                <div class="table-responsive mt-3">
+
+                                                    @foreach (var amtType in activeAmountType.OrderByDescending(x => x.AmountType))
+                                                    {
+                                                        <table class="table table-sm table-hover table-bordered mt-1">
+
+                                                            <thead>
+                                                                <tr>
+                                                                    <td class="text-center align-middle" style="width: 25%; font-size: 18px;"><b>@amtType.AmountDesc</b></td>
+                                                                    @foreach (var head in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                                    {
+                                                                        <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>@head.AmountCategoryName</b></td>
+                                                                    }
+                                                                </tr>
+                                                            </thead>
+
+                                                            <tbody>
+                                                                @foreach (var row in activeSubCategories)
+                                                                {
+                                                                    if (row.AmountType.Equals(amtType.AmountType))
+                                                                    {
+                                                                        <tr>
+                                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>@row.AmountSubCategoryName</b></td>
+                                                                            @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                                            {
+                                                                                bool isbreak = false;
+
+                                                                                @foreach (var dt in activeLog.header)
+                                                                                {
+                                                                                    @foreach (var dta in dt.lines)
+                                                                                    {
+                                                                                        @if (dta.ShiftID.Equals(shift.ShiftID) && dta.AmountType.Equals(amtType.AmountType) && dta.AmountSubCategoryID.Equals(row.AmountSubCategoryID) && dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                                                        {
+                                                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @dta.LineAmount.ToString("N0") ,-</td>
+
+                                                                                            isbreak = true;
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                @if (!isbreak)
+                                                                                {
+                                                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                                                }
+
+                                                                            }
+                                                                        </tr>
+                                                                    }
+                                                                }
+                                                            </tbody>
+
+                                                            <tfoot>
+                                                                <tr>
+                                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Sub Total</td>
+                                                                    @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                                    {
+                                                                        var isbreak = false;
+
+                                                                        @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                                        {
+                                                                            @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                                            {
+                                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @dt.lines.Where(y => y.AmountType.Equals(amtType.AmountType)).Sum(x => x.LineAmount).ToString("N0") ,-</td>
+
+                                                                                isbreak = true;
+                                                                            }
+                                                                        }
+
+                                                                        @if (!isbreak)
+                                                                        {
+                                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                                        }
+                                                                    }
+                                                                </tr>
+                                                            </tfoot>
+
+                                                        </table>
+                                                    }
+
+                                                    <table class="table table-sm table-hover table-bordered mt-1">
+
+                                                        <thead>
+                                                            <tr>
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 18px;"><b>Recap</b></td>
+                                                                @foreach (var head in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                                {
+                                                                    <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>@head.AmountCategoryName</b></td>
+                                                                }
+                                                            </tr>
+                                                        </thead>
+
+                                                        <tbody>
+                                                            <tr>
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Total</td>
+                                                                @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                                {
+                                                                    var isbreak = false;
+
+                                                                    @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                                    {
+                                                                        @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                                        {
+                                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @dt.HeaderAmount.ToString("N0") ,-</td>
+
+                                                                            isbreak = true;
+                                                                        }
+                                                                    }
+
+                                                                    @if (!isbreak)
+                                                                    {
+                                                                        <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                                    }
+                                                                }
+                                                            </tr>
+
+                                                            <tr>
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Expected Amount</td>
+                                                                @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                                {
+                                                                    var isbreak = false;
+
+                                                                    @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                                    {
+                                                                        @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                                        {
+                                                                            <td class="text-center align-middle" style="width: 25%; font-size: 15px;">Rp. @dt.ActualAmount.ToString("N0") ,-</td>
+
+                                                                            isbreak = true;
+                                                                        }
+                                                                    }
+
+                                                                    @if (!isbreak)
+                                                                    {
+                                                                        <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                                    }
+                                                                }
+                                                            </tr>
+
+                                                            <tr>
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>Difference</b></td>
+                                                                @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                                {
+                                                                    var isbreak = false;
+
+                                                                    @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                                    {
+                                                                        @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                                        {
+                                                                            <td class="text-center align-middle @(!Decimal.Subtract(dt.HeaderAmount, dt.ActualAmount).Equals(decimal.Zero) ? "bg-danger text-white" : "bg-success text-white")" style="width: 25%; font-size: 15px;">Rp. @((dt.HeaderAmount - dt.ActualAmount).ToString("N0")) ,-</td>
+
+                                                                            isbreak = true;
+                                                                        }
+                                                                    }
+
+                                                                    @if (!isbreak)
+                                                                    {
+                                                                        <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                                    }
+                                                                }
+                                                            </tr>
+
+                                                            <tr>
+                                                                <td class="text-center align-middle" style="width: 25%; font-size: 15px;"><b>Note</b></td>
+                                                                @foreach (var colAmount in activeCategories.OrderBy(x => x.AmountCategoryName))
+                                                                {
+                                                                    var isbreak = false;
+
+                                                                    @foreach (var dt in activeLog.header.Where(x => x.lines.All(y => y.ShiftID.Equals(shift.ShiftID))))
+                                                                    {
+                                                                        @if (dt.AmountCategoryID.Equals(colAmount.AmountCategoryID))
+                                                                        {
+                                                                            <td class="text-center align-middle text-wrap" style="width: 25%; font-size: 15px;">@dt.CategoryNote</td>
+
+                                                                            isbreak = true;
+                                                                        }
+                                                                    }
+
+                                                                    @if (!isbreak)
+                                                                    {
+                                                                        <td class="text-center align-middle" style="width: 25%; font-size: 15px;">&#216;</td>
+                                                                    }
+                                                                }
+                                                            </tr>
+                                                        </tbody>
+
+                                                    </table>
+                                                </div>
+
+                                            </div>
+                                        }
+                                    </div>
+
+                                </EditForm>
+
+                            </div>
+
+                            <div class="modal-footer cus-bg">
+                                @if (LoginService.activeUser.userPrivileges.Contains("CF"))
+                                {
+                                    <button type="button" class="btn btn-sm btn-success fw-bold" disabled="@(!activeLog.approvals.Any(x => x.ConfirmUser.Equals("")) && activeLog.LogStatus.Equals("Partial") ? null : "disabled")" @onclick="@(() => updateBrankasStatus("Done", activeLog.LogType))">Archive Data</button>
+                                    <button type="button" class="btn btn-sm btn-warning fw-bold" disabled="@(activeLog.approvals.FirstOrDefault(y => y.ShiftID.Equals(activeShift.FirstOrDefault(x => x.isActive.Equals(true)).ShiftID) && y.ConfirmUser.Equals("")) != null ? null : "disabled")" @onclick="(() => confirmModal = true)">Confirm</button>
+                                }
+
+                                @if (LoginService.activeUser.userPrivileges.Contains("ED"))
+                                {
+                                    <button type="button" class="btn btn-sm btn-dark fw-bold" disabled="@(!activeLog.LogStatus.Equals("Done") ? null : "disabled")" @onclick="(() => editDocument(activeLog))">Edit</button>
+                                }
+                                
+                                <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="hideModal">Close</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (confirmModal)
+            {
+                <div class="modal fade show" id="confirmModal" tabindex="-2" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                        <div class="modal-content">
+                        @* header *@
+                            <div class="modal-header cus-bg">
+                                <h5 class="modal-title fw-bolder text-white">Confirm Log Handover ?</h5>
+
+                                <button type="button" class="close border-0" aria-label="Close" @onclick="(() => confirmModal = false)">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <label class="fw-bold" for="create_user">Create User :</label>
+                                        <input type="text" id="create_user" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).CreateUser" class="form-control-sm w-100 border-1" readonly />
+                                    </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="create_date">Create Date :</label>
+                                        <input type="text" id="create_date" value="@activeLog.approvals.FirstOrDefault(x => x.ShiftID.Equals(activeShift.Where(y => y.isActive.Equals(true)).FirstOrDefault().ShiftID)).CreateDate.ToString("dd MMMM yyyy HH:mm:ss")" class="form-control-sm w-100 border-1" readonly />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <label class="fw-bold" for="cf_user">Confirm User :</label>
+                                        <input type="text" id="cf_user" value="@activeUser.userName" class="form-control-sm w-100 border-1" readonly />
+                                    </div>
+                                    <div class="col">
+                                        <label class="fw-bold" for="cf_date">Confirm Date :</label>
+                                        <input type="text" id="cf_date" value="@DateTime.Now.ToString("dd MMMM yyyy HH:mm:ss")" class="form-control-sm w-100 border-1" readonly />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer cus-bg">
+                                @if (LoginService.activeUser.userPrivileges.Contains("CF"))
+                                {
+                                    <button type="button" class="btn btn-sm btn-success fw-bold" disabled="@(activeLog.LogStatus.Equals("Partial") ? "disabled" : null)" @onclick="(() => confirmLog())">Confirm</button>
+                                }
+                                <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="(() => confirmModal = false)">No</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+    else
+    {
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col align-middle text-center">
+                    <h3>Fetch Data Privileges in Process</h3>
+                    <small>Refresh Page Using Button Below If There is No Response</small>
+                    <br />
+                    <button type="button" class="btn btn-primary my-4" @onclick="(() => StateHasChanged())"><b>Refresh Page</b></button>
+                </div>
+            </div>
+        </div>
+    }
+}
+

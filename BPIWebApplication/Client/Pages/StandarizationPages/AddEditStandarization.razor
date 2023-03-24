@@ -1,0 +1,354 @@
+﻿@page "/standarization/addstandarization"
+@page "/standarization/editstandarization/{param}"
+@inject IStandarizationService StandarizationService
+@inject ILoginService LoginService
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
+@inject IJSRuntime JS
+
+@if (LoginService.activeUser == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    @if (LoginService.activeUser.userPrivileges != null)
+    {
+        @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
+        {
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <h3>User Require Elevation</h3>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col col-md-12">
+                        <div class="d-flex flex-column align-items-start">
+                            @if (param == null)
+                            {
+                                <PageTitle>Standarizations - Add Document</PageTitle>
+                                <h3>Standarizations</h3>
+                                <small><i>Add Document</i></small>
+                            }
+                            else
+                            {
+                                <PageTitle>Standarizations - Edit Document</PageTitle>
+                                <h3>Standarizations</h3>
+                                <small><i>Edit Document</i></small>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @if (alertTrigger)
+                {
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <strong>@alertMessage</strong> @alertBody
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="(() => alertTrigger = false)">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                }
+
+
+                @if (successAlert)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>@alertMessage</strong> @alertBody
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="(() => successAlert = false)">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                }
+
+                <div class="row">
+                    <div class="d-flex flex-column align-items-center">
+                        
+                        <EditForm Model="standarizationData">
+
+                            <div class="row my-2">
+                                <div class="col">
+                                    <label for="doc_type">Standarization Type : </label>
+                                    <InputSelect id="doc_type" @bind-Value="standarizationData.TypeID" class="form-select" disabled="@(successUpload.Equals(true) ? "disabled" : null)">
+                                        <option hidden value="">Select Type</option>
+
+                                        @if (checkStandarizationTypesDataPresent())
+                                        {
+                                            @foreach (var type in StandarizationService.standarizationTypes)
+                                            {
+                                                <option value="@type.TypeID">@type.Descriptions</option>
+                                            }
+                                        }
+                                        
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <label for="doc_no">Document No : </label>
+                                    <InputText id="doc_no" @bind-Value="standarizationData.StandarizationID" disabled="@(successUpload.Equals(true) ? "disabled" : null)" placeholder="Max 16 Characters" class="form-control"></InputText>
+                                    <!-- <input type="text" class="form-control" name="DocumentNo" id="doc_no" /> -->
+                                </div>
+                                <div class="col">
+                                    <label for="doc_date">Document Date : </label>
+                                    <InputDate id="doc_date" @bind-Value="standarizationData.StandarizationDate" disabled="@(successUpload.Equals(true) ? "disabled" : null)" class="form-control"></InputDate>
+                                    <!-- <input type="date" class="form-control" name="DocumentDate" id="doc_date" /> -->
+                                </div>
+                            </div>
+
+                            <div class="row my-1">
+                                <div class="col">
+                                    <label for="doc_name">Description : </label>
+                                    <InputTextArea id="doc_name" @bind-Value="standarizationData.StandarizationDetails" disabled="@(successUpload.Equals(true) ? "disabled" : null)" placeholder="Max 150 Characters" class="form-control"></InputTextArea>
+                                    <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
+                                </div>
+                            </div>
+
+                            <div class="separator my-2">Tag(s)</div>
+
+                            <button type="button" class="btn btn-sm btn-warning my-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => tags.Add(new BPIWebApplication.Shared.MainModel.Standarizations.StandarizationTag()))"><b>Add Tags</b></button>
+
+                            @if (tags.Any())
+                            {
+                                <table class="table table-sm table-bordered" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 10%;">Action</th>
+                                            <th style="width: 90%; background-color:aquamarine;">Tag Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var tag in tags)
+                                        {
+                                            <tr>
+                                                <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => tags.Remove(tag))"><i class="oi oi-delete"></i></button></td>
+                                                <td><input type="text" class="form-control w-100 h-100" placeholder="Max 50 Characters" @bind="tag.TagDescriptions" /></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning fade show" role="alert">
+                                    <strong>Add New Tag(s) !</strong>
+                                </div>
+                            }
+
+                            <div class="separator my-2">File(s)</div>
+
+                            <button type="button" class="btn btn-sm btn-warning my-2" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => fileLines.Add(new BPIWebApplication.Shared.MainModel.Stream.FileStream()))"><b>Add Files</b></button>
+
+                            @if (fileLines.Any())
+                            {
+                                <table class="table table-sm table-bordered" style="width: 100%">
+                                    <caption>&lowast; Max File Size Upload @maxFileSize MB(s)</caption>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 5%;">Action</th>
+                                            <th style="width: 30%; background-color:aquamarine;">Description</th>
+                                            <th style="width: 20%;">File Name</th>
+                                            <th style="width: 10%;">Size (KB)</th>
+                                            <th style="width: 25%; background-color:aquamarine;">Select File</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var f in fileLines)
+                                        {
+                                            <tr>
+                                                <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => fileLines.Remove(f))"><i class="oi oi-delete"></i></button></td>
+                                                <td><input type="text" class="form-control w-100 h-100" placeholder="Max 100 Characters" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @bind="f.fileDesc" /></td>
+                                                <td>@f.fileName</td>
+                                                <td>@(f.fileSize / 1024) Kilobyte(s)</td>
+                                                <td><InputFile class="form-control form-control-file" OnChange="@((InputFileChangeEventArgs args) => UploadHandleSelection(args, f))" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputFile></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning fade show" role="alert">
+                                    <strong>Add New Attachment(s) !</strong>
+                                </div>
+                            }
+
+                            <div class="row my-3">
+                                <div class="col">
+                                    @*<button type="button" class="btn btn-danger" @onclick="ClearFiles">Reset</button>*@
+                                    @if (param == null)
+                                    {
+                                        <button type="button" class="btn btn-primary" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="@(async () => { isConfirmationActive = true; })"><b>Add</b></button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-primary mx-1" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="@(async () => { isConfirmationActive = true; })"><b>Edit</b></button>
+                                        <button type="button" class="btn btn-danger mx-1" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="@(async () => { isConfirmationActive = true; isConfirmationDeletion = true; })"><b>Delete</b></button>
+                                    }
+                                </div>
+                            </div>
+                        </EditForm>
+
+                    </div>
+                </div>
+
+                <div class="my-4">
+
+                    <div class="row flex-row flex-nowrap wrap-card overflow-auto">
+
+                        @foreach (var file in standarizationData.Attachments)
+                        {
+                            <div style="width: 190px;">
+                                <div class="card" id="balanceCard" @onclick="@(() => downloadStandarizationFile(file))">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-wrap"><b> @file.Descriptions </b></h6>
+                                    </div>
+                                    <div class="card-footer">
+                                        <small class="text-muted"><i>Click To Download File</i></small>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+            </div>
+        }
+
+        @if (isConfirmationActive)
+        {
+            <div class="modal fade show" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModal" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideConfirmationModalonESC">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header cus-bg">
+                            <h5 class="modal-title fw-bold text-white">Confirmation</h5>
+
+                            <button type="button" class="close border-0" @onclick="(() => isConfirmationActive = false)">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div class="row">
+                                <div class="col align-middle text-center">
+                                    <p class="fw-bold">Confirm Document ?</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">Document Type</div>
+                                <div class="col">: @standarizationData.TypeID</div>
+                            </div>
+                            <div class="row">
+                                <div class="col">Document No</div>
+                                <div class="col">: <b>@standarizationData.StandarizationID</b></div>
+                            </div>
+                            <div class="row">
+                                <div class="col">Document Date</div>
+                                <div class="col">: @standarizationData.StandarizationDate.ToString("dd MMMM yyyy")</div>
+                            </div>
+                            <div class="row">
+                                <div class="col">Document Date</div>
+                                <div class="col">: @standarizationData.StandarizationDetails</div>
+                            </div>
+
+                            <div class="separator my-2">Tag(s)</div>
+
+                            @if (tags.Count > 0)
+                            {
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="d-flex">
+
+                                        </div>
+                                        @foreach (var tag in tags)
+                                        {
+                                            <label class="badge bg-secondary mx-1" style="font-size: 13px;">@tag.TagDescriptions</label>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="separator my-2">File(s)</div>
+
+                            @if (fileLines.Count > 0)
+                            {
+                                <div class="row">
+                                    <div class="col">
+                                        @foreach (var file in fileLines)
+                                        {
+                                            <label class="badge bg-secondary mx-1" style="font-size: 13px;">@file.fileDesc</label>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                        </div>
+                        <div class="modal-footer cus-bg">
+                            @if (param == null)
+                            {
+                                <button type="button" title="Submit" class="btn btn-sm btn-primary fw-bold" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="createStandarization">
+                                    Yes
+                                    @if (isLoading)
+                                    {
+                                        <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                    }
+                                </button>
+                            }
+                            else
+                            {
+                                @if (!isConfirmationDeletion)
+                                {
+                                    <button type="button" title="Submit" class="btn btn-sm btn-primary fw-bold" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="editStandarization">
+                                        Yes
+                                        @if (isLoading)
+                                        {
+                                            <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                        }
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" title="Delete" class="btn btn-sm btn-danger fw-bold" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="deleteStandarization">
+                                        Yes
+                                        @if (isLoading)
+                                        {
+                                            <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                        }
+                                    </button>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col align-middle text-center">
+                    <h3>Fetch Data Privileges in Process</h3>
+                    <small>Refresh Page Using Button Below If There is No Response</small>
+                    <br/>
+                    <button type="button" class="btn btn-primary my-4" @onclick="(() => StateHasChanged())"><b>Refresh Page</b></button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+
+@if (isLoading)
+{
+    <div class="modal show" id="splashLoading" tabindex="-5" role="dialog" aria-labelledby="splashLoadingDialog" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+        <BPIWebApplication.Client.Shared.CustomLayout.SplashScreen></BPIWebApplication.Client.Shared.CustomLayout.SplashScreen>
+    </div>
+}

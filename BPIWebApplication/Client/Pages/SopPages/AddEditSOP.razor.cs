@@ -5,8 +5,10 @@ using BPIWebApplication.Shared.FileUploadModel;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Microsoft.JSInterop;
-using BPIWebApplication.Shared;
 using BPIWebApplication.Shared.DbModel;
+using BPIWebApplication.Shared.MainModel.Login;
+using BPIWebApplication.Shared.MainModel.Procedure;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BPIWebApplication.Client.Pages.SopPages
 {
@@ -27,7 +29,11 @@ namespace BPIWebApplication.Client.Pages.SopPages
         // private string filePath = string.Empty;
 
         private Procedure procedure = new Procedure();
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        private ActiveUser activeUser = new();
+        private UserPrivileges privilegeDataParam = new();
+        private List<string> userPriv = new();
+
         private IJSObjectReference _jsModule;
 
         private static string Base64Decode(string base64EncodedData)
@@ -46,17 +52,63 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
         protected override async Task OnInitializedAsync()
         {
-            // await ProcedureService.GetAllBisnisUnit();
-            // await ProcedureService.GetAllDepartment();
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+                LoginService.activeUser.userPrivileges.Clear();
 
-            // filePath = config.GetValue<string>("FilePath:FileUploadPath");
+            if (syncSessionStorage.ContainKey("PagePrivileges"))
+                syncSessionStorage.RemoveItem("PagePrivileges");
+
+            string tkn = syncSessionStorage.GetItem<string>("token");
+
+            if (syncSessionStorage.ContainKey("userName"))
+            {
+                privilegeDataParam.moduleId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("ModuleId")));
+                privilegeDataParam.UserName = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam = new();
+                privilegeDataParam.userLocationParam.SessionId = syncSessionStorage.GetItem<string>("SessionId");
+                privilegeDataParam.userLocationParam.MacAddress = "";
+                privilegeDataParam.userLocationParam.IpClient = "";
+                privilegeDataParam.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("AppV")));
+                privilegeDataParam.userLocationParam.LocationId = Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[1];
+                privilegeDataParam.userLocationParam.Name = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[0]);
+                privilegeDataParam.userLocationParam.PageIndex = 1;
+                privilegeDataParam.userLocationParam.PageSize = 100;
+                privilegeDataParam.privileges = new();
+            }
+
+            var res = await LoginService.frameworkApiFacadePrivilege(privilegeDataParam, tkn);
+
+            userPriv.Clear();
+
+            if (res.isSuccess)
+            {
+                if (res.Data.privileges.Any())
+                {
+                    foreach (var priv in res.Data.privileges)
+                    {
+                        userPriv.Add(priv.privilegeId);
+                    }
+                }
+
+                syncSessionStorage.SetItem("PagePrivileges", userPriv);
+
+                LoginService.activeUser.userPrivileges = userPriv;
+
+            }
+            //
 
             await ProcedureService.GetAllProcedure();
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
 
@@ -220,11 +272,11 @@ namespace BPIWebApplication.Client.Pages.SopPages
             {
                 uploadTrigger = await ProcedureService.checkProsedureExisting(procedure.ProcedureNo);
 
-                List<FileReadyUpload> readyUpload = new List<FileReadyUpload>();
+                List<BPIWebApplication.Shared.MainModel.Stream.FileStream> readyUpload = new List<BPIWebApplication.Shared.MainModel.Stream.FileStream>();
 
                 if (!uploadTrigger)
                 {
-                    if (activeUser.role.Contains("admin"))
+                    if (activeUser.userPrivileges.Contains("CR"))
                     {
                         if (listFileUploadWi != null)
                         {
@@ -240,7 +292,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
                                 stream.Close();
 
-                                readyUpload.Add(new FileReadyUpload
+                                readyUpload.Add(new BPIWebApplication.Shared.MainModel.Stream.FileStream
                                 {
                                     type = "WI",
                                     fileName = fi.Name,
@@ -266,7 +318,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
                                 stream.Close();
 
-                                readyUpload.Add(new FileReadyUpload
+                                readyUpload.Add(new BPIWebApplication.Shared.MainModel.Stream.FileStream
                                 {
                                     type = "SOP",
                                     fileName = fi.Name,
@@ -289,12 +341,12 @@ namespace BPIWebApplication.Client.Pages.SopPages
                         {
                             // pass data files and procedure details
 
-                            ProcedureUpload procedureUpload = new ProcedureUpload();
+                            ProcedureStream procedureUpload = new ProcedureStream();
                             procedureUpload.procedureDetails = new QueryModel<Procedure>();
-                            procedureUpload.files = new List<FileReadyUpload>();
+                            procedureUpload.files = new List<BPIWebApplication.Shared.MainModel.Stream.FileStream>();
 
                             procedureUpload.procedureDetails.Data = procedure;
-                            procedureUpload.procedureDetails.userEmail = activeUser.UserLogin.userName;
+                            procedureUpload.procedureDetails.userEmail = activeUser.userName;
                             procedureUpload.procedureDetails.userAction = "I";
                             procedureUpload.procedureDetails.userActionDate = DateTime.Now;
                             procedureUpload.files = readyUpload;
@@ -343,9 +395,9 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
             try
             {
-                List<FileReadyUpload> readyUpload = new List<FileReadyUpload>();
+                List<BPIWebApplication.Shared.MainModel.Stream.FileStream> readyUpload = new List<BPIWebApplication.Shared.MainModel.Stream.FileStream>();
 
-                if (activeUser.role.Contains("admin"))
+                if (activeUser.userPrivileges.Contains("ED"))
                 {
                     if (listFileUploadWi != null)
                     {
@@ -361,7 +413,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
                             stream.Close();
 
-                            readyUpload.Add(new FileReadyUpload
+                            readyUpload.Add(new BPIWebApplication.Shared.MainModel.Stream.FileStream
                             {
                                 type = "WI",
                                 fileName = fi.Name,
@@ -387,7 +439,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
                             stream.Close();
 
-                            readyUpload.Add(new FileReadyUpload
+                            readyUpload.Add(new BPIWebApplication.Shared.MainModel.Stream.FileStream
                             {
                                 type = "SOP",
                                 fileName = fi.Name,
@@ -410,12 +462,12 @@ namespace BPIWebApplication.Client.Pages.SopPages
                     {
                         // pass data files and procedure details
 
-                        ProcedureUpload procedureUpload = new ProcedureUpload();
+                        ProcedureStream procedureUpload = new ProcedureStream();
                         procedureUpload.procedureDetails = new QueryModel<Procedure>();
-                        procedureUpload.files = new List<FileReadyUpload>();
+                        procedureUpload.files = new List<BPIWebApplication.Shared.MainModel.Stream.FileStream>();
 
                         procedureUpload.procedureDetails.Data = procedure;
-                        procedureUpload.procedureDetails.userEmail = activeUser.UserLogin.userName;
+                        procedureUpload.procedureDetails.userEmail = activeUser.userName;
                         procedureUpload.procedureDetails.userAction = "U";
                         procedureUpload.procedureDetails.userActionDate = DateTime.Now;
                         procedureUpload.files = readyUpload;
@@ -451,7 +503,9 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
         private async void handleDownload(string path, string procNo)
         {
-            var dt = await ProcedureService.GetFile(path);
+            var temp = path + "!_!" + procNo;
+
+            var dt = await ProcedureService.GetFile(temp);
 
             if (!dt.isSuccess)
             {

@@ -1,0 +1,209 @@
+﻿@page "/pettycash/generatesi"
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
+@inject ILoginService LoginService
+@inject IManagementService ManagementService
+@inject IPettyCashService PettyCashService
+@inject IJSRuntime JS
+
+
+<PageTitle>Petty Cash - Generate SI</PageTitle>
+
+@if (LoginService.activeUser == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    if (LoginService.activeUser.userPrivileges != null)
+    {
+        @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
+        {
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <h3>User Require Elevation</h3>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="container-fluid">
+                <h3>Petty Cash</h3>
+                <small><i>Generate SI</i></small>
+
+                <div class="mt-4">
+                    <button type="button" class="btn btn-sm btn-warning my-1" @onclick="modalShow"><b>Apply Document</b></button>
+                </div>
+
+
+                @if (reimburses.Any())
+                {
+                    <button type="button" style="width: 40px;" class="btn btn-sm btn-danger my-1" @onclick="@(() => reimburseAction("remove"))" ><i class="oi oi-circle-x"></i></button>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <td class="text-center align-middle">
+                                        <input class="form-check-input" type="checkbox" id="checkall" @onclick="checkAll" checked="@(reimburseCheckAllisChecked.Equals(true) ? "checked" : null)" />
+                                    </td>
+                                    <td class="text-center align-middle fw-bold">Reimburse ID</td>
+                                    <td class="text-center align-middle fw-bold">Reimburse Date</td>
+                                    <td class="text-center align-middle fw-bold">Location</td>
+                                    <td class="text-center align-middle fw-bold">Applicant</td>
+                                    <td class="text-center align-middle fw-bold">Total Amount</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var reimburse in reimburses)
+                                {
+                                    <tr>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input" type="checkbox" id="@reimburse.ReimburseID" @onclick="(() => appendReimburseSelected(reimburse))" checked="@(selectedReimburse.SingleOrDefault(a => a.ReimburseID == reimburse.ReimburseID) != null ? "checked" : null)" />
+                                        </td>
+                                        <td class="text-center align-middle">@reimburse.ReimburseID</td>
+                                        <td class="text-center align-middle">@reimburse.ReimburseDate.ToString("dd / MM / yyyy")</td>
+                                        <td class="text-center align-middle">@reimburse.LocationID</td>
+                                        <td class="text-center align-middle">@reimburse.Applicant</td>
+                                        <td class="text-center align-middle">@reimburse.lines.Sum(x => x.ApprovedAmount).ToString("N0")</td>
+                                    </tr>
+                                }
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row my-2">
+                        <button type="button" title="Please Recheck the Total Amount" class="btn btn-sm btn-primary fw-bold" disabled="@(LoginService.activeUser.userPrivileges.Contains("XP") ? null : "disabled")" @onclick="generateSI">Generate SI</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <strong>No Reimburse Selected !</strong> Apply from Button Above
+                    </div>
+                }
+
+            </div>
+
+            @if (showModal)
+            {
+                <div class="modal fade show" id="selectReimburseModal" tabindex="-1" role="dialog" aria-labelledby="selectReimburseModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog modal-xl" role="document">
+                        <div class="modal-content">
+
+                            <div class="modal-header cus-bg">
+                                <p class="modal-title text-white"><b>Select Expense(s)</b></p>
+                                <button type="button" class="close border-0" @onclick="modalHide">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+
+                                @if (checkReimburseDataPresent())
+                                {
+                                    <table class="table table-sm table-bordered" style="width: 100%">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 5%;" class="text-center align-middle">Select</th>
+                                                <th style="width: 19%;" class="text-center align-middle">Reimburse ID</th>
+                                                <th style="width: 19%;" class="text-center align-middle">Location</th>
+                                                <th style="width: 15%;" scope="col" class="d-none d-sm-table-cell text-center align-middle">Date</th>
+                                                <th style="width: 21%;" scope="col" class="d-none d-sm-table-cell text-center align-middle">Applicant</th>
+                                                <th style="width: 21%;" class="text-center align-middle">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var reim in PettyCashService.reimburses)
+                                            {
+                                                <tr id="selectExpenseRowStyle" @onclick="(() => appendReimburseSelected(reim))">
+                                                    <td style="text-align: center;">
+                                                        <input class="form-check-input" type="checkbox" id="@reim.ReimburseID" value="@reim.ReimburseID" checked="@((selectedReimburse.SingleOrDefault(a => a.ReimburseID == reim.ReimburseID) != null) ? "checked" : null)" />
+                                                    </td>
+
+                                                    <td style="font-size: 13px; text-align: center;">@reim.ReimburseID</td>
+                                                    <td style="font-size: 13px; text-align: center;">@reim.LocationID</td>
+                                                    <td class="d-none d-sm-table-cell" style="font-size: 13px; text-align: center;">@reim.ReimburseDate.ToString("dd / MM / yyyy")</td>
+                                                    <td class="d-none d-sm-table-cell" style="font-size: 13px; text-align: center;">@reim.Applicant</td>
+                                                    <td style="font-size: 13px; text-align: center;">@reim.lines.Sum(x => x.ApprovedAmount).ToString("N0")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+
+                                    <ul class="pagination pagination-sm justify-content-center my-2">
+
+                                        @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                                        @if ((reimbursePageActive - 1) > 0)
+                                        {
+                                            <li class="page-item px-1 paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive - 1)))"><span class="page-link">Previous</span></li>
+                                            <li class="page-item paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive - 1)))"><span class="page-link">@(reimbursePageActive - 1)</span></li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                                            <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                        }
+
+                                        <li class="page-item active paging-style" @onclick="(() => reimbursePageSelect(reimbursePageActive))"><span class="page-link">@reimbursePageActive</span></li>
+
+                                        @if (reimbursePageActive < reimburseNumberofPage)
+                                        {
+                                            <li class="page-item paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive + 1)))"><span class="page-link">@(reimbursePageActive + 1)</span></li>
+                                            <li class="page-item px-1 paging-style" @onclick="(() => reimbursePageSelect((reimbursePageActive + 1)))"><span class="page-link">Next</span></li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                                            <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                                        }
+
+
+                                        @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                        <strong>There is no Outstanding Expense(s) !</strong> Have a great day !
+                                    </div>
+                                }
+
+                            </div>
+                            <div class="modal-footer cus-bg">
+                                <button type="button" class="btn btn-sm btn-primary" @onclick="applyReimburse">
+                                    Select
+                                    @if (isLoading)
+                                    {
+                                        <span id="spinnerLogin" class="spinner-border spinner-border-sm"></span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+    else
+    {
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col align-middle text-center">
+                    <h3>Fetch Data Privileges in Process</h3>
+                    <small>Refresh Page Using Button Below If There is No Response</small>
+                    <br />
+                    <button type="button" class="btn btn-primary my-4" @onclick="(() => StateHasChanged())"><b>Refresh Page</b></button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@if (isLoading)
+{
+    <div class="modal show" id="splashLoading" tabindex="-5" role="dialog" aria-labelledby="splashLoadingDialog" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+        <BPIWebApplication.Client.Shared.CustomLayout.SplashScreen></BPIWebApplication.Client.Shared.CustomLayout.SplashScreen>
+    </div>
+}

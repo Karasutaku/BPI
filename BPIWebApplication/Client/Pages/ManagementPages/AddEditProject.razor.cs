@@ -1,14 +1,20 @@
 ﻿using BPIWebApplication.Shared.DbModel;
+using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.PagesModel.AddEditProject;
 using BPIWebApplication.Shared.PagesModel.AddEditUser;
 using Microsoft.AspNetCore.Components;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BPIWebApplication.Client.Pages.ManagementPages
 {
-    public partial class AddEditProject
+    public partial class AddEditProject : ComponentBase
     {
         [Parameter]
         public string? param { get; set; }
+
+        private ActiveUser activeUser = new();
+        private UserPrivileges privilegeDataParam = new();
+        private List<string> userPriv = new();
 
         // message trigger flag
         private bool alertTrigger = false;
@@ -20,7 +26,8 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
         private bool successAlert = false;
 
         private Project project = new Project();
-        private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
+        private Project editProject = new Project();
+        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
 
         private static string Base64Decode(string base64EncodedData)
         {
@@ -36,11 +43,66 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
 
         protected override async Task OnInitializedAsync()
         {
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+                LoginService.activeUser.userPrivileges.Clear();
 
-            activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            activeUser.UserLogin = new LoginUser();
-            activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            if (syncSessionStorage.ContainKey("PagePrivileges"))
+                syncSessionStorage.RemoveItem("PagePrivileges");
+
+            string tkn = syncSessionStorage.GetItem<string>("token");
+
+            if (syncSessionStorage.ContainKey("userName"))
+            {
+                privilegeDataParam.moduleId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("ModuleId")));
+                privilegeDataParam.UserName = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam = new();
+                privilegeDataParam.userLocationParam.SessionId = syncSessionStorage.GetItem<string>("SessionId");
+                privilegeDataParam.userLocationParam.MacAddress = "";
+                privilegeDataParam.userLocationParam.IpClient = "";
+                privilegeDataParam.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("AppV")));
+                privilegeDataParam.userLocationParam.LocationId = Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[1];
+                privilegeDataParam.userLocationParam.Name = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[0]);
+                privilegeDataParam.userLocationParam.PageIndex = 1;
+                privilegeDataParam.userLocationParam.PageSize = 100;
+                privilegeDataParam.privileges = new();
+            }
+
+            var res = await LoginService.frameworkApiFacadePrivilege(privilegeDataParam, tkn);
+
+            userPriv.Clear();
+
+            if (res.isSuccess)
+            {
+                if (res.Data.privileges.Any())
+                {
+                    foreach (var priv in res.Data.privileges)
+                    {
+                        userPriv.Add(priv.privilegeId);
+                    }
+                }
+
+                syncSessionStorage.SetItem("PagePrivileges", userPriv);
+
+                LoginService.activeUser.userPrivileges = userPriv;
+
+            }
+            //
+
+            activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+
+            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //activeUser.UserLogin = new LoginUser();
+            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
+            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
 
             // _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/SopPages/Dashboard.razor.js");
 
@@ -54,7 +116,8 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
 
                 if (ManagementService.projects.SingleOrDefault(a => a.ProjectName == temp) != null)
                 {
-                    project = ManagementService.projects.SingleOrDefault(a => a.ProjectName == temp);
+                    editProject = new();
+                    editProject = ManagementService.projects.SingleOrDefault(a => a.ProjectName == temp);
                 }
                 else
                 {
@@ -78,7 +141,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
                     insertData.Data = new Project();
 
                     insertData.Data = project;
-                    insertData.userEmail = activeUser.UserLogin.userName;
+                    insertData.userEmail = activeUser.userName;
                     insertData.userAction = "I";
                     insertData.userActionDate = DateTime.Now;
 
@@ -105,7 +168,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
 
         }
 
-        private async void editProject()
+        private async void editProjectData()
         {
             try
             {
@@ -113,7 +176,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
                 updateData.Data = new Project();
 
                 updateData.Data = project;
-                updateData.userEmail = activeUser.UserLogin.userName;
+                updateData.userEmail = activeUser.userName;
                 updateData.userAction = "U";
                 updateData.userActionDate = DateTime.Now;
 

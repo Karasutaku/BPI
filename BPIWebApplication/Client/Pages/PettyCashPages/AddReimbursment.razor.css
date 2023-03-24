@@ -1,4 +1,58 @@
-﻿.separator {
+﻿th {
+    font-size: 13px;
+    text-align: center;
+}
+
+td {
+    vertical-align: middle;
+}
+
+.card-header {
+    background: rgb(254,255,125);
+    background: linear-gradient(90deg, rgba(254,255,125,0.44870448179271705) 0%, rgba(255,222,87,0.5439425770308124) 38%, rgba(245,255,118,0.48792016806722693) 100%);
+}
+
+#selectExpenseRowStyle {
+    cursor: pointer;
+}
+
+#title_amount {
+    text-align: center;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+#total_amount {
+    text-align: end;
+}
+
+#nominal_amount {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+#attachCard {
+    cursor: pointer;
+    background: rgb(254,255,125);
+    background: linear-gradient(90deg, rgba(254,255,125,0.44870448179271705) 0%, rgba(255,222,87,0.5439425770308124) 38%, rgba(245,255,118,0.48792016806722693) 100%);
+}
+
+#AccordionTitleCard {
+    width: 90%;
+    color: white;
+    background-color: #515060;
+}
+
+#AccordionDeleteCard {
+    width: 10%;
+}
+
+.cus-bg {
+    background: rgb(2,0,36);
+    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,0.41789215686274506) 35%, rgba(27,66,138,0.6643907563025211) 100%);
+}
+
+.separator {
     display: flex;
     align-items: center;
     text-align: center;
@@ -18,49 +72,3 @@
     .separator:not(:empty)::after {
         margin-left: .25em;
     }
-
-label {
-    margin-top: 5px;
-}
-
-input {
-    margin-bottom: 5px;
-}
-
-select {
-    margin-bottom: 5px;
-}
-
-th {
-    font-size: 13px;
-    text-align: center;
-}
-
-td {
-    text-align: center;
-    vertical-align: middle;
-}
-
-#title_amount {
-    text-align: center;
-    font-weight: bold;
-    vertical-align: middle;
-}
-
-#total_amount {
-    text-align: end;
-}
-
-#nominal_amount {
-    font-size: 25px;
-    font-weight: bold;
-}
-
-.modal-body {
-    height: 70vh;
-    overflow-y: auto;
-}
-
-.modal {
-    overflow-y: hidden;
-}

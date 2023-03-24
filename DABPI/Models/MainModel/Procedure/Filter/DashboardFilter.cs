@@ -2,6 +2,7 @@
 {
     public class DashboardFilter
     {
+        public string locationId { get; set; } = string.Empty;
         public int pageNo { get; set; } = 0;
         public int rowPerPage { get; set; } = 0;
         public string filterNo { get; set; } = string.Empty;

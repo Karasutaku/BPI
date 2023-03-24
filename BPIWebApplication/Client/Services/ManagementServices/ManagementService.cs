@@ -1,6 +1,7 @@
-﻿using BPIWebApplication.Shared;
-using BPIWebApplication.Shared.DbModel;
+﻿using BPIWebApplication.Shared.DbModel;
 using BPIWebApplication.Shared.FileUploadModel;
+using BPIWebApplication.Shared.MainModel;
+using BPIWebApplication.Shared.MainModel.Procedure;
 using BPIWebApplication.Shared.PagesModel.AddEditProject;
 using BPIWebApplication.Shared.PagesModel.AddEditUser;
 using System.Net.Http.Json;
@@ -19,6 +20,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
         public List<Department> departments { get; set; } = new List<Department>();
         public List<UserAdmin> users { get; set; } = new List<UserAdmin>();
         public List<Project> projects { get; set; } = new List<Project>();
+        public List<LocationResp> locations { get; set; } = new List<LocationResp>();
 
         // encode decode base 64
 
@@ -36,13 +38,47 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
         // get
 
-        public async Task<ResultModel<List<BisnisUnit>>> GetAllBisnisUnit()
+        public async Task<ResultModel<List<LocationResp>>> GetCompanyLocations(Location data)
+        {
+            ResultModel<List<LocationResp>> resData = new ResultModel<List<LocationResp>>();
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<Location>("api/endUser/BPIBase/getCompanyLocation", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<List<LocationResp>>>();
+
+                    if (respBody.isSuccess)
+                    {
+                        locations = respBody.Data;
+
+                        resData.Data = respBody.Data;
+                        resData.isSuccess = respBody.isSuccess;
+                        resData.ErrorCode = respBody.ErrorCode;
+                        resData.ErrorMessage = respBody.ErrorMessage;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = null;
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
+
+            return resData;
+        }
+
+        public async Task<ResultModel<List<BisnisUnit>>> GetAllBisnisUnit(string param)
         {
             ResultModel<List<BisnisUnit>> resData = new ResultModel<List<BisnisUnit>>();
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/Management/getAllBisnisUnitData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>($"api/endUser/BPIBase/getAllBisnisUnitData/{param}");
                 //var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/endUser/BPIBase/getAllBisnisUnitData");
 
                 if (result.isSuccess)
@@ -65,13 +101,13 @@ namespace BPIWebApplication.Client.Services.ManagementServices
             return resData;
         }
 
-        public async Task<ResultModel<List<Department>>> GetAllDepartment()
+        public async Task<ResultModel<List<Department>>> GetAllDepartment(string param)
         {
             ResultModel<List<Department>> resData = new ResultModel<List<Department>>();
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>("api/Management/getAllDepartmentData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>($"api/endUser/BPIBase/getAllDepartmentData/{param}");
 
                 if (result.isSuccess)
                 {
@@ -99,7 +135,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<UserAdmin>>>("api/Management/getAllUserAdminData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<UserAdmin>>>("api/endUser/BPIBase/getAllUserAdminData");
 
                 if (result.isSuccess)
                 {
@@ -127,7 +163,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<Project>>>("api/Management/getAllProjectData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Project>>>("api/endUser/BPIBase/getAllProjectData");
 
                 if (result.isSuccess)
                 {
@@ -157,7 +193,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<Department>>("api/Management/createNewDepartmentData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<Department>>("api/endUser/BPIBase/createNewDepartmentData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -189,7 +225,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<UserAdmin>>("api/Management/createNewUserAdminData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<UserAdmin>>("api/endUser/BPIBase/createNewUserAdminData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -221,7 +257,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<Project>>("api/Management/createNewProjectData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<Project>>("api/endUser/BPIBase/createNewProjectData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -255,7 +291,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<Department>>("api/Management/editDepartmentData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<Department>>("api/endUser/BPIBase/editDepartmentData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -287,7 +323,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<UserAdmin>>("api/Management/editUserAdminData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<UserAdmin>>("api/endUser/BPIBase/editUserAdminData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -319,7 +355,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.PostAsJsonAsync<QueryModel<Project>>("api/Management/editProjectData", data);
+                var result = await _http.PostAsJsonAsync<QueryModel<Project>>("api/endUser/BPIBase/editProjectData", data);
 
                 if (result.IsSuccessStatusCode)
                 {
@@ -355,7 +391,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<string>>($"api/Procedure/isProcedureDataPresent/{temp}");
+                var result = await _http.GetFromJsonAsync<ResultModel<string>>($"api/endUser/BPIBase/isProcedureDataPresent/{temp}");
 
                 if (result.isSuccess)
                 {
@@ -390,7 +426,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<string>>($"api/Procedure/isUserAdminPresent/{temp}");
+                var result = await _http.GetFromJsonAsync<ResultModel<string>>($"api/endUser/BPIBase/isUserAdminPresent/{temp}");
 
                 if (result.isSuccess)
                 {
@@ -425,7 +461,7 @@ namespace BPIWebApplication.Client.Services.ManagementServices
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<string>>($"api/Procedure/isProjectPresent/{temp}");
+                var result = await _http.GetFromJsonAsync<ResultModel<string>>($"api/endUser/BPIBase/isProjectPresent/{temp}");
 
                 if (result.isSuccess)
                 {

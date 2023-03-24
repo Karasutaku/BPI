@@ -1,156 +1,185 @@
 ﻿@page "/procedure/accesshistory"
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
 @inject IProcedureService ProcedureService
+@inject ILoginService LoginService
 @inject IJSRuntime JS
 
 <PageTitle>SOP - History</PageTitle>
 
 
-@if (!(activeUser.role.Contains("admin") || !activeUser.role.Contains("guest")))
+@if (LoginService.activeUser == null)
 {
-    <h3>User Require Elevation</h3>
+    <p>Loading...</p>
 }
 else
 {
-    <div class="container-fluid">
-
-        <div class="row justify-content-md-between">
-            <div class="col-md-auto">
-                <div class="d-flex flex-column align-items-start">
-                    <h3>Standard Operational Procedures</h3>
-                    <small><i>Access History - Page @pageActive of @numberofPage</i></small>
-                </div>
-            </div>
-            <div class="col-md-4">
-
-                <div class="row">
-                    <label class="fw-bold">Filter</label>
-                </div>
-
-                <div class="row d-flex flex-row">
-                    <select class="form-select-sm" @bind="historyFilterSelect" onselect="historyFilterSelected" id="inputFilter">
-                        <option disabled hidden>Choose Filter</option>
-                        <option value="procNo">Procedure No</option>
-                        <option value="procName">Procedure Name</option>
-                        <option value="userEmail">User</option>
-                    </select>
-                    
-                    <input type="text" class="form-control" placeholder="Details . . ." @bind="filterDetails" @bind:event="oninput" />
-                    <button type="button" class="btn btn-sm btn-primary-cus" @onclick="applyFilter">Filter</button>
-                    <button type="button" class="btn btn-sm btn-secondary" @onclick="resetFilter">Reset</button>
-                </div>
-
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-sm table-hover">
-                <thead>
-                    <tr>
-                        <th scope="col">Nomor Dokumen</th>
-                        <th scope="col">Nama Dokumen</th>
-                        <th scope="col">User</th>
-                        <th scope="col">Access Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var hist in ProcedureService.historyAccess)
-                    {
-                        <tr>
-                            <td>@hist.ProcedureNo</td>
-                            <td>@hist.ProcedureName</td>
-                            <td>@hist.UserEmail</td>
-                            <td>@hist.HistoryAccessDate</td>
-                        </tr>    
-                    }    
-                </tbody>
-            </table>
-        </div>
-
-        <ul class="pagination pagination-sm justify-content-center">
-
-            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
-            @if ((pageActive - 1) > 0)
-            {
-                <li class="page-item px-1 paging-style" @onclick="(() => pageSelect((pageActive - 1)))"><span class="page-link">Previous</span></li>
-                <li class="page-item paging-style" @onclick="(() => pageSelect((pageActive - 1)))"><span class="page-link">@(pageActive - 1)</span></li>
-            }
-            else
-            {
-                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
-                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
-            }
-
-            <li class="page-item active paging-style" @onclick="(() => pageSelect(pageActive))"><span class="page-link">@pageActive</span></li>
-
-            @if (pageActive < numberofPage)
-            {
-                <li class="page-item paging-style" @onclick="(() => pageSelect((pageActive + 1)))"><span class="page-link">@(pageActive + 1)</span></li>
-                <li class="page-item px-1 paging-style" @onclick="(() => pageSelect((pageActive + 1)))"><span class="page-link">Next</span></li>
-            }
-            else
-            {
-                <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
-                <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
-            }
-
-
-            @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
-        </ul>
-
-        <button class="btn btn-sm btn-primary-cus" type="button" @onclick="modalShow">Export Data</button>
-
-        <p></p>
-    </div>
-
-    @if (showModal)
+    @if (LoginService.activeUser.userPrivileges != null)
     {
-        <div class="modal fade show" id="exportHistoryModal" tabindex="-1" role="dialog" aria-labelledby="exportHistoryModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    @* header *@
-                    <div class="modal-header">
-                        <div class="nav">
-                            <p>Export to (*.xlsx)</p>
-                        </div>
+        @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
+        {
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <h3>User Require Elevation</h3>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="container-fluid">
 
-                        <button type="button" class="close" @onclick="modalHide">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-
-                    <div class="modal-body">
-                        @* body *@
-                        <div class="form-group">
-                            <EditForm Model="reportSubmit">
-                                <div class="row">
-                                    <div class="col">
-                                        <label for="inputStartDate">Start Date :</label>
-                                        <InputDate class="form-control" id="inputStartDate" @bind-Value="reportSubmit.startDate"></InputDate>
-                                    </div>
-
-                                    <div class="col">
-                                        <label for="inputEndDate">End Date :</label>
-                                        <InputDate class="form-control" id="inputEndDate" @bind-Value="reportSubmit.endDate"></InputDate>
-                                    </div>
-                                </div>
-                            
-                                <div class="row">
-                                    <div class="col">
-                                        <label for="inputTextProcNo">Procedure No :</label>
-                                        <InputText class="form-control" id="inputTextProcNo" @bind-Value="reportSubmit.procedureNo"></InputText>
-                                    </div>
-                                </div>
-                            </EditForm>
+                <div class="row justify-content-md-between">
+                    <div class="col-md-auto">
+                        <div class="d-flex flex-column align-items-start">
+                            <h3>Standard Operational Procedures</h3>
+                            <small><i>Access History - Page @pageActive of @numberofPage</i></small>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-warning" @onclick="modalHide">Hide</button>
-                        <button type="submit" class="btn btn-primary" @onclick="exportAccessHistoryReport">Export</button>
+                    <div class="col-md-4">
+
+                        <div class="row">
+                            <label class="fw-bold">Filter</label>
+                        </div>
+
+                        <div class="row d-flex flex-row">
+                            <select class="form-select-sm" @bind="historyFilterSelect" onselect="historyFilterSelected" id="inputFilter">
+                                <option disabled hidden>Choose Filter</option>
+                                <option value="procNo">Procedure No</option>
+                                <option value="procName">Procedure Name</option>
+                                <option value="userEmail">User</option>
+                            </select>
+
+                            <input type="text" class="form-control" placeholder="Details . . ." @bind="filterDetails" @bind:event="oninput" />
+                            <button type="button" class="btn btn-sm btn-primary-cus" @onclick="applyFilter">Filter</button>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="resetFilter">Reset</button>
+                        </div>
+
                     </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">Nomor Dokumen</th>
+                                <th scope="col">Nama Dokumen</th>
+                                <th scope="col">User</th>
+                                <th scope="col">Access Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var hist in ProcedureService.historyAccess)
+                            {
+                                <tr>
+                                    <td>@hist.ProcedureNo</td>
+                                    <td>@hist.ProcedureName</td>
+                                    <td>@hist.UserEmail</td>
+                                    <td>@hist.HistoryAccessDate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <ul class="pagination pagination-sm justify-content-center">
+
+                    @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                    @if ((pageActive - 1) > 0)
+                    {
+                        <li class="page-item px-1 paging-style" @onclick="(() => pageSelect((pageActive - 1)))"><span class="page-link">Previous</span></li>
+                        <li class="page-item paging-style" @onclick="(() => pageSelect((pageActive - 1)))"><span class="page-link">@(pageActive - 1)</span></li>
+                    }
+                    else
+                    {
+                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Previous</span></li>
+                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                    }
+
+                    <li class="page-item active paging-style" @onclick="(() => pageSelect(pageActive))"><span class="page-link">@pageActive</span></li>
+
+                    @if (pageActive < numberofPage)
+                    {
+                        <li class="page-item paging-style" @onclick="(() => pageSelect((pageActive + 1)))"><span class="page-link">@(pageActive + 1)</span></li>
+                        <li class="page-item px-1 paging-style" @onclick="(() => pageSelect((pageActive + 1)))"><span class="page-link">Next</span></li>
+                    }
+                    else
+                    {
+                        <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
+                        <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
+                    }
+
+
+                    @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
+                </ul>
+
+                <button class="btn btn-sm btn-primary-cus" type="button" @onclick="modalShow">Export Data</button>
+
+                <p></p>
+            </div>
+
+            @if (showModal)
+            {
+                <div class="modal fade show" id="exportHistoryModal" tabindex="-1" role="dialog" aria-labelledby="exportHistoryModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            @* header *@
+                            <div class="modal-header">
+                                <div class="nav">
+                                    <p>Export to (*.xlsx)</p>
+                                </div>
+
+                                <button type="button" class="close" @onclick="modalHide">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                @* body *@
+                                <div class="form-group">
+                                    <EditForm Model="reportSubmit">
+                                        <div class="row">
+                                            <div class="col">
+                                                <label for="inputStartDate">Start Date :</label>
+                                                <InputDate class="form-control" id="inputStartDate" @bind-Value="reportSubmit.startDate"></InputDate>
+                                            </div>
+
+                                            <div class="col">
+                                                <label for="inputEndDate">End Date :</label>
+                                                <InputDate class="form-control" id="inputEndDate" @bind-Value="reportSubmit.endDate"></InputDate>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col">
+                                                <label for="inputTextProcNo">Procedure No :</label>
+                                                <InputText class="form-control" id="inputTextProcNo" @bind-Value="reportSubmit.procedureNo"></InputText>
+                                            </div>
+                                        </div>
+                                    </EditForm>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-warning" @onclick="modalHide">Hide</button>
+                                <button type="submit" class="btn btn-primary" @onclick="exportAccessHistoryReport">Export</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+    else
+    {
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col align-middle text-center">
+                    <h3>Fetch Data Privileges in Process</h3>
+                    <small>Refresh Page Using Button Below If There is No Response</small>
+                    <br />
+                    <button type="button" class="btn btn-primary my-4" @onclick="(() => StateHasChanged())"><b>Refresh Page</b></button>
                 </div>
             </div>
         </div>
     }
-    
 }
+
