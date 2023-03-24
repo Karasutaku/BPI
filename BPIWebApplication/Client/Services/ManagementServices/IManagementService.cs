@@ -16,8 +16,8 @@ namespace BPIWebApplication.Client.Services.ManagementServices
         List<LocationResp> locations { get; set; }
 
         // get
-        Task<ResultModel<List<BisnisUnit>>> GetAllBisnisUnit();
-        Task<ResultModel<List<Department>>> GetAllDepartment();
+        Task<ResultModel<List<BisnisUnit>>> GetAllBisnisUnit(string param);
+        Task<ResultModel<List<Department>>> GetAllDepartment(string param);
         Task<ResultModel<List<UserAdmin>>> GetAllUserAdmin();
         Task<ResultModel<List<Project>>> GetAllProject();
         Task<ResultModel<List<LocationResp>>> GetCompanyLocations(Location data);

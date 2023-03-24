@@ -196,13 +196,13 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
             return resData;
         }
 
-        public async Task<ResultModel<List<DepartmentProcedure>>> GetDepartmentProcedurewithPaging(int pageNo)
+        public async Task<ResultModel<List<DepartmentProcedure>>> GetDepartmentProcedurewithPaging(string param)
         {
             ResultModel<List<DepartmentProcedure>> resData = new ResultModel<List<DepartmentProcedure>>();
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/endUser/Procedure/getDepartmentProcedureDatawithPaging/{pageNo}");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/endUser/Procedure/getDepartmentProcedureDatawithPaging/{param}");
 
                 if (result.isSuccess)
                 {
@@ -474,13 +474,13 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
             return resData.Data;
         }
 
-        public async Task<int> getDepartmentProcedureNumberofPage()
+        public async Task<int> getDepartmentProcedureNumberofPage(string param)
         {
             ResultModel<int> resData = new ResultModel<int>();
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/endUser/Procedure/getDepartmentProcedureNumberofPage");
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/endUser/Procedure/getDepartmentProcedureNumberofPage/{param}");
 
                 if (result.isSuccess)
                 {

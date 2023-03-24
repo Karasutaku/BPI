@@ -26,7 +26,7 @@
 
             @if (childApplications != null)
             {
-                @foreach (var ca in childApplications)
+                @foreach (var ca in childApplications.OrderBy(order => order.ChildApplicationId))
                 {
                     @*<li class="nav-header text-white my-2">@ca.ChildApplicationName</li>*@
                     <div id="MainModuleMenu" class="nav-item px-2 trigger-button" @onclick="(() => toggleCaMenu(ca))">
@@ -69,6 +69,14 @@
                         }
                     }
                 }
+            }
+            else
+            {
+                <div id="CategoryModuleMenu" class="nav-item px-2 py-1">
+                    <a class="nav-link">
+                        <span class="oi oi-reload" aria-hidden="true"></span> Reload Page
+                    </a>
+                </div>
             }
             
         </div>

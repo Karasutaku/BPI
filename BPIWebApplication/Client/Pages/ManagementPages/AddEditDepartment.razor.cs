@@ -2,6 +2,7 @@
 using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.MainModel.Procedure;
 using Microsoft.AspNetCore.Components;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
 
 namespace BPIWebApplication.Client.Pages.ManagementPages
@@ -10,6 +11,10 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
     {
         [Parameter]
         public string? param { get; set; }
+
+        private ActiveUser activeUser = new();
+        private UserPrivileges privilegeDataParam = new();
+        private List<string> userPriv = new();
 
         // message trigger flag
         private bool alertTrigger = false;
@@ -38,13 +43,67 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
 
         protected override async Task OnInitializedAsync()
         {
-            // await ProcedureService.GetAllBisnisUnit();
-            // await ProcedureService.GetAllDepartment();
 
-            // filePath = config.GetValue<string>("FilePath:FileUploadPath");
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+                LoginService.activeUser.userPrivileges.Clear();
 
-            await ManagementService.GetAllBisnisUnit();
-            await ManagementService.GetAllDepartment();
+            if (syncSessionStorage.ContainKey("PagePrivileges"))
+                syncSessionStorage.RemoveItem("PagePrivileges");
+
+            string tkn = syncSessionStorage.GetItem<string>("token");
+
+            if (syncSessionStorage.ContainKey("userName"))
+            {
+                privilegeDataParam.moduleId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("ModuleId")));
+                privilegeDataParam.UserName = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam = new();
+                privilegeDataParam.userLocationParam.SessionId = syncSessionStorage.GetItem<string>("SessionId");
+                privilegeDataParam.userLocationParam.MacAddress = "";
+                privilegeDataParam.userLocationParam.IpClient = "";
+                privilegeDataParam.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("AppV")));
+                privilegeDataParam.userLocationParam.LocationId = Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[1];
+                privilegeDataParam.userLocationParam.Name = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[0]);
+                privilegeDataParam.userLocationParam.PageIndex = 1;
+                privilegeDataParam.userLocationParam.PageSize = 100;
+                privilegeDataParam.privileges = new();
+            }
+
+            var res = await LoginService.frameworkApiFacadePrivilege(privilegeDataParam, tkn);
+
+            userPriv.Clear();
+
+            if (res.isSuccess)
+            {
+                if (res.Data.privileges.Any())
+                {
+                    foreach (var priv in res.Data.privileges)
+                    {
+                        userPriv.Add(priv.privilegeId);
+                    }
+                }
+
+                syncSessionStorage.SetItem("PagePrivileges", userPriv);
+
+                LoginService.activeUser.userPrivileges = userPriv;
+
+            }
+            //
+
+            activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+
+            string loc = activeUser.location.Equals("") ? "HO" : activeUser.location;
+
+            await ManagementService.GetAllBisnisUnit(Base64Encode(loc));
+            await ManagementService.GetAllDepartment(Base64Encode(loc));
 
             //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             //activeUser.UserLogin = new LoginUser();
@@ -63,6 +122,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
 
                 if (ManagementService.departments.SingleOrDefault(a => a.DepartmentID == temp) != null)
                 {
+                    editDepartment = new();
                     editDepartment = ManagementService.departments.SingleOrDefault(a => a.DepartmentID == temp);
                 }
                 else
@@ -85,7 +145,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
                     insertData.Data = new Department();
 
                     insertData.Data = department;
-                    //insertData.userEmail = activeUser.UserLogin.userName;
+                    insertData.userEmail = activeUser.userName;
                     insertData.userAction = "I";
                     insertData.userActionDate = DateTime.Now;
 
@@ -119,7 +179,7 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
                 updateData.Data = new Department();
 
                 updateData.Data = editDepartment;
-                //updateData.userEmail = activeUser.UserLogin.userName;
+                updateData.userEmail = activeUser.userName;
                 updateData.userAction = "U";
                 updateData.userActionDate = DateTime.Now;
 

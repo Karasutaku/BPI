@@ -1,14 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
-using System.Runtime.InteropServices;
 using Microsoft.JSInterop;
-using System.Buffers.Text;
-using System.Runtime.CompilerServices;
 using BPIWebApplication.Shared.DbModel;
 using BPIWebApplication.Shared.PagesModel.Dashboard;
-using Microsoft.AspNetCore.Components.Web;
-using System.Diagnostics;
 using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.MainModel.Procedure;
+using BPIWebApplication.Client.Services.LoginServices;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BPIWebApplication.Client.Pages.SopPages
 {
@@ -32,21 +29,6 @@ namespace BPIWebApplication.Client.Pages.SopPages
             return departmentSelect;
         }
 
-        private async void resetFilter ()
-        {
-            filterActive = false;
-            FilterProcedure = string.Empty;
-            bisnisUnitSelect = string.Empty;
-            departmentSelect = string.Empty;
-
-            pageActive = 1;
-
-            await ProcedureService.GetDepartmentProcedurewithPaging(pageActive);
-            numberofPage = await ProcedureService.getDepartmentProcedureNumberofPage();
-
-            StateHasChanged();
-        }
-
         //public bool isVisible (DepartmentProcedure departmentProcedure)
         //{
         //    if (string.IsNullOrEmpty(FilterProcedure) && string.IsNullOrEmpty(departmentSelected()))
@@ -63,8 +45,9 @@ namespace BPIWebApplication.Client.Pages.SopPages
         //    return false;
         //}
 
-        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
         private ActiveUser activeUser = new();
+        private UserPrivileges privilegeDataParam = new();
+        private List<string> userPriv = new();
 
         private IJSObjectReference _jsModule;
         private int pageActive, numberofPage;
@@ -74,6 +57,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
             return Convert.ToBase64String(plainTextBytes);
         }
+
         private static string Base64Decode(string base64EncodedData)
         {
             var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
@@ -82,6 +66,52 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
         protected override async Task OnInitializedAsync()
         {
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+                LoginService.activeUser.userPrivileges.Clear();
+
+            if (syncSessionStorage.ContainKey("PagePrivileges"))
+                syncSessionStorage.RemoveItem("PagePrivileges");
+
+            string tkn = syncSessionStorage.GetItem<string>("token");
+
+            if (syncSessionStorage.ContainKey("userName"))
+            {
+                privilegeDataParam.moduleId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("ModuleId")));
+                privilegeDataParam.UserName = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam = new();
+                privilegeDataParam.userLocationParam.SessionId = syncSessionStorage.GetItem<string>("SessionId");
+                privilegeDataParam.userLocationParam.MacAddress = "";
+                privilegeDataParam.userLocationParam.IpClient = "";
+                privilegeDataParam.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("AppV")));
+                privilegeDataParam.userLocationParam.LocationId = Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[1];
+                privilegeDataParam.userLocationParam.Name = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[0]);
+                privilegeDataParam.userLocationParam.PageIndex = 1;
+                privilegeDataParam.userLocationParam.PageSize = 100;
+                privilegeDataParam.privileges = new();
+            }
+
+            var res = await LoginService.frameworkApiFacadePrivilege(privilegeDataParam, tkn);
+
+            userPriv.Clear();
+
+            if (res.isSuccess)
+            {
+                if (res.Data.privileges.Any())
+                {
+                    foreach (var priv in res.Data.privileges)
+                    {
+                        userPriv.Add(priv.privilegeId);
+                    }
+                }
+
+                syncSessionStorage.SetItem("PagePrivileges", userPriv);
+
+                LoginService.activeUser.userPrivileges = userPriv;
+
+            }
+            //
+
             activeUser.token = await sessionStorage.GetItemAsync<string>("token");
             activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
@@ -92,16 +122,15 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
             LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
-            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            //activeUser.UserLogin = new LoginUser();
-            //activeUser.UserLogin.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userEmail"));
-            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
+            string loc = activeUser.location.Equals("") ? "HO" : activeUser.location;
 
-            await ManagementService.GetAllBisnisUnit();
-            await ManagementService.GetAllDepartment();
+            await ManagementService.GetAllBisnisUnit(Base64Encode(loc));
+            await ManagementService.GetAllDepartment(Base64Encode(loc));
             pageActive = 1;
-            await ProcedureService.GetDepartmentProcedurewithPaging(pageActive);
-            numberofPage = await ProcedureService.getDepartmentProcedureNumberofPage();
+            string temp = activeUser.location + "!_!" + pageActive.ToString();
+            await ProcedureService.GetDepartmentProcedurewithPaging(Base64Encode(temp));
+
+            numberofPage = await ProcedureService.getDepartmentProcedureNumberofPage(Base64Encode(loc));
 
             filterActive = false;
             filterDetails = new DashboardFilter();
@@ -186,6 +215,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
             pageActive = 1;
 
+            filterDetails.locationId = activeUser.location.Equals("") ? "HO" : activeUser.location;
             filterDetails.filterNo = FilterProcedure;
             filterDetails.filterName = FilterProcedure;
             filterDetails.filterDept = departmentSelect;
@@ -195,6 +225,25 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
             await ProcedureService.GetDepartmentProcedurewithFilterbyPaging(filterDetails);
             numberofPage = await ProcedureService.getDepartmentProcedurewithFilterNumberofPage(filterDetails);
+
+            StateHasChanged();
+        }
+
+        private async void resetFilter()
+        {
+            filterActive = false;
+            FilterProcedure = string.Empty;
+            bisnisUnitSelect = string.Empty;
+            departmentSelect = string.Empty;
+
+            pageActive = 1;
+
+            string temp = activeUser.location + "!_!" + pageActive.ToString();
+
+            await ProcedureService.GetDepartmentProcedurewithPaging(Base64Encode(temp));
+
+            string loc = activeUser.location.Equals("") ? "HO" : activeUser.location;
+            numberofPage = await ProcedureService.getDepartmentProcedureNumberofPage(Base64Encode(loc));
 
             StateHasChanged();
         }
@@ -212,11 +261,19 @@ namespace BPIWebApplication.Client.Pages.SopPages
 
             if (!filterActive)
             {
-                await ProcedureService.GetDepartmentProcedurewithPaging(pageActive);
+                string temp = activeUser.location + "!_!" + pageActive.ToString();
+                await ProcedureService.GetDepartmentProcedurewithPaging(Base64Encode(temp));
             }
             else
             {
+                filterDetails.locationId = activeUser.location.Equals("") ? "HO" : activeUser.location;
+                filterDetails.filterNo = FilterProcedure;
+                filterDetails.filterName = FilterProcedure;
+                filterDetails.filterDept = departmentSelect;
+                filterDetails.filterBU = bisnisUnitSelect;
                 filterDetails.pageNo = pageActive;
+                filterDetails.rowPerPage = 0;
+
                 await ProcedureService.GetDepartmentProcedurewithFilterbyPaging(filterDetails);
             }
 

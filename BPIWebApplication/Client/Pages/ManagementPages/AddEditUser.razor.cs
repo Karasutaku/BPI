@@ -11,6 +11,8 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
         [Parameter]
         public string? param { get; set; }
 
+        private ActiveUser activeUser = new();
+
         // message trigger flag
         private bool alertTrigger = false;
         private string alertMessage = string.Empty;
@@ -40,6 +42,16 @@ namespace BPIWebApplication.Client.Pages.ManagementPages
         {
             //await ManagementService.GetAllBisnisUnit();
             //await ManagementService.GetAllDepartment();
+
+            activeUser.token = await sessionStorage.GetItemAsync<string>("token");
+            activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
+            activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
             await ManagementService.GetAllUserAdmin();
 

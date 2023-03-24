@@ -27,12 +27,15 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
         private bool isConfirmationDeletion = false;
 
         private int maxFileSize = 0;
+        private string[] acceptedFileExtensions = new string[] {};
 
         private Standarizations standarizationData = new();
         private List<StandarizationTag> tags = new();
         private List<BPIWebApplication.Shared.MainModel.Stream.FileStream> fileLines = new();
 
         private ActiveUser activeUser = new();
+        private UserPrivileges privilegeDataParam = new();
+        private List<string> userPriv = new();
 
         private IJSObjectReference _jsModule;
 
@@ -49,6 +52,51 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
         protected override async Task OnInitializedAsync()
         {
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+                LoginService.activeUser.userPrivileges.Clear();
+
+            if (syncSessionStorage.ContainKey("PagePrivileges"))
+                syncSessionStorage.RemoveItem("PagePrivileges");
+
+            string tkn = syncSessionStorage.GetItem<string>("token");
+
+            if (syncSessionStorage.ContainKey("userName"))
+            {
+                privilegeDataParam.moduleId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("ModuleId")));
+                privilegeDataParam.UserName = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam = new();
+                privilegeDataParam.userLocationParam.SessionId = syncSessionStorage.GetItem<string>("SessionId");
+                privilegeDataParam.userLocationParam.MacAddress = "";
+                privilegeDataParam.userLocationParam.IpClient = "";
+                privilegeDataParam.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("AppV")));
+                privilegeDataParam.userLocationParam.LocationId = Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[1];
+                privilegeDataParam.userLocationParam.Name = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[0]);
+                privilegeDataParam.userLocationParam.PageIndex = 1;
+                privilegeDataParam.userLocationParam.PageSize = 100;
+                privilegeDataParam.privileges = new();
+            }
+
+            var res = await LoginService.frameworkApiFacadePrivilege(privilegeDataParam, tkn);
+
+            userPriv.Clear();
+
+            if (res.isSuccess)
+            {
+                if (res.Data.privileges.Any())
+                {
+                    foreach (var priv in res.Data.privileges)
+                    {
+                        userPriv.Add(priv.privilegeId);
+                    }
+                }
+
+                syncSessionStorage.SetItem("PagePrivileges", userPriv);
+
+                LoginService.activeUser.userPrivileges = userPriv;
+
+            }
+
             activeUser.token = await sessionStorage.GetItemAsync<string>("token");
             activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
@@ -63,6 +111,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             await StandarizationService.getStandarizationTypes();
 
             maxFileSize = await StandarizationService.getStandarizationMaxFileSize();
+            acceptedFileExtensions = await StandarizationService.getStandarizationAcceptedFileExtension();
 
             _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/StandarizationPages/AddEditStandarization.razor.js");
         }
@@ -75,19 +124,22 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             {
                 if (param != null)
                 {
-                    string temp = Base64Decode(param);
-                    var data = StandarizationService.standarizations.SingleOrDefault(x => x.StandarizationID.Equals(temp));
+                    var temp = Base64Decode(param).Split("!_!");
+                    var data = StandarizationService.standarizations.SingleOrDefault(x => x.StandarizationID.Equals(temp[0]));
 
                     if (data != null)
                     {
                         isLoading = true;
-                        StandarizationService.fileStreams.Clear();
-
                         standarizationData = data;
 
-                        string temp1 = data.StandarizationID + "!_!" + data.TypeID;
+                        if (!temp[0].Equals(temp[1]))
+                        {
+                            StandarizationService.fileStreams.Clear();
 
-                        await Task.Run(async () => { await StandarizationService.getFileStream(Base64Encode(temp1)); });
+                            string temp1 = data.StandarizationID + "!_!" + data.TypeID;
+
+                            await Task.Run(async () => { await StandarizationService.getFileStream(Base64Encode(temp1)); });
+                        }
 
                         tags.Clear();
                         fileLines.Clear();
@@ -156,7 +208,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                     isLoading = true;
 
                     var content = StandarizationService.fileStreams.SingleOrDefault(x => x.type.Equals(data.StandarizationID) && x.fileName.Equals(data.FilePath)).content;
-                    string filename = data.FilePath.Split("!_!")[1] + data.FileExtention;
+                    string filename = data.FilePath.Split("!_!")[1];
 
                     await HandleDownloadDocument(content, filename);
 
@@ -176,22 +228,22 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
         IReadOnlyList<IBrowserFile>? listFileUpload;
 
-        private bool fileValidation(string ext)
-        {
-            if (!ext.Contains("pdf", StringComparison.OrdinalIgnoreCase))
-                return false;
+        //private bool fileValidation(string ext)
+        //{
+        //    if (!ext.Contains("pdf", StringComparison.OrdinalIgnoreCase))
+        //        return false;
 
-            if (!ext.Contains("xlsx", StringComparison.OrdinalIgnoreCase))
-                return false;
+        //    if (!ext.Contains("xlsx", StringComparison.OrdinalIgnoreCase))
+        //        return false;
 
-            if (!ext.Contains("xls", StringComparison.OrdinalIgnoreCase))
-                return false;
+        //    if (!ext.Contains("xls", StringComparison.OrdinalIgnoreCase))
+        //        return false;
 
-            if (!ext.Contains("mp4", StringComparison.OrdinalIgnoreCase))
-                return false;
+        //    if (!ext.Contains("mp4", StringComparison.OrdinalIgnoreCase))
+        //        return false;
 
-            return true;
-        }
+        //    return true;
+        //}
 
         private bool validateInput()
         {
@@ -216,9 +268,6 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             if (fileLines.Any(x => x.fileDesc.IsNullOrEmpty()))
                 return false;
 
-            if (fileLines.Any(x => x.fileSize > (1024 * 1024 * maxFileSize)))
-                return false;
-
             return true;
         }
 
@@ -227,37 +276,53 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             listFileUpload = files.GetMultipleFiles();
             string trustedFilename = string.Empty;
 
-            if (listFileUpload != null)
+            if (maxFileSize == 0)
             {
-                foreach (var file in listFileUpload)
+                successAlert = false;
+                alertTrigger = true;
+                alertMessage = "Fail Fetch Max File Size !";
+                alertBody = "Please Check Your Connection";
+
+                await _jsModule.InvokeVoidAsync("showAlert", "File Size Parameter is Invalid !");
+
+                isLoading = false;
+            }
+            else
+            {
+                if (listFileUpload != null)
                 {
-                    FileInfo fi = new FileInfo(file.Name);
-                    string ext = fi.Extension;
-
-                    if (fileValidation(ext))
+                    foreach (var file in listFileUpload)
                     {
-                        successUpload = false;
-                        successAlert = false;
-                        alertTrigger = true;
-                        alertMessage = "File Selection Failed !";
-                        alertBody = "File Extention is not Supported";
+                        FileInfo fi = new FileInfo(file.Name);
+                        string ext = fi.Extension;
 
-                        StateHasChanged();
-                    }
-                    else
-                    {
-                        Stream stream = file.OpenReadStream(file.Size);
-                        MemoryStream ms = new MemoryStream();
-                        await stream.CopyToAsync(ms);
+                        if (!acceptedFileExtensions.Any(x => x.Equals(ext)) || file.Size > (1024 * 1024 * maxFileSize))
+                        {
+                            successUpload = false;
+                            successAlert = false;
+                            alertTrigger = true;
+                            alertMessage = "File Selection Failed !";
+                            alertBody = "File Extention / File Size is not Supported";
 
-                        stream.Close();
+                            await _jsModule.InvokeVoidAsync("showAlert", "Invalid File Extensions / File Size Exceeded Limit !");
 
-                        //line.type = "";
-                        line.fileName = Path.GetRandomFileName() + "!_!" + fi.Name;
-                        //line.fileDesc = "";
-                        line.fileType = ext;
-                        line.fileSize = Convert.ToInt32(file.Size);
-                        line.content = ms.ToArray();
+                            StateHasChanged();
+                        }
+                        else
+                        {
+                            Stream stream = file.OpenReadStream(file.Size);
+                            MemoryStream ms = new MemoryStream();
+                            await stream.CopyToAsync(ms);
+
+                            stream.Close();
+
+                            //line.type = "";
+                            line.fileName = Path.GetRandomFileName() + "!_!" + fi.Name;
+                            //line.fileDesc = "";
+                            line.fileType = ext;
+                            line.fileSize = Convert.ToInt32(file.Size);
+                            line.content = ms.ToArray();
+                        }
                     }
                 }
             }
@@ -273,29 +338,17 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                 {
                     successAlert = false;
                     alertTrigger = true;
-                    alertMessage = "Blank Input Field / Max File Size !";
+                    alertMessage = "Blank Input Field !";
                     alertBody = "Please Recheck and Fill the blank Field";
 
                     StateHasChanged();
                 }
                 else
                 {
-                    if (maxFileSize == 0)
-                    {
-                        successAlert = false;
-                        alertTrigger = true;
-                        alertMessage = "Fail Fetch Max File Size !";
-                        alertBody = "Please Check Your Connection";
-
-                        StateHasChanged();
-
-                        throw new Exception("Fail Fetch Max File Size ! Please Check Your Connection");
-                    }
-
+                    isLoading = true;
 
                     if (LoginService.activeUser.userPrivileges.Contains("CR"))
                     {
-                        isLoading = true;
 
                         StandarizationStream uploadData = new();
 
@@ -308,7 +361,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                         temp.Data.Attachments = new();
 
                         temp.Data = standarizationData;
-                        
+
                         foreach (var tag in tags)
                         {
                             temp.Data.Tags.Add(new StandarizationTag
@@ -318,7 +371,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                                 TagDescriptions = tag.TagDescriptions
                             });
                         }
-                        
+
                         foreach (var f in fileLines)
                         {
                             FileInfo fi = new FileInfo(f.fileName);
@@ -368,8 +421,9 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
                             StateHasChanged();
                         }
-                        
+
                     }
+                    
                 }
             }
             catch (Exception ex)

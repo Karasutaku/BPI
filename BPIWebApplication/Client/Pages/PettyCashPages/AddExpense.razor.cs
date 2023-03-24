@@ -13,6 +13,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
     {
         //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
         private ActiveUser activeUser = new();
+        private UserPrivileges privilegeDataParam = new();
+        private List<string> userPriv = new();
 
         private Expense expense = new Expense();
         private List<ExpenseLine> expenseLines = new List<ExpenseLine>();
@@ -22,6 +24,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         private int advancePageActive = 0;
         private int advanceNumberofPage = 0;
+        private int maxFileSize = 0;
 
         private bool showModalConfirmation = false;
         private bool isTypeTransfer = false;
@@ -55,6 +58,52 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         protected override async Task OnInitializedAsync()
         {
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+                LoginService.activeUser.userPrivileges.Clear();
+
+            if (syncSessionStorage.ContainKey("PagePrivileges"))
+                syncSessionStorage.RemoveItem("PagePrivileges");
+
+            string tkn = syncSessionStorage.GetItem<string>("token");
+
+            if (syncSessionStorage.ContainKey("userName"))
+            {
+                privilegeDataParam.moduleId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("ModuleId")));
+                privilegeDataParam.UserName = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam = new();
+                privilegeDataParam.userLocationParam.SessionId = syncSessionStorage.GetItem<string>("SessionId");
+                privilegeDataParam.userLocationParam.MacAddress = "";
+                privilegeDataParam.userLocationParam.IpClient = "";
+                privilegeDataParam.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("AppV")));
+                privilegeDataParam.userLocationParam.LocationId = Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[1];
+                privilegeDataParam.userLocationParam.Name = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[0]);
+                privilegeDataParam.userLocationParam.PageIndex = 1;
+                privilegeDataParam.userLocationParam.PageSize = 100;
+                privilegeDataParam.privileges = new();
+            }
+
+            var res = await LoginService.frameworkApiFacadePrivilege(privilegeDataParam, tkn);
+
+            userPriv.Clear();
+
+            if (res.isSuccess)
+            {
+                if (res.Data.privileges.Any())
+                {
+                    foreach (var priv in res.Data.privileges)
+                    {
+                        userPriv.Add(priv.privilegeId);
+                    }
+                }
+
+                syncSessionStorage.SetItem("PagePrivileges", userPriv);
+
+                LoginService.activeUser.userPrivileges = userPriv;
+
+            }
+            //
+
             activeUser.token = await sessionStorage.GetItemAsync<string>("token");
             activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
@@ -74,7 +123,10 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
             advancePageActive = 1;
 
-            await ManagementService.GetAllDepartment();
+            string loc = activeUser.location.Equals("") ? "HO" : activeUser.location;
+            await ManagementService.GetAllDepartment(Base64Encode(loc));
+
+            maxFileSize = await PettyCashService.getPettyCashMaxSizeUpload();
 
             StateHasChanged();
 
@@ -131,13 +183,13 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                     FileInfo fi = new FileInfo(file.Name);
                     string ext = fi.Extension;
 
-                    if (!ext.Contains("pdf", StringComparison.OrdinalIgnoreCase))
+                    if (!ext.Contains("pdf", StringComparison.OrdinalIgnoreCase) || file.Size > (1024 * 1024 * maxFileSize))
                     {
                         successUpload = false;
                         successAlert = false;
                         alertTrigger = true;
                         alertMessage = "File Selection Failed !";
-                        alertBody = "File Extention is not PDF";
+                        alertBody = "Check Your File Extension or File Size";
 
                         StateHasChanged();
                     }

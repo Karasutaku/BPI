@@ -19,6 +19,7 @@ namespace BPIWebApplication.Client.Services.StandarizationServices
 
         Task<int> getModulePageSize(string Table);
         Task<int> getStandarizationMaxFileSize();
+        Task<string[]> getStandarizationAcceptedFileExtension();
 
     }
 }

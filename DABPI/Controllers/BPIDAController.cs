@@ -51,7 +51,7 @@ namespace BPIDA.Controllers
 
         // get DA
 
-        internal DataTable getAllBisnisUnitData()
+        internal DataTable getAllBisnisUnitData(string loc)
         {
             DataTable dt = new DataTable("Data");
 
@@ -68,6 +68,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
 
                     SqlDataAdapter da = new SqlDataAdapter();
                     da.SelectCommand = command;
@@ -86,7 +87,7 @@ namespace BPIDA.Controllers
             return dt;
         }
 
-        internal DataTable getAllDepartmentData()
+        internal DataTable getAllDepartmentData(string loc)
         {
             DataTable dt = new DataTable("Data");
 
@@ -103,6 +104,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
 
                     SqlDataAdapter da = new SqlDataAdapter();
                     da.SelectCommand = command;
@@ -405,8 +407,8 @@ namespace BPIDA.Controllers
 
         // http get
 
-        [HttpGet("getAllBisnisUnitData")]
-        public async Task<IActionResult> getAllBisnisUnitDataTable()
+        [HttpGet("getAllBisnisUnitData/{param}")]
+        public async Task<IActionResult> getAllBisnisUnitDataTable(string param)
         {
             ResultModel<List<BisnisUnit>> res = new ResultModel<List<BisnisUnit>>();
             List<BisnisUnit> bisnisUnit = new List<BisnisUnit>();
@@ -415,7 +417,7 @@ namespace BPIDA.Controllers
 
             try
             {
-                dtBisnisUnit = getAllBisnisUnitData();
+                dtBisnisUnit = getAllBisnisUnitData(Base64Decode(param));
 
                 if (dtBisnisUnit.Rows.Count > 0)
                 {
@@ -451,8 +453,8 @@ namespace BPIDA.Controllers
             return actionResult;
         }
 
-        [HttpGet("getAllDepartmentData")]
-        public async Task<IActionResult> getAllDepartmentDataTable()
+        [HttpGet("getAllDepartmentData/{param}")]
+        public async Task<IActionResult> getAllDepartmentDataTable(string param)
         {
             ResultModel<List<Department>> res = new ResultModel<List<Department>>();
             List<Department> department = new List<Department>();
@@ -461,7 +463,7 @@ namespace BPIDA.Controllers
 
             try
             {
-                dtDepartment = getAllDepartmentData();
+                dtDepartment = getAllDepartmentData(Base64Decode(param));
 
                 if (dtDepartment.Rows.Count > 0)
                 {
@@ -1123,6 +1125,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", data.locationId);
                     command.Parameters.AddWithValue("@PageNo", data.pageNo);
                     command.Parameters.AddWithValue("@RowPerPage", data.rowPerPage);
                     command.Parameters.AddWithValue("@FilterNo", data.filterNo);
@@ -1147,7 +1150,7 @@ namespace BPIDA.Controllers
             return dt;
         }
 
-        internal DataTable getDepartmentProcedureDatawithPaging(int pageNo, int rowPerPage)
+        internal DataTable getDepartmentProcedureDatawithPaging(string loc, int pageNo, int rowPerPage)
         {
             DataTable dt = new DataTable("Data");
 
@@ -1164,6 +1167,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
                     command.Parameters.AddWithValue("@PageNo", pageNo);
                     command.Parameters.AddWithValue("@RowPerPage", rowPerPage);
 
@@ -1298,7 +1302,7 @@ namespace BPIDA.Controllers
             return dt;
         }
 
-        internal int getDepartmentProcedureNumberofPage(int RowPerPage)
+        internal int getDepartmentProcedureNumberofPage(string loc, int RowPerPage)
         {
             int conInt = 0;
 
@@ -1315,6 +1319,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", loc);
                     command.Parameters.AddWithValue("@RowPerPage", RowPerPage);
                     var data = command.ExecuteScalar();
                     conInt = Convert.ToInt32(data);
@@ -1363,6 +1368,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@RowPerPage", filData.locationId);
                     command.Parameters.AddWithValue("@RowPerPage", filData.rowPerPage);
                     command.Parameters.AddWithValue("@FilterNo", filData.filterNo);
                     command.Parameters.AddWithValue("@FilterName", filData.filterName);
@@ -1774,8 +1780,8 @@ namespace BPIDA.Controllers
             return actionResult;
         }
 
-        [HttpGet("getDepartmentProcedureDatawithPaging/{pageNo}")]
-        public async Task<IActionResult> getAllDepartmentProcedureDataTablebyPaging(int pageNo)
+        [HttpGet("getDepartmentProcedureDatawithPaging/{param}")]
+        public async Task<IActionResult> getAllDepartmentProcedureDataTablebyPaging(string param)
         {
             ResultModel<List<DepartmentProcedure>> res = new ResultModel<List<DepartmentProcedure>>();
             List<DepartmentProcedure> departmentProcedure = new List<DepartmentProcedure>();
@@ -1784,7 +1790,12 @@ namespace BPIDA.Controllers
 
             try
             {
-                dtDepartmentProcedure = getDepartmentProcedureDatawithPaging(pageNo, _rowPerPage);
+                string tempz = Base64Decode(param);
+
+                string loc = tempz.Split("!_!")[0].Equals("") ? "HO" : tempz.Split("!_!")[0];
+                int pageNo = Convert.ToInt32(tempz.Split("!_!")[1]);
+
+                dtDepartmentProcedure = getDepartmentProcedureDatawithPaging(loc, pageNo, _rowPerPage);
 
                 if (dtDepartmentProcedure.Rows.Count > 0)
                 {
@@ -2043,15 +2054,18 @@ namespace BPIDA.Controllers
             return actionResult;
         }
 
-        [HttpGet("getDepartmentProcedureNumberofPage")]
-        public async Task<IActionResult> getDepartmentProcedureNumberofPageData()
+        [HttpGet("getDepartmentProcedureNumberofPage/{param}")]
+        public async Task<IActionResult> getDepartmentProcedureNumberofPageData(string param)
         {
             ResultModel<int> res = new ResultModel<int>();
             IActionResult actionResult = null;
 
             try
             {
-                res.Data = getDepartmentProcedureNumberofPage(_rowPerPage);
+                //string loc = param.Equals("") ? "HO" : param;
+                string temp = Base64Decode(param);
+
+                res.Data = getDepartmentProcedureNumberofPage(temp, _rowPerPage);
 
                 res.isSuccess = true;
                 res.ErrorCode = "00";

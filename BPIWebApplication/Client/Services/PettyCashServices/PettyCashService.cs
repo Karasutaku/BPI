@@ -3,6 +3,7 @@ using BPIWebApplication.Shared.MainModel;
 using BPIWebApplication.Shared.MainModel.PettyCash;
 using BPIWebApplication.Shared.MainModel.Company;
 using System.Net.Http.Json;
+using BPIWebApplication.Shared.PagesModel.PettyCash;
 
 namespace BPIWebApplication.Client.Services.PettyCashServices
 {
@@ -293,6 +294,35 @@ namespace BPIWebApplication.Client.Services.PettyCashServices
                 resData.isSuccess = false;
                 resData.ErrorCode = "99";
                 resData.ErrorMessage = ex.Message;
+            }
+
+            return resData;
+        }
+
+        public async Task<List<ResultModel<ReimbursementMultiSelectStatusUpdate>>> editMultiSelectDocumentStatus(List<ReimbursementMultiSelectStatusUpdate> data)
+        {
+            List<ResultModel<ReimbursementMultiSelectStatusUpdate>> resData = new();
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<List<ReimbursementMultiSelectStatusUpdate>>("api/endUser/PettyCash/editMultiSelectDocumentStatus", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<List<ResultModel<ReimbursementMultiSelectStatusUpdate>>>();
+
+                    resData = respBody;
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Add(new ResultModel<ReimbursementMultiSelectStatusUpdate>
+                {
+                    Data = null,
+                    isSuccess = false,
+                    ErrorCode = "99",
+                    ErrorMessage = "ERROR : REASON " + ex.Message
+                });
             }
 
             return resData;
@@ -800,6 +830,41 @@ namespace BPIWebApplication.Client.Services.PettyCashServices
             }
 
             return resData;
+        }
+
+        public async Task<int> getPettyCashMaxSizeUpload()
+        {
+            ResultModel<int> resData = new ResultModel<int>();
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/endUser/PettyCash/getPettyCashMaxSizeUpload");
+
+                if (result.isSuccess)
+                {
+                    resData.Data = result.Data;
+                    resData.isSuccess = result.isSuccess;
+                    resData.ErrorCode = result.ErrorCode;
+                    resData.ErrorMessage = result.ErrorMessage;
+
+                }
+                else
+                {
+                    resData.Data = result.Data;
+                    resData.isSuccess = result.isSuccess;
+                    resData.ErrorCode = result.ErrorCode;
+                    resData.ErrorMessage = result.ErrorMessage;
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = 0;
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
+
+            return resData.Data;
         }
 
         //
