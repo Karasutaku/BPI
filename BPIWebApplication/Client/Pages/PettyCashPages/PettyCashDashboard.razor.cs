@@ -5,6 +5,7 @@ using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.MainModel.PettyCash;
 using BPIWebApplication.Shared.MainModel.Procedure;
 using BPIWebApplication.Shared.PagesModel.Dashboard;
+using BPIWebApplication.Shared.PagesModel.PettyCash;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.ExtendedProperties;
 using DocumentFormat.OpenXml.Office2010.PowerPoint;
@@ -23,6 +24,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
     {
         //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
         private ActiveUser activeUser = new();
+        private UserPrivileges privilegeDataParam = new();
+        private List<string> userPriv = new();
 
         private Advance advance = new Advance();
         private Expense expense = new Expense();
@@ -31,6 +34,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private List<string> exp = new List<string>();
         private List<ReimburseLine> selectedReimburseLines = new();
         private List<string> coaSummary = new();
+        List<ReimbursementMultiSelectStatusUpdate> selectedReimburse = new();
+        List<ResultModel<ReimbursementMultiSelectStatusUpdate>> finishedDocument = new();
 
         private OutstandingBalance outstandingBalance = new();
         private BalanceDetails locBalanceDetails = new();
@@ -54,6 +59,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private bool isExpenseActive = false;
         private bool isReimburseActive = false;
         private bool isFetchBalanceActive = false;
+        private bool showMultiSelectApprovalModal = false;
 
         // ongoing
         private int advancePageActive = 0;
@@ -111,6 +117,52 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
 
         protected override async Task OnInitializedAsync()
         {
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+                LoginService.activeUser.userPrivileges.Clear();
+
+            if (syncSessionStorage.ContainKey("PagePrivileges"))
+                syncSessionStorage.RemoveItem("PagePrivileges");
+
+            string tkn = syncSessionStorage.GetItem<string>("token");
+
+            if (syncSessionStorage.ContainKey("userName"))
+            {
+                privilegeDataParam.moduleId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("ModuleId")));
+                privilegeDataParam.UserName = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam = new();
+                privilegeDataParam.userLocationParam.SessionId = syncSessionStorage.GetItem<string>("SessionId");
+                privilegeDataParam.userLocationParam.MacAddress = "";
+                privilegeDataParam.userLocationParam.IpClient = "";
+                privilegeDataParam.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("AppV")));
+                privilegeDataParam.userLocationParam.LocationId = Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[1];
+                privilegeDataParam.userLocationParam.Name = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[0]);
+                privilegeDataParam.userLocationParam.PageIndex = 1;
+                privilegeDataParam.userLocationParam.PageSize = 100;
+                privilegeDataParam.privileges = new();
+            }
+
+            var res = await LoginService.frameworkApiFacadePrivilege(privilegeDataParam, tkn);
+
+            userPriv.Clear();
+
+            if (res.isSuccess)
+            {
+                if (res.Data.privileges.Any())
+                {
+                    foreach (var priv in res.Data.privileges)
+                    {
+                        userPriv.Add(priv.privilegeId);
+                    }
+                }
+
+                syncSessionStorage.SetItem("PagePrivileges", userPriv);
+
+                LoginService.activeUser.userPrivileges = userPriv;
+
+            }
+            //
+
             activeUser.token = await sessionStorage.GetItemAsync<string>("token");
             activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
@@ -180,7 +232,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             string prbslocPage = "POSTED!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + preimbursePageActive.ToString();
             await PettyCashService.getReimburseDatabyLocation(Base64Encode(prbslocPage));
 
-            await ManagementService.GetAllDepartment();
+            string loc = activeUser.location.Equals("") ? "HO" : activeUser.location;
+            await ManagementService.GetAllDepartment(Base64Encode(loc));
 
             location.Condition = $"a.CompanyId={Convert.ToInt32(activeUser.company)}";
             location.PageIndex = 1;
@@ -226,6 +279,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
         private void hideUpdateBudgetModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showUpdateBudgetModal = false; } } catch (Exception exc) { } }
         private void hideCutoffModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showUpdateCutoffModal = false; } } catch (Exception exc) { } }
         private void hideExportModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showExportModal = false; } } catch (Exception exc) { } }
+        private void hideReportProcessModalonESC(KeyboardEventArgs e) { try { if (e.Key.Equals("Escape")) { showMultiSelectApprovalModal = false; } } catch (Exception exc) { } }
 
         private bool checkUserPrivilegeViewable()
         {
@@ -831,6 +885,8 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                         {
                             await _jsModule.InvokeVoidAsync("showAlert", "Please Process all Lines !");
                         }
+
+                        isLoading = false;
                     }
                     else
                     {
@@ -928,7 +984,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                             }
                             else if (action.Contains("Released"))
                             {
-                                string temp = "PettyCash!_!StatusRelease!_!" + activeUser.location + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID;
+                                string temp = "PettyCash!_!StatusRelease!_!" + reimburse.LocationID + "!_!" + activeUser.userName + "!_!" + reimburse.ReimburseID;
                                 var res3 = await PettyCashService.autoEmail(Base64Encode(temp));
 
                                 if (res3.isSuccess)
@@ -1007,10 +1063,85 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             }
             catch (Exception ex)
             {
+                isLoading = false;
                 await _jsModule.InvokeVoidAsync("showAlert", ex.Message);
                 throw new Exception(ex.Message);
             }
             
+        }
+
+        private async void updateMultiSelectDocumentStatus(string action)
+        {
+            try
+            {
+                isLoading = true;
+
+                if (!validateMultiSelectApproval(action))
+                {
+                    isLoading = false;
+                    await _jsModule.InvokeVoidAsync("showAlert", "Please Check Your Selected Document !");
+                }
+                else
+                {
+                    selectedReimburse.ForEach(x =>
+                    {
+                        x.statusValue = action;
+                    });
+
+                    var res = await PettyCashService.editMultiSelectDocumentStatus(selectedReimburse);
+
+                    if (res.Any(x => x.isSuccess.Equals(true)))
+                    {
+                        finishedDocument = res;
+
+                        selectedReimburse.ForEach(x =>
+                        {
+                            var dt = PettyCashService.reimburses.SingleOrDefault(y => y.ReimburseID.Equals(x.documentID));
+
+                            if (dt != null)
+                            {
+                                PettyCashService.reimburses.SingleOrDefault(y => y.ReimburseID.Equals(x.documentID)).ReimburseStatus = action;
+
+                                if (action.Equals("Released"))
+                                {
+                                    PettyCashService.reimburses.SingleOrDefault(y => y.ReimburseID.Equals(x.documentID)).statusDetails.releaseUser = activeUser.userName;
+                                    PettyCashService.reimburses.SingleOrDefault(y => y.ReimburseID.Equals(x.documentID)).statusDetails.releaseDate = DateTime.Now;
+                                }
+                            }
+
+                        });
+                        selectedReimburse.Clear();
+
+                        showMultiSelectApprovalModal = true;
+                        await _jsModule.InvokeVoidAsync("showAlert", "Process Finished ! Please Check Process Report !");
+                    }
+                    else
+                    {
+                        await _jsModule.InvokeVoidAsync("showAlert", "ALL APPROVAL PROCESS FAILED ! Please Check Your Connection and Retry Your Action !");
+                    }
+                }
+
+                isLoading = false;
+                StateHasChanged();
+
+            }
+            catch (Exception ex)
+            {
+                isLoading = false;
+                await _jsModule.InvokeVoidAsync("showAlert", ex.Message);
+            }
+
+        }
+
+        private bool validateMultiSelectApproval(string act)
+        {
+            if (selectedReimburse.Any(x => x.currentDocumentStatus.Equals(act)))
+                return false;
+
+            if (act.Equals("Released") && selectedReimburse.Any(x => !x.currentDocumentStatus.Equals("Approved")))
+                return false;
+
+            return true;
         }
 
         private async Task modalShow(Advance advData, Expense expData, Reimburse reimData, string type, string denom)
@@ -1447,17 +1578,33 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 isReimburseFilterActive = true;
                 isLoading = true;
 
-                string remStatus = "";
-                string remFilType = remFilterType;
-                string remFilValue = remFilterValue;
-
                 PettyCashService.reimburses.Clear();
 
-                string rbspz = "Reimburse!_!ReimburseID!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + activeUser.location;
-                reimburseNumberofPage = await PettyCashService.getModulePageSize(Base64Encode(rbspz));
+                if (remFilterType.Equals("STATUS"))
+                {
+                    string remStatus = remFilterValue;
+                    string remFilType = "ID";
+                    string remFilValue = "";
 
-                string rbslocPage = "MASTER!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + reimbursePageActive.ToString();
-                await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
+                    string rbspz = "Reimburse!_!ReimburseID!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + activeUser.location;
+                    reimburseNumberofPage = await PettyCashService.getModulePageSize(Base64Encode(rbspz));
+
+                    string rbslocPage = "MASTER!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + reimbursePageActive.ToString();
+                    await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
+                }
+                else
+                {
+                    string remStatus = "";
+                    string remFilType = remFilterType;
+                    string remFilValue = remFilterValue;
+
+                    string rbspz = "Reimburse!_!ReimburseID!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + activeUser.location;
+                    reimburseNumberofPage = await PettyCashService.getModulePageSize(Base64Encode(rbspz));
+
+                    string rbslocPage = "MASTER!_!" + activeUser.location + "!_!" + remStatus + "!_!" + remFilType + "!_!" + remFilValue + "!_!" + reimbursePageActive.ToString();
+                    await PettyCashService.getReimburseDatabyLocation(Base64Encode(rbslocPage));
+                }
+                
                 isLoading = false;
             }
             else
@@ -1637,6 +1784,32 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             isLoading = false;
         }
 
+        private void appendReimburseSelected(string docType, string docId, string docLoc, string currStatus)
+        {
+            if (selectedReimburse.FirstOrDefault(a => a.documentID == docId) == null)
+            {
+                selectedReimburse.Add(new ReimbursementMultiSelectStatusUpdate
+                {
+                    docType = docType,
+                    documentID = docId,
+                    statusValue = "",
+                    approver = activeUser.userName,
+                    documentLocation = docLoc,
+                    currentDocumentStatus = currStatus
+                });
+            }
+            else
+            {
+                var itemRemove1 = selectedReimburse.SingleOrDefault(a => a.documentID == docId);
+
+                if (itemRemove1 != null)
+                {
+                    selectedReimburse.Remove(itemRemove1);
+                }
+
+            }
+        }
+
         // master
         private bool checkAdvanceDataPresent()
         {
@@ -1739,6 +1912,25 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
             try
             {
                 if (PettyCashService.preimburses.Any())
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        private bool checkFinishedDocumentDataPresent()
+        {
+            try
+            {
+                if (finishedDocument.Any())
                 {
                     return true;
                 }

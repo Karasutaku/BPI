@@ -72,13 +72,13 @@ namespace BPIWebApplication.Client.Services.ManagementServices
             return resData;
         }
 
-        public async Task<ResultModel<List<BisnisUnit>>> GetAllBisnisUnit()
+        public async Task<ResultModel<List<BisnisUnit>>> GetAllBisnisUnit(string param)
         {
             ResultModel<List<BisnisUnit>> resData = new ResultModel<List<BisnisUnit>>();
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/endUser/BPIBase/getAllBisnisUnitData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>($"api/endUser/BPIBase/getAllBisnisUnitData/{param}");
                 //var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/endUser/BPIBase/getAllBisnisUnitData");
 
                 if (result.isSuccess)
@@ -101,13 +101,13 @@ namespace BPIWebApplication.Client.Services.ManagementServices
             return resData;
         }
 
-        public async Task<ResultModel<List<Department>>> GetAllDepartment()
+        public async Task<ResultModel<List<Department>>> GetAllDepartment(string param)
         {
             ResultModel<List<Department>> resData = new ResultModel<List<Department>>();
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>("api/endUser/BPIBase/getAllDepartmentData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>($"api/endUser/BPIBase/getAllDepartmentData/{param}");
 
                 if (result.isSuccess)
                 {

@@ -31,7 +31,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
         Task<ResultModel<List<HistoryAccess>>> GetHistoryAccessReportbyFilter(AccessHistoryReport data);
         Task<ResultModel<List<DepartmentProcedure>>> GetAllDepartmentProcedure();
         Task<ResultModel<List<DepartmentProcedure>>> GetDepartmentProcedurewithFilterbyPaging(DashboardFilter data);
-        Task<ResultModel<List<DepartmentProcedure>>> GetDepartmentProcedurewithPaging(int pageNo);
+        Task<ResultModel<List<DepartmentProcedure>>> GetDepartmentProcedurewithPaging(string param);
         Task<ResultModel<BPIWebApplication.Shared.MainModel.Stream.FileStream>> GetFile(string path);
 
         // create
@@ -48,7 +48,7 @@ namespace BPIWebApplication.Client.Services.ProcedureServices
 
         // is exist
         Task<bool> checkProsedureExisting(string ProcNo);
-        Task<int> getDepartmentProcedureNumberofPage();
+        Task<int> getDepartmentProcedureNumberofPage(string param);
         Task<int> getDepartmentProcedurewithFilterNumberofPage(DashboardFilter data);
         Task<int> getHistoryAccessNumberofPage();
         Task<int> getAccessHistorywithFilterNumberofPage(AccessHistoryFilter data);

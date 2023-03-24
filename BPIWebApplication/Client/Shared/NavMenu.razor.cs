@@ -14,7 +14,7 @@ namespace BPIWebApplication.Client.Shared
 
         private FacadeUserModule moduleData = new();
 
-        List<ChildApplication> childApplications = new();
+        List<ChildApplication>? childApplications = new();
         List<ModuleCategory> userModuleCategories = new();
 
         //private bool showModalTrigger = false;
@@ -29,8 +29,6 @@ namespace BPIWebApplication.Client.Shared
         private bool caHasPageName = false;
         private bool expandCaMenu = false;
 
-        //private ActiveUser<LoginUser> activeUser = new ActiveUser<LoginUser>();
-        //private ActiveUser activeUser = new();
         private List<FacadeUserModuleResp> module = new();
         private List<ModuleCategory> mainModule = new();
 
@@ -39,21 +37,8 @@ namespace BPIWebApplication.Client.Shared
 
         private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
-        //private void showModal() => showModalTrigger = true;
-        //private void hideModal() => showModalTrigger = false;
-
         protected override async Task OnInitializedAsync()
         {
-            //activeUser.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            //activeUser.role = Base64Decode(await sessionStorage.GetItemAsync<string>("role"));
-
-            //activeUser.token = await sessionStorage.GetItemAsync<string>("token");
-            //activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-            //activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
-            //activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
-            //activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
-            //activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-
             await getUserModule();
         }
 
@@ -98,88 +83,47 @@ namespace BPIWebApplication.Client.Shared
                     moduleData.ModuleTypeId = "LOC";
                 }
 
-                //moduleData.ModuleTypeId = "CMP";
-
                 string tkn = await sessionStorage.GetItemAsync<string>("token");
 
                 var moduleResp = await LoginService.frameworkApiFacadeModule(moduleData, tkn);
 
-                module = moduleResp.Data;
-                //if (moduleResp.Data.Any())
-                //{
-                //    module = moduleResp.Data;
-
-                //    foreach (var modId in module)
-                //    {
-                //        ModuleCategory temp = new();
-
-                //        temp.moduleCategoryId = modId.moduleCategoryId;
-                //        temp.moduleCategoryName = modId.moduleCategoryName;
-
-                //        if (mainModule.FirstOrDefault(x => x.moduleCategoryId.Equals(temp.moduleCategoryId)) == null)
-                //        {
-                //            mainModule.Add(temp);
-                //        }
-
-                //    }
-                //}
-
-                //var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).OrderBy(x => x.childApplicationId).ToList();
-
-                //foreach (var b in mChild)
-                //{
-                //    childApplications.Add(new ChildApplication
-                //    {
-                //        ChildApplicationId = b.childApplicationId,
-                //        ChildApplicationName = b.childApplicationName,
-                //        moduleId = b.moduleId,
-                //        moduleName = b.moduleName,
-                //        url = b.url,
-                //        icon = b.icon
-                //    });
-                //}
-
-                //var mCat = moduleResp.Data.GroupBy(x => x.moduleId).Select(x => x.FirstOrDefault()).OrderBy(x => x.childApplicationId).ThenBy(x => x.moduleCategoryId).ToList();
-
-                //foreach (var a in mCat)
-                //{
-                //    userModuleCategories.Add(new UserModuleCategory
-                //    {
-                //        UserModuleCategoryId = a.moduleCategoryId,
-                //        UserModuleCategoryName = a.moduleCategoryName,
-                //        ApplicationId = a.applicationId,
-                //        ChildApplicationId = a.childApplicationId
-                //    });
-                //}
-
-                var mCat = moduleResp.Data.GroupBy(x => x.moduleCategoryId).Select(x => x.FirstOrDefault()).ToList();
-
-                foreach (var a in mCat)
+                if (moduleResp.isSuccess)
                 {
-                    userModuleCategories.Add(new ModuleCategory
+                    module = moduleResp.Data;
+
+                    var mCat = moduleResp.Data.GroupBy(x => x.moduleCategoryId).Select(x => x.FirstOrDefault()).ToList();
+
+                    foreach (var a in mCat)
                     {
-                        moduleCategoryId = a.moduleCategoryId,
-                        moduleCategoryName = a.moduleCategoryName,
-                        ApplicationId = a.applicationId,
-                        ChildApplicationId = a.childApplicationId
-                    });
+                        userModuleCategories.Add(new ModuleCategory
+                        {
+                            moduleCategoryId = a.moduleCategoryId,
+                            moduleCategoryName = a.moduleCategoryName,
+                            ApplicationId = a.applicationId,
+                            ChildApplicationId = a.childApplicationId
+                        });
+                    }
+
+                    var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).ToList();
+
+                    foreach (var b in mChild)
+                    {
+                        childApplications.Add(new ChildApplication
+                        {
+                            ChildApplicationId = b.childApplicationId,
+                            ChildApplicationName = b.childApplicationName,
+                            moduleId = b.moduleId,
+                            moduleName = b.moduleName,
+                            url = b.url,
+                            icon = b.icon
+                        });
+                    }
                 }
-
-                var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).ToList();
-
-                foreach (var b in mChild)
+                else
                 {
-                    childApplications.Add(new ChildApplication
-                    {
-                        ChildApplicationId = b.childApplicationId,
-                        ChildApplicationName = b.childApplicationName,
-                        moduleId = b.moduleId,
-                        moduleName = b.moduleName,
-                        url = b.url,
-                        icon = b.icon
-                    });
+                    childApplications = null;
                 }
-
+                
             }
             else
             {
@@ -201,97 +145,59 @@ namespace BPIWebApplication.Client.Shared
                     moduleData.ModuleTypeId = "LOC";
                 }
 
-                //moduleData.ModuleTypeId = "CMP";
-
                 moduleData.ApplicationId = LoginService.activeUser.appV; //
                 moduleData.UserName = LoginService.activeUser.userName;
 
                 var moduleResp = await LoginService.frameworkApiFacadeModule(moduleData, LoginService.activeUser.token);
 
-                module = moduleResp.Data;
-                //if (moduleResp.Data.Any())
-                //{
-                //    module = moduleResp.Data;
-
-                //    foreach (var modId in module)
-                //    {
-                //        ModuleCategory temp = new();
-
-                //        temp.moduleCategoryId = modId.moduleCategoryId;
-                //        temp.moduleCategoryName = modId.moduleCategoryName;
-
-                //        if (mainModule.FirstOrDefault(x => x.moduleCategoryId.Equals(temp.moduleCategoryId)) == null)
-                //        {
-                //            mainModule.Add(temp);
-                //        }
-
-                //    }
-                //}
-
-
-                //var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).OrderBy(x => x.childApplicationId).ToList();
-
-                //foreach (var b in mChild)
-                //{
-                //    childApplications.Add(new ChildApplication
-                //    {
-                //        ChildApplicationId = b.childApplicationId,
-                //        ChildApplicationName = b.childApplicationName
-                //    });
-                //}
-
-                //var mCat = moduleResp.Data.GroupBy(x => x.moduleId).Select(x => x.FirstOrDefault()).OrderBy(x => x.childApplicationId).ThenBy(x => x.moduleCategoryId).ToList();
-
-                //foreach (var a in mCat)
-                //{
-                //    userModuleCategories.Add(new UserModuleCategory
-                //    {
-                //        UserModuleCategoryId = a.moduleCategoryId,
-                //        UserModuleCategoryName = a.moduleCategoryName,
-                //        ApplicationId = a.applicationId,
-                //        ChildApplicationId = a.childApplicationId
-                //    });
-                //}
-
-                var mCat = moduleResp.Data.GroupBy(x => x.moduleCategoryId).Select(x => x.FirstOrDefault()).ToList();
-
-                foreach (var a in mCat)
+                if (moduleResp.isSuccess)
                 {
-                    userModuleCategories.Add(new ModuleCategory
+                    module = moduleResp.Data;
+
+                    var mCat = moduleResp.Data.GroupBy(x => x.moduleCategoryId).Select(x => x.FirstOrDefault()).ToList();
+
+                    foreach (var a in mCat)
                     {
-                        moduleCategoryId = a.moduleCategoryId,
-                        moduleCategoryName = a.moduleCategoryName,
-                        ApplicationId = a.applicationId,
-                        ChildApplicationId = a.childApplicationId
-                    });
+                        userModuleCategories.Add(new ModuleCategory
+                        {
+                            moduleCategoryId = a.moduleCategoryId,
+                            moduleCategoryName = a.moduleCategoryName,
+                            ApplicationId = a.applicationId,
+                            ChildApplicationId = a.childApplicationId
+                        });
+                    }
+
+                    var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).ToList();
+
+                    foreach (var b in mChild)
+                    {
+                        childApplications.Add(new ChildApplication
+                        {
+                            ChildApplicationId = b.childApplicationId,
+                            ChildApplicationName = b.childApplicationName,
+                            moduleId = b.moduleId,
+                            moduleName = b.moduleName,
+                            url = b.url,
+                            icon = b.icon
+                        });
+                    }
                 }
-
-                var mChild = moduleResp.Data.GroupBy(x => x.childApplicationId).Select(x => x.FirstOrDefault()).ToList();
-
-                foreach (var b in mChild)
+                else
                 {
-                    childApplications.Add(new ChildApplication
-                    {
-                        ChildApplicationId = b.childApplicationId,
-                        ChildApplicationName = b.childApplicationName,
-                        moduleId = b.moduleId,
-                        moduleName = b.moduleName,
-                        url = b.url,
-                        icon = b.icon
-                    });
+                    childApplications = null;
                 }
-
             }
-            
+
+            StateHasChanged();
         }
 
         private async void ToggleNavMenu(FacadeUserModuleResp menu)
         {
-            //if (await sessionStorage.ContainKeyAsync("ModuleId"))
-            //{
-            //    await sessionStorage.RemoveItemAsync("ModuleId");
-            //}
-            //await sessionStorage.SetItemAsync<string>("ModuleId", Base64Encode(Convert.ToInt32(menu.moduleId).ToString()));
+            if (syncSessionStorage.ContainKey("ModuleId"))
+            {
+                syncSessionStorage.RemoveItem("ModuleId");
+            }
+            syncSessionStorage.SetItem<string>("ModuleId", Base64Encode(Convert.ToInt32(menu.moduleId).ToString()));
 
             collapseNavMenu = !collapseNavMenu;
 
@@ -300,67 +206,70 @@ namespace BPIWebApplication.Client.Shared
             //    await sessionStorage.RemoveItemAsync("PagePrivileges");
             //}
 
-            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
-            {
-                LoginService.activeUser.userPrivileges.Clear();
-            }
+            // MAJOR : 23 / 03 / 2023
+            // CHECK USER PRIVILEGE LANGSUNG DI INITIALIZAITONS MASING-MASING PAGES
 
-            string tkn = await sessionStorage.GetItemAsync<string>("token");
+            //if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+            //{
+            //    LoginService.activeUser.userPrivileges.Clear();
+            //}
 
-            if (await sessionStorage.ContainKeyAsync("userName"))
-            {
-                privData.moduleId = menu.moduleId;
-                privData.UserName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-                privData.userLocationParam = new();
-                privData.userLocationParam.SessionId = await sessionStorage.GetItemAsync<string>("SessionId");
-                privData.userLocationParam.MacAddress = "";
-                privData.userLocationParam.IpClient = "";
-                privData.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-                privData.userLocationParam.LocationId = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
-                privData.userLocationParam.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
-                privData.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0]);
-                privData.userLocationParam.PageIndex = 1;
-                privData.userLocationParam.PageSize = 100;
-                privData.privileges = new();
-            }
-            else
-            {
-                privData.moduleId = menu.moduleId;
-                privData.UserName = LoginService.activeUser.userName;
-                privData.userLocationParam = new();
-                privData.userLocationParam.SessionId = LoginService.activeUser.sessionId;
-                privData.userLocationParam.MacAddress = "";
-                privData.userLocationParam.IpClient = "";
-                privData.userLocationParam.ApplicationId = LoginService.activeUser.appV;
-                privData.userLocationParam.LocationId = LoginService.activeUser.location;
-                privData.userLocationParam.Name = LoginService.activeUser.userName;
-                privData.userLocationParam.CompanyId = Convert.ToInt32(LoginService.activeUser.company);
-                privData.userLocationParam.PageIndex = 1;
-                privData.userLocationParam.PageSize = 100;
-                privData.privileges = new();
-            }
+            //string tkn = await sessionStorage.GetItemAsync<string>("token");
 
-            var res = await LoginService.frameworkApiFacadePrivilege(privData, tkn);
+            //if (await sessionStorage.ContainKeyAsync("userName"))
+            //{
+            //    privData.moduleId = menu.moduleId;
+            //    privData.UserName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //    privData.userLocationParam = new();
+            //    privData.userLocationParam.SessionId = await sessionStorage.GetItemAsync<string>("SessionId");
+            //    privData.userLocationParam.MacAddress = "";
+            //    privData.userLocationParam.IpClient = "";
+            //    privData.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
+            //    privData.userLocationParam.LocationId = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
+            //    privData.userLocationParam.Name = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
+            //    privData.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0]);
+            //    privData.userLocationParam.PageIndex = 1;
+            //    privData.userLocationParam.PageSize = 100;
+            //    privData.privileges = new();
+            //}
+            //else
+            //{
+            //    privData.moduleId = menu.moduleId;
+            //    privData.UserName = LoginService.activeUser.userName;
+            //    privData.userLocationParam = new();
+            //    privData.userLocationParam.SessionId = LoginService.activeUser.sessionId;
+            //    privData.userLocationParam.MacAddress = "";
+            //    privData.userLocationParam.IpClient = "";
+            //    privData.userLocationParam.ApplicationId = LoginService.activeUser.appV;
+            //    privData.userLocationParam.LocationId = LoginService.activeUser.location;
+            //    privData.userLocationParam.Name = LoginService.activeUser.userName;
+            //    privData.userLocationParam.CompanyId = Convert.ToInt32(LoginService.activeUser.company);
+            //    privData.userLocationParam.PageIndex = 1;
+            //    privData.userLocationParam.PageSize = 100;
+            //    privData.privileges = new();
+            //}
 
-            userPriv.Clear();
+            //var res = await LoginService.frameworkApiFacadePrivilege(privData, tkn);
 
-            if (res.isSuccess)
-            {
-                if (res.Data.privileges.Any())
-                {
-                    foreach (var priv in res.Data.privileges)
-                    {
-                        userPriv.Add(priv.privilegeId);
-                    }
-                }
+            //userPriv.Clear();
 
-                //syncSessionStorage.RemoveItem("PagePrivileges");
+            //if (res.isSuccess)
+            //{
+            //    if (res.Data.privileges.Any())
+            //    {
+            //        foreach (var priv in res.Data.privileges)
+            //        {
+            //            userPriv.Add(priv.privilegeId);
+            //        }
+            //    }
 
-                await sessionStorage.SetItemAsync("PagePrivileges", userPriv);
+            //    //syncSessionStorage.RemoveItem("PagePrivileges");
+
+            //    await sessionStorage.SetItemAsync("PagePrivileges", userPriv);
                 
-                LoginService.activeUser.userPrivileges = userPriv;
+            //    LoginService.activeUser.userPrivileges = userPriv;
 
-            }
+            //}
             
         }
 

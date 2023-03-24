@@ -1,5 +1,6 @@
 ﻿@page "/pettycash/addexpense"
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
 @inject ILoginService LoginService
 @inject IPettyCashService PettyCashService
 @inject IManagementService ManagementService
@@ -256,6 +257,7 @@ else
                         @if (fileLines.Any())
                         {
                             <table class="table table-sm table-bordered" style="width: 100%">
+                                <caption>&lowast; Max File Size Upload @maxFileSize MB(s)</caption>
                                 <thead>
                                     <tr>
                                         <th style="width: 5%;">Action</th>

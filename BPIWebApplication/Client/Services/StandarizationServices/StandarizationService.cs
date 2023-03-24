@@ -273,6 +273,40 @@ namespace BPIWebApplication.Client.Services.StandarizationServices
             return resData.Data;
         }
 
+        public async Task<string[]> getStandarizationAcceptedFileExtension()
+        {
+            ResultModel<string[]> resData = new ResultModel<string[]>();
+
+            try
+            {
+                var result = await _http.GetFromJsonAsync<ResultModel<string[]>>($"api/endUser/Standarization/getStandarizationAcceptedFileExtension");
+
+                if (result.isSuccess)
+                {
+                    resData.Data = result.Data;
+                    resData.isSuccess = result.isSuccess;
+                    resData.ErrorCode = result.ErrorCode;
+                    resData.ErrorMessage = result.ErrorMessage;
+
+                }
+                else
+                {
+                    resData.Data = result.Data;
+                    resData.isSuccess = result.isSuccess;
+                    resData.ErrorCode = result.ErrorCode;
+                    resData.ErrorMessage = result.ErrorMessage;
+                }
+            }
+            catch (Exception ex)
+            {
+                resData.Data = new string[] {};
+                resData.isSuccess = false;
+                resData.ErrorCode = "99";
+                resData.ErrorMessage = ex.Message;
+            }
+
+            return resData.Data;
+        }
 
         //
     }

@@ -3,213 +3,218 @@
 @inject IManagementService ManagementService
 @inject ILoginService LoginService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
 
 
-@if (LoginService.activeUser.userPrivileges == null || !LoginService.activeUser.userPrivileges.Contains("VW"))
+@if (LoginService.activeUser == null)
 {
-    <div class="container-fluid">
-        <div class="d-flex align-items-center">
-            <h3>User Require Elevation</h3>
-        </div>
-    </div>
+    <p>Loading...</p>
 }
 else
 {
-    <div class="container-fluid">
-        <PageTitle>Procedure - Apply Department</PageTitle>
-        <h3>Standard Operational Procedures</h3>
-        <small><i>Apply Deparment's Procedure</i></small>
-
-        @if (alertTrigger)
+    @if (LoginService.activeUser.userPrivileges != null)
+    {
+        @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
         {
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                <strong>@alertMessage</strong> @alertBody
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <h3>User Require Elevation</h3>
+                </div>
             </div>
         }
-
-        @if (successAlert)
+        else
         {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <strong>@alertMessage</strong> @alertBody
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        }
+            <div class="container-fluid">
+                <PageTitle>Procedure - Apply Department</PageTitle>
+                <h3>Standard Operational Procedures</h3>
+                <small><i>Apply Deparment's Procedure</i></small>
 
-        <div id="inputSuggestion" class="form-control-sm">
-            <label for="procedureNoInput" class="form-control-sm">Procedure No : </label>
-
-            <input type="text" id="procedureNoInput" class="form-control-sm" placeholder="CMSS/SOP/<DIV>/<NO>" @bind-value="procNoFilter" list="procList" />
-        
-            <datalist id="procList">
-                @foreach (var proc in ProcedureService.procedures)
+                @if (alertTrigger)
                 {
-                    <option value="@proc.ProcedureNo">@proc.ProcedureNo</option>
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <strong>@alertMessage</strong> @alertBody
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
                 }
-            </datalist>
 
-            <button class="btn btn-sm btn-primary-cus" type="button" @onclick="(() => selectProcedure())">GO</button>
-        </div>
+                @if (successAlert)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>@alertMessage</strong> @alertBody
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                }
 
-        <div class="separator">Details</div>
-    
-        <div class="d-flex flex-column align-items-center" id="procDetails">
-            <EditForm class="form-group" Model="previewProcedure">
-                <div class="row">
-                    <div class="col">
-                        <label for="procNo">Procedure No :</label>
-                        <InputText class="form-control" id="procNo" @bind-Value="previewProcedure.ProcedureNo" disabled></InputText>
-                    </div>
-                    <div class="col">
-                        <label for="procDate">Procedure Date :</label>
-                        <InputDate class="form-control" id="procDate" @bind-Value="previewProcedure.ProcedureDate" disabled></InputDate>
-                    </div>
+                <div id="inputSuggestion" class="form-control-sm">
+                    <label for="procedureNoInput" class="form-control-sm">Procedure No : </label>
+
+                    <input type="text" id="procedureNoInput" class="form-control-sm" placeholder="CMSS/SOP/<DIV>/<NO>" @bind-value="procNoFilter" list="procList" />
+
+                    <datalist id="procList">
+                        @foreach (var proc in ProcedureService.procedures)
+                        {
+                            <option value="@proc.ProcedureNo">@proc.ProcedureNo</option>
+                        }
+                    </datalist>
+
+                    <button class="btn btn-sm btn-primary-cus" type="button" @onclick="(() => selectProcedure())">GO</button>
                 </div>
-                <div class="row">
-                    <div class="col">
-                        <label for="procName">Procedure Name :</label>
-                        <InputText class="form-control" id="procName" @bind-Value="previewProcedure.ProcedureName" disabled></InputText>
-                    </div>
-                </div>
-            </EditForm>
-        </div>
 
-        <div class="d-flex flex-column align-items-center" id="procDetails">
-            @* department selected here *@
-            <p class="dept-selected">@deptSelected.Count DEPARTMENT(s) SELECTED</p>
+                <div class="separator">Details</div>
 
-            @if (procedureSelected && LoginService.activeUser.userPrivileges.Contains("CR"))
-            {
-                <button class="btn btn-sm btn-warning-cus" type="button" @onclick="modalShow">Select Department</button>
-                <p></p>
-                <button class="btn btn-sm btn-primary-cus" type="button" @onclick="handleSubmit">Submit</button>
-            }
-            else
-            {
-                <button class="btn btn-sm btn-warning-cus" type="button" @onclick="modalShow" disabled>Select Department</button>
-                <p></p>
-                <button class="btn btn-sm btn-primary-cus" type="button" @onclick="handleSubmit" disabled>Submit</button>
-            }
-
-        </div>
-        
-    
-        @*
-        <div class="separator">Uploaded Files</div>
-
-        <div class="d-flex justify-content-start">
-            <div class="col">
-                // itteration file existing 
-                <div id="cardFile" class="card">
-                    <img class="card-img-top" src="img/pdf-icon.png" />
-                    <div class="card-body">
-                        <h5 class="card-title">// filename </h5>
-                        <p class="card-text text-sm-center">Click Below to Preview</p>
-                        <button type="button" class="btn btn-sm btn-primary align-items-center">Preview</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        *@
-
-        @if (showModal)
-        {
-            <div class="modal fade show" id="departmentApplyModal" tabindex="-1" role="dialog" aria-labelledby="departmentApplyModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        @* header *@
-                        <div class="modal-header">
-                            <div class="nav">
-                                <button class="btn-sm btn-flat" @onclick="showModalBodyStore">STORE</button>
-                                <button class="btn-sm btn-flat" @onclick="showModalBodyHo">HO</button>
-                                <button class="btn-sm btn-flat" @onclick="showModalBodyDc">DC</button>
+                <div class="d-flex flex-column align-items-center" id="procDetails">
+                    <EditForm class="form-group" Model="previewProcedure">
+                        <div class="row">
+                            <div class="col">
+                                <label for="procNo">Procedure No :</label>
+                                <InputText class="form-control" id="procNo" @bind-Value="previewProcedure.ProcedureNo" disabled></InputText>
                             </div>
-
-                            <button type="button" class="close" @onclick="modalHide">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
+                            <div class="col">
+                                <label for="procDate">Procedure Date :</label>
+                                <InputDate class="form-control" id="procDate" @bind-Value="previewProcedure.ProcedureDate" disabled></InputDate>
+                            </div>
                         </div>
-
-                        <div class="modal-body">
-                            @* body *@
-                            @if (ManagementService.departments.Any())
-                            {
-                                foreach (var dept in ManagementService.departments)
-                                {   
-                                    @* Store Dept *@
-                                    if ((dept.BisnisUnitID == "01" && (showModalBodyStoreTrigger || defaultModalTrigger)))
-                                    {
-                                        //if (deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null)
-                                        //{
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" checked="@(deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null ? null : "checked")" @onclick="(() => appendDeptSelected(dept.DepartmentID))" />
-                                                <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
-                                            </div>
-                                        //}
-                                        //else
-                                        //{
-                                        //    <div class="form-check">
-                                        //        <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" @onclick="(() => appendDeptSelected(dept.DepartmentID))" checked />
-                                        //        <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
-                                        //    </div>
-                                        //}
-
-                                    }
-                                    @* HO Dept *@
-                                    if (dept.BisnisUnitID == "00" && showModalBodyHoTrigger)
-                                    {
-                                        //if (deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null)
-                                        //{
-                                            <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" checked="@(deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null ? null : "checked")" @onclick="(() => appendDeptSelected(dept.DepartmentID))" />
-                                                <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
-                                            </div>
-                                        //}
-                                        //else
-                                        //{
-                                        //    <div class="form-check">
-                                        //        <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" @onclick="(() => appendDeptSelected(dept.DepartmentID))" checked />
-                                        //        <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
-                                        //    </div>
-                                        //}
-                                    }
-                                    @* DC Dept *@
-                                    if (dept.BisnisUnitID == "02" && showModalBodyDcTrigger)
-                                    {
-                                        //if (deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null)
-                                        //{
-                                            <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" checked="@(deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null ? null : "checked")" value="@dept.DepartmentID" @onclick="(() => appendDeptSelected(dept.DepartmentID))" />
-                                                <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
-                                            </div>
-                                        //}
-                                        //else
-                                        //{
-                                        //    <div class="form-check">
-                                        //        <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" @onclick="(() => appendDeptSelected(dept.DepartmentID))" checked />
-                                        //        <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
-                                        //    </div>
-                                        //}
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                <p class="text-danger">There are no available Department</p>
-                            }
-
+                        <div class="row">
+                            <div class="col">
+                                <label for="procName">Procedure Name :</label>
+                                <InputText class="form-control" id="procName" @bind-Value="previewProcedure.ProcedureName" disabled></InputText>
+                            </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" @onclick="modalHide">Apply</button>
+                    </EditForm>
+                </div>
+
+                <div class="d-flex flex-column align-items-center" id="procDetails">
+                    @* department selected here *@
+                    <p class="dept-selected">@deptSelected.Count DEPARTMENT(s) SELECTED</p>
+
+                    @if (procedureSelected && LoginService.activeUser.userPrivileges.Contains("CR"))
+                    {
+                        <button class="btn btn-sm btn-warning-cus" type="button" @onclick="modalShow">Select Department</button>
+                        <p></p>
+                        <button class="btn btn-sm btn-primary-cus" type="button" @onclick="handleSubmit">Submit</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-warning-cus" type="button" @onclick="modalShow" disabled>Select Department</button>
+                        <p></p>
+                        <button class="btn btn-sm btn-primary-cus" type="button" @onclick="handleSubmit" disabled>Submit</button>
+                    }
+
+                </div>
+
+                @if (showModal)
+                {
+                    <div class="modal fade show" id="departmentApplyModal" tabindex="-1" role="dialog" aria-labelledby="departmentApplyModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                @* header *@
+                                <div class="modal-header">
+                                    <div class="nav">
+                                        <button class="btn-sm btn-flat" @onclick="showModalBodyStore">STORE</button>
+                                        <button class="btn-sm btn-flat" @onclick="showModalBodyHo">HO</button>
+                                        <button class="btn-sm btn-flat" @onclick="showModalBodyDc">DC</button>
+                                    </div>
+
+                                    <button type="button" class="close" @onclick="modalHide">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+
+                                <div class="modal-body">
+                                    @* body *@
+                                    @if (ManagementService.departments.Any())
+                                    {
+                                        foreach (var dept in ManagementService.departments)
+                                        {
+                                            @* Store Dept *@
+                                            if ((dept.BisnisUnitID == "01" && (showModalBodyStoreTrigger || defaultModalTrigger)))
+                                            {
+                                                //if (deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null)
+                                                //{
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" checked="@(deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null ? null : "checked")" @onclick="(() => appendDeptSelected(dept.DepartmentID))" />
+                                                    <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
+                                                </div>
+                                                //}
+                                                //else
+                                                //{
+                                                //    <div class="form-check">
+                                                //        <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" @onclick="(() => appendDeptSelected(dept.DepartmentID))" checked />
+                                                //        <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
+                                                //    </div>
+                                                //}
+
+                                            }
+                                            @* HO Dept *@
+                                            if (dept.BisnisUnitID == "00" && showModalBodyHoTrigger)
+                                            {
+                                                //if (deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null)
+                                                //{
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" checked="@(deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null ? null : "checked")" @onclick="(() => appendDeptSelected(dept.DepartmentID))" />
+                                                    <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
+                                                </div>
+                                                //}
+                                                //else
+                                                //{
+                                                //    <div class="form-check">
+                                                //        <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" @onclick="(() => appendDeptSelected(dept.DepartmentID))" checked />
+                                                //        <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
+                                                //    </div>
+                                                //}
+                                            }
+                                            @* DC Dept *@
+                                            if (dept.BisnisUnitID == "02" && showModalBodyDcTrigger)
+                                            {
+                                                //if (deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null)
+                                                //{
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" checked="@(deptSelected.SingleOrDefault(a => a.DepartmentID == dept.DepartmentID) == null ? null : "checked")" value="@dept.DepartmentID" @onclick="(() => appendDeptSelected(dept.DepartmentID))" />
+                                                    <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
+                                                </div>
+                                                //}
+                                                //else
+                                                //{
+                                                //    <div class="form-check">
+                                                //        <input class="form-check-input" type="checkbox" id="@dept.DepartmentID" value="@dept.DepartmentID" @onclick="(() => appendDeptSelected(dept.DepartmentID))" checked />
+                                                //        <label class="form-check-label" for="@dept.DepartmentID">@dept.DepartmentName</label>
+                                                //    </div>
+                                                //}
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="text-danger">There are no available Department</p>
+                                    }
+
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary" @onclick="modalHide">Apply</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                }
+
             </div>
         }
-
-    </div>
+    }
+    else
+    {
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col align-middle text-center">
+                    <h3>Fetch Data Privileges in Process</h3>
+                    <small>Refresh Page Using Button Below If There is No Response</small>
+                    <br />
+                    <button type="button" class="btn btn-primary my-4" @onclick="(() => StateHasChanged())"><b>Refresh Page</b></button>
+                </div>
+            </div>
+        </div>
+    }
 }

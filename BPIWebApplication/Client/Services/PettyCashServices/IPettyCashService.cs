@@ -3,6 +3,7 @@ using BPIWebApplication.Shared.MainModel.Company;
 using BPIWebApplication.Shared.MainModel;
 using BPIWebApplication.Shared.DbModel;
 using static System.Net.WebRequestMethods;
+using BPIWebApplication.Shared.PagesModel.PettyCash;
 
 namespace BPIWebApplication.Client.Services.PettyCashServices
 {
@@ -47,6 +48,7 @@ namespace BPIWebApplication.Client.Services.PettyCashServices
         Task<ResultModel<QueryModel<List<string>>>> updateExpenseDataSettlement(QueryModel<List<string>> data);
         Task<ResultModel<QueryModel<string>>> updateReimburseDataSettlement(QueryModel<string> data);
         Task<ResultModel<QueryModel<string>>> updateDocumentStatus(QueryModel<string> data);
+        Task<List<ResultModel<ReimbursementMultiSelectStatusUpdate>>> editMultiSelectDocumentStatus(List<ReimbursementMultiSelectStatusUpdate> data);
         Task<ResultModel<QueryModel<Reimburse>>> updateReimburseLineData(QueryModel<Reimburse> data);
 
         // is
@@ -57,6 +59,7 @@ namespace BPIWebApplication.Client.Services.PettyCashServices
 
         Task<int> getModulePageSize(string Table);
         Task<ResultModel<bool>> autoEmail(string param);
+        Task<int> getPettyCashMaxSizeUpload();
 
     }
 }

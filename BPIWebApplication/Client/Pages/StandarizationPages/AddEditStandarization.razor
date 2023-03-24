@@ -3,6 +3,7 @@
 @inject IStandarizationService StandarizationService
 @inject ILoginService LoginService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
 @inject IJSRuntime JS
 
 @if (LoginService.activeUser == null)
@@ -146,6 +147,7 @@ else
                             @if (fileLines.Any())
                             {
                                 <table class="table table-sm table-bordered" style="width: 100%">
+                                    <caption>&lowast; Max File Size Upload @maxFileSize MB(s)</caption>
                                     <thead>
                                         <tr>
                                             <th style="width: 5%;">Action</th>
@@ -162,8 +164,8 @@ else
                                                 <td><button type="button" class="btn btn-sm btn-danger h-100 w-100" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @onclick="(() => fileLines.Remove(f))"><i class="oi oi-delete"></i></button></td>
                                                 <td><input type="text" class="form-control w-100 h-100" placeholder="Max 100 Characters" disabled="@(successUpload.Equals(true) ? "disabled" : null)" @bind="f.fileDesc" /></td>
                                                 <td>@f.fileName</td>
-                                                <td>@(f.fileSize / 1024)</td>
-                                                <td><InputFile class="form-control form-control-file" accept=".pdf, .xls, .xlsx, .mp4" OnChange="@((InputFileChangeEventArgs args) => UploadHandleSelection(args, f))" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputFile></td>
+                                                <td>@(f.fileSize / 1024) Kilobyte(s)</td>
+                                                <td><InputFile class="form-control form-control-file" OnChange="@((InputFileChangeEventArgs args) => UploadHandleSelection(args, f))" disabled="@(successUpload.Equals(true) ? "disabled" : null)"></InputFile></td>
                                             </tr>
                                         }
                                     </tbody>

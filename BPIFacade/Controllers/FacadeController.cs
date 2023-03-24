@@ -26,15 +26,15 @@ namespace BPIFacade.Controllers
             _http.BaseAddress = new Uri(config.GetValue<string>("BaseUri:BpiBR"));
         }
 
-        [HttpGet("getAllBisnisUnitData")]
-        public async Task<IActionResult> getAllBisnisUnitDataTable()
+        [HttpGet("getAllBisnisUnitData/{param}")]
+        public async Task<IActionResult> getAllBisnisUnitDataTable(string param)
         {
             ResultModel<List<BisnisUnit>> res = new ResultModel<List<BisnisUnit>>();
             IActionResult actionResult = null;
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/BR/BPIBase/getAllBisnisUnitData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>($"api/BR/BPIBase/getAllBisnisUnitData/{param}");
 
                 if (result.isSuccess)
                 {
@@ -70,15 +70,15 @@ namespace BPIFacade.Controllers
             return actionResult;
         }
 
-        [HttpGet("getAllDepartmentData")]
-        public async Task<IActionResult> getAllDepartmentDataTable()
+        [HttpGet("getAllDepartmentData/{param}")]
+        public async Task<IActionResult> getAllDepartmentDataTable(string param)
         {
             ResultModel<List<Department>> res = new ResultModel<List<Department>>();
             IActionResult actionResult = null;
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>("api/BR/BPIBase/getAllDepartmentData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>($"api/BR/BPIBase/getAllDepartmentData/{param}");
 
                 if (result.isSuccess)
                 {
@@ -547,15 +547,15 @@ namespace BPIFacade.Controllers
             return actionResult;
         }
 
-        [HttpGet("getDepartmentProcedureDatawithPaging/{pageNo}")]
-        public async Task<IActionResult> getAllDepartmentProcedureDataTablebyPaging(int pageNo)
+        [HttpGet("getDepartmentProcedureDatawithPaging/{param}")]
+        public async Task<IActionResult> getAllDepartmentProcedureDataTablebyPaging(string param)
         {
             ResultModel<List<DepartmentProcedure>> res = new ResultModel<List<DepartmentProcedure>>();
             IActionResult actionResult = null;
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/BR/Procedure/getDepartmentProcedureDatawithPaging/{pageNo}");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/BR/Procedure/getDepartmentProcedureDatawithPaging/{param}");
 
                 if (result.isSuccess)
                 {
@@ -773,15 +773,15 @@ namespace BPIFacade.Controllers
             return actionResult;
         }
 
-        [HttpGet("getDepartmentProcedureNumberofPage")]
-        public async Task<IActionResult> getDepartmentProcedureNumberofPageData()
+        [HttpGet("getDepartmentProcedureNumberofPage/{param}")]
+        public async Task<IActionResult> getDepartmentProcedureNumberofPageData(string param)
         {
             ResultModel<int> res = new ResultModel<int>();
             IActionResult actionResult = null;
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<int>>("api/BR/Procedure/getDepartmentProcedureNumberofPage");
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/BR/Procedure/getDepartmentProcedureNumberofPage/{param}");
 
                 if (result.isSuccess)
                 {
@@ -1754,6 +1754,53 @@ namespace BPIFacade.Controllers
                 res.isSuccess = false;
                 res.ErrorCode = "99";
                 res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("editMultiSelectDocumentStatus")]
+        public async Task<IActionResult> editMultiSelectDocumentStatus(List<ReimbursementMultiSelectStatusUpdate> data)
+        {
+            List<ResultModel<ReimbursementMultiSelectStatusUpdate>> res = new List<ResultModel<ReimbursementMultiSelectStatusUpdate>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<List<ReimbursementMultiSelectStatusUpdate>>($"api/BR/PettyCash/editMultiSelectDocumentStatus", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<List<ResultModel<ReimbursementMultiSelectStatusUpdate>>>();
+
+                    res = respBody;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Add(new ResultModel<ReimbursementMultiSelectStatusUpdate>
+                    {
+                        Data = null,
+                        isSuccess = false,
+                        ErrorCode = "01",
+                        ErrorMessage = "CONNECTION FAIL TO BR"
+                    });
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Add(new ResultModel<ReimbursementMultiSelectStatusUpdate>
+                {
+                    Data = null,
+                    isSuccess = false,
+                    ErrorCode = "99",
+                    ErrorMessage = "ERROR : REASON " + ex.Message
+                });
 
                 actionResult = BadRequest(res);
             }

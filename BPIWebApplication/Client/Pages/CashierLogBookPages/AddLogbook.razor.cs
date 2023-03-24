@@ -18,6 +18,8 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
         public string? param { get; set; } = null;
 
         private ActiveUser activeUser = new();
+        private UserPrivileges privilegeDataParam = new();
+        private List<string> userPriv = new();
 
         //private Shift activeShift { get; set; } = new();
         //private AmountCategories activeCategories { get; set; } = new();
@@ -55,15 +57,61 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
 
         protected override async Task OnInitializedAsync()
         {
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+                LoginService.activeUser.userPrivileges.Clear();
+
+            if (syncSessionStorage.ContainKey("PagePrivileges"))
+                syncSessionStorage.RemoveItem("PagePrivileges");
+
+            string tkn = syncSessionStorage.GetItem<string>("token");
+
+            if (syncSessionStorage.ContainKey("userName"))
+            {
+                privilegeDataParam.moduleId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("ModuleId")));
+                privilegeDataParam.UserName = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam = new();
+                privilegeDataParam.userLocationParam.SessionId = syncSessionStorage.GetItem<string>("SessionId");
+                privilegeDataParam.userLocationParam.MacAddress = "";
+                privilegeDataParam.userLocationParam.IpClient = "";
+                privilegeDataParam.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("AppV")));
+                privilegeDataParam.userLocationParam.LocationId = Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[1];
+                privilegeDataParam.userLocationParam.Name = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[0]);
+                privilegeDataParam.userLocationParam.PageIndex = 1;
+                privilegeDataParam.userLocationParam.PageSize = 100;
+                privilegeDataParam.privileges = new();
+            }
+
+            var res = await LoginService.frameworkApiFacadePrivilege(privilegeDataParam, tkn);
+
+            userPriv.Clear();
+
+            if (res.isSuccess)
+            {
+                if (res.Data.privileges.Any())
+                {
+                    foreach (var priv in res.Data.privileges)
+                    {
+                        userPriv.Add(priv.privilegeId);
+                    }
+                }
+
+                syncSessionStorage.SetItem("PagePrivileges", userPriv);
+
+                LoginService.activeUser.userPrivileges = userPriv;
+
+            }
+            //
+
             activeUser.token = await sessionStorage.GetItemAsync<string>("token");
             activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
             activeUser.location = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[1];
             activeUser.sessionId = await sessionStorage.GetItemAsync<string>("SessionId");
             activeUser.appV = Convert.ToInt32(Base64Decode(await sessionStorage.GetItemAsync<string>("AppV")));
-            //activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
+            activeUser.userPrivileges = await sessionStorage.GetItemAsync<List<string>>("PagePrivileges");
 
-            //LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
+            LoginService.activeUser.userPrivileges = activeUser.userPrivileges;
 
             await CashierLogbookService.getShiftData("CashierLogbook");
             await CashierLogbookService.getLogbookCategories();
@@ -74,10 +122,12 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
             logbook.LogStatus = "Create";
             logbook.LogStatusDate = DateTime.Now;
 
-            string param = $"WHERE LogDate BETWEEN \'{logbook.LogStatusDate.ToString("yyyyMMdd")}\' AND \'{logbook.LogStatusDate.ToString("yyyyMMdd")}\'";
-            var res = await CashierLogbookService.getNumberofLogExisting(Base64Encode(param));
+            isActiveDocumentExist = true;
 
-            if (res > 0)
+            string param = activeUser.location + $"!_!WHERE LogDate BETWEEN \'{logbook.LogStatusDate.ToString("yyyyMMdd")}\' AND \'{logbook.LogStatusDate.ToString("yyyyMMdd")}\' AND LogStatus != \'DONE\'";
+            var res2 = await CashierLogbookService.getNumberofLogExisting(Base64Encode(param));
+
+            if (res2 > 0)
             {
                 isActiveDocumentExist = true;
             }

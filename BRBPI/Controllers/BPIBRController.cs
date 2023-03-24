@@ -20,6 +20,7 @@ using BPIBR.Models.MainModel.CashierLogbook;
 using BPIBR.Models.MainModel.Standarizations;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using System.IO.Compression;
+using System.Threading.Tasks;
 
 namespace BPIBR.Controllers
 {
@@ -35,15 +36,15 @@ namespace BPIBR.Controllers
             _http.BaseAddress = new Uri(config.GetValue<string>("BaseUri:BpiDA"));
         }
 
-        [HttpGet("getAllBisnisUnitData")]
-        public async Task<IActionResult> getAllBisnisUnitDataTable()
+        [HttpGet("getAllBisnisUnitData/{param}")]
+        public async Task<IActionResult> getAllBisnisUnitDataTable(string param)
         {
             ResultModel<List<BisnisUnit>> res = new ResultModel<List<BisnisUnit>>();
             IActionResult actionResult = null;
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>("api/DA/BPIBase/getAllBisnisUnitData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<BisnisUnit>>>($"api/DA/BPIBase/getAllBisnisUnitData/{param}");
 
                 if (result.isSuccess)
                 {
@@ -79,15 +80,15 @@ namespace BPIBR.Controllers
             return actionResult;
         }
 
-        [HttpGet("getAllDepartmentData")]
-        public async Task<IActionResult> getAllDepartmentDataTable()
+        [HttpGet("getAllDepartmentData/{param}")]
+        public async Task<IActionResult> getAllDepartmentDataTable(string param)
         {
             ResultModel<List<Department>> res = new ResultModel<List<Department>>();
             IActionResult actionResult = null;
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>("api/DA/BPIBase/getAllDepartmentData");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<Department>>>($"api/DA/BPIBase/getAllDepartmentData/{param}");
 
                 if (result.isSuccess)
                 {
@@ -556,15 +557,15 @@ namespace BPIBR.Controllers
             return actionResult;
         }
 
-        [HttpGet("getDepartmentProcedureDatawithPaging/{pageNo}")]
-        public async Task<IActionResult> getAllDepartmentProcedureDataTablebyPaging(int pageNo)
+        [HttpGet("getDepartmentProcedureDatawithPaging/{param}")]
+        public async Task<IActionResult> getAllDepartmentProcedureDataTablebyPaging(string param)
         {
             ResultModel<List<DepartmentProcedure>> res = new ResultModel<List<DepartmentProcedure>>();
             IActionResult actionResult = null;
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/DA/Procedure/getDepartmentProcedureDatawithPaging/{pageNo}");
+                var result = await _http.GetFromJsonAsync<ResultModel<List<DepartmentProcedure>>>($"api/DA/Procedure/getDepartmentProcedureDatawithPaging/{param}");
 
                 if (result.isSuccess)
                 {
@@ -782,15 +783,15 @@ namespace BPIBR.Controllers
             return actionResult;
         }
 
-        [HttpGet("getDepartmentProcedureNumberofPage")]
-        public async Task<IActionResult> getDepartmentProcedureNumberofPageData()
+        [HttpGet("getDepartmentProcedureNumberofPage/{param}")]
+        public async Task<IActionResult> getDepartmentProcedureNumberofPageData(string param)
         {
             ResultModel<int> res = new ResultModel<int>();
             IActionResult actionResult = null;
 
             try
             {
-                var result = await _http.GetFromJsonAsync<ResultModel<int>>("api/DA/Procedure/getDepartmentProcedureNumberofPage");
+                var result = await _http.GetFromJsonAsync<ResultModel<int>>($"api/DA/Procedure/getDepartmentProcedureNumberofPage/{param}");
 
                 if (result.isSuccess)
                 {
@@ -2251,6 +2252,87 @@ namespace BPIBR.Controllers
             return actionResult;
         }
 
+        [HttpPost("editMultiSelectDocumentStatus")]
+        public async Task<IActionResult> editMultiSelectDocumentStatus(List<ReimbursementMultiSelectStatusUpdate> data)
+        {
+            List<ResultModel<ReimbursementMultiSelectStatusUpdate>> res = new List<ResultModel<ReimbursementMultiSelectStatusUpdate>>();
+            IActionResult actionResult = null;
+
+            try
+            {
+                //if (data.Data.Split("!_!")[1].Contains("E") && data.Data.Split("!_!")[4].Equals("Open") && data.Data.Split("!_!")[2].Equals("Rejected"))
+                //{
+                //    string temp = data.Data.Split("!_!")[1] + "!_!MASTER";
+
+                //    var result1 = await _http.GetFromJsonAsync<ResultModel<List<AttachmentLine>>>($"api/DA/PettyCash/getAttachmentLines/{Base64Encode(temp)}");
+
+                //    if (result1.isSuccess)
+                //    {
+                //        foreach (var dt in result1.Data)
+                //        {
+                //            deleteFilefromDirectory(data.Data.Split("!_!")[1], dt.PathFile);
+                //        }
+                //    }
+                //}
+
+                await Parallel.ForEachAsync(data, new ParallelOptions { MaxDegreeOfParallelism = 4 }, async (dt, i) =>
+                {
+                    ResultModel<ReimbursementMultiSelectStatusUpdate> taskResult = new();
+                    QueryModel<string> param = new();
+
+                    if (dt.statusValue.Equals("Released"))
+                    {
+                        param.Data = "Reimburse!_!" + dt.documentID + "!_!" + dt.statusValue + "!_!";
+                        param.userEmail = dt.approver;
+                        param.userAction = "U";
+                        param.userActionDate = DateTime.Now;
+
+                        var result = await _http.PostAsJsonAsync<QueryModel<string>>($"api/DA/PettyCash/editDocumentStatus", param);
+
+                        if (result.IsSuccessStatusCode)
+                        {
+                            var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<string>>>();
+
+                            taskResult.Data = dt;
+                            taskResult.isSuccess = respBody.isSuccess;
+                            taskResult.ErrorCode = respBody.ErrorCode;
+                            taskResult.ErrorMessage = respBody.ErrorMessage;
+                        
+                            res.Add(taskResult);
+                            
+                            string emailParam = "PettyCash!_!StatusRelease!_!" + dt.documentLocation + "!_!" + dt.approver + "!_!" + dt.documentID;
+                            await getMailingDetailsData(Base64Encode(emailParam));
+                        }
+                        else
+                        {
+                            taskResult.Data = dt;
+                            taskResult.isSuccess = result.IsSuccessStatusCode;
+                            taskResult.ErrorCode = "01";
+                            taskResult.ErrorMessage = "Fail Update Document Status DA";
+
+                            res.Add(taskResult);
+                        }
+                    }
+
+                });
+
+                actionResult = Ok(res);
+            }
+            catch (Exception ex)
+            {
+                res.Add(new ResultModel<ReimbursementMultiSelectStatusUpdate>
+                {
+                    Data = null,
+                    isSuccess = false,
+                    ErrorCode = "99",
+                    ErrorMessage = "PARALEL TASK FORCED STOP : REASON " + ex.Message
+                });
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
         [HttpPost("editReimburseLine")]
         public async Task<IActionResult> editReimburseLineData(QueryModel<Reimburse> data)
         {
@@ -3573,6 +3655,7 @@ namespace BPIBR.Controllers
         private readonly HttpClient _http;
         private readonly IConfiguration _configuration;
         private readonly string _uploadPath;
+        private readonly string[] _compressedFileExtensions;
 
         public StandarizationController(HttpClient http, IConfiguration config)
         {
@@ -3580,6 +3663,7 @@ namespace BPIBR.Controllers
             _configuration = config;
             _http.BaseAddress = new Uri(_configuration.GetValue<string>("BaseUri:BpiDA"));
             _uploadPath = _configuration.GetValue<string>("File:Standarizations:UploadPath");
+            _compressedFileExtensions = config.GetValue<string>("File:Standarizations:CompressedFileExtensions").Split("|");
         }
 
         private static string Base64Encode(string plainText)
@@ -3609,7 +3693,7 @@ namespace BPIBR.Controllers
             await stream.CopyToAsync(fs);
         }
 
-        internal async void saveZipBinaryDatatoDirectory(byte[] data, string path)
+        internal async Task saveFiletoDirectoryAsZip(string path, string originalName, Byte[] content)
         {
             string dir = Path.GetDirectoryName(path);
 
@@ -3622,24 +3706,53 @@ namespace BPIBR.Controllers
             {
                 using (ZipArchive archive = new ZipArchive(compressedStream, ZipArchiveMode.Create, false))
                 {
-                    string filename = Path.GetFileName(path);
-                    var entry = archive.CreateEntry(filename);
+                    FileInfo fi = new FileInfo(originalName);
+                    var entry = archive.CreateEntry(fi.Name);
 
-                    using (var original = new MemoryStream(data))
+                    using (var original = new MemoryStream(content))
                     {
                         using (var zipEntryStream = entry.Open())
                         {
-                            await original.CopyToAsync(zipEntryStream);
+                            original.CopyTo(zipEntryStream);
                         }
                     }
                 }
 
-                await using FileStream fs = new(path, FileMode.Create);
+                using FileStream fs = new(path, FileMode.Create);
                 Stream stream = new MemoryStream(compressedStream.ToArray());
-                await stream.CopyToAsync(fs);
+                stream.CopyTo(fs);
+            }
+        }
+
+        // data processing
+        private async Task<Byte[]> compressData(byte[] data)
+        {
+            byte[] compressedData = new byte[0];
+
+            using (var compressedStream = new MemoryStream())
+            using (var zipStream = new GZipStream(compressedStream, CompressionMode.Compress))
+            {
+                zipStream.Write(data, 0, data.Length);
+                zipStream.Close();
+                compressedData = compressedStream.ToArray();
             }
 
-            //archive.ExtractToDirectory(path);
+            return compressedData;
+        }
+
+        private async Task<Byte[]> decompressData(byte[] data)
+        {
+            byte[] decompressedData = new byte[0];
+
+            using (var compressedStream = new MemoryStream(data))
+            using (var zipStream = new GZipStream(compressedStream, CompressionMode.Decompress))
+            using (var resultStream = new MemoryStream())
+            {
+                zipStream.CopyTo(resultStream);
+                decompressedData = resultStream.ToArray();
+            }
+
+            return decompressedData;
         }
 
         internal async Task<Byte[]> getFileStream(string type, string filename, DateTime date)
@@ -3647,6 +3760,26 @@ namespace BPIBR.Controllers
             string path = Path.Combine(_uploadPath, type, date.Year.ToString(), date.Month.ToString(), date.Day.ToString(), Path.GetFileName(filename));
 
             return await System.IO.File.ReadAllBytesAsync(path);
+        }
+
+        private async Task<Byte[]> getFileStreamfromZip(string filename, string originalName, byte[] data)
+        {
+            byte[] compressedData = new byte[0];
+
+            Stream stream = new MemoryStream(data);
+            ZipArchive archive = new ZipArchive(stream);
+
+            FileInfo fi = new FileInfo(originalName);
+            var entryData = archive.GetEntry(fi.Name);
+            var content = entryData.Open();
+
+            using (var ms = new MemoryStream())
+            {
+                await content.CopyToAsync(ms);
+                compressedData = ms.ToArray();
+            }
+
+            return compressedData;
         }
 
         internal bool deleteFilefromDirectory(string type, string filename, DateTime date)
@@ -3679,18 +3812,23 @@ namespace BPIBR.Controllers
 
                     foreach (var file in data.files)
                     {
-                        string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
+                        if (_compressedFileExtensions.Any(y => y.Equals(file.fileType)))
+                        //if (file.fileName.Contains(".mp4"))
+                        {
+                            byte[] tempContent = new byte[0];
+                            string oriPath = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
+                            string zipPath = Path.ChangeExtension(oriPath, ".zip");
 
-                        await saveFiletoDirectory(path, file.content);
+                            tempContent = await decompressData(file.content);
 
-                        //string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), "ZipPath", file.fileName);
+                            await saveFiletoDirectoryAsZip(zipPath, oriPath, tempContent);
+                        }
+                        else
+                        {
+                            string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
 
-                        //await saveFiletoDirectory(path, file.content);
-
-                        //string zipPath = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), "ZipPath");
-                        //string zipOutPath = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
-
-                        //ZipFile.CreateFromDirectory(zipPath, zipOutPath + ".zip");
+                            await saveFiletoDirectory(path, file.content);
+                        }
                     }
 
                     res.Data = respBody.Data;
@@ -3759,9 +3897,27 @@ namespace BPIBR.Controllers
 
                     foreach (var file in data.files)
                     {
-                        string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
+                        //string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
 
-                        await saveFiletoDirectory(path, file.content);
+                        //await saveFiletoDirectory(path, file.content);
+
+                        if (_compressedFileExtensions.Any(y => y.Equals(file.fileType)))
+                        //if (file.fileName.Contains(".mp4"))
+                        {
+                            byte[] tempContent = new byte[0];
+                            string oriPath = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
+                            string zipPath = Path.ChangeExtension(oriPath, ".zip");
+
+                            tempContent = await decompressData(file.content);
+
+                            await saveFiletoDirectoryAsZip(zipPath, oriPath, tempContent);
+                        }
+                        else
+                        {
+                            string path = Path.Combine(_uploadPath, data.standarizationDetails.Data.TypeID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), file.fileName);
+
+                            await saveFiletoDirectory(path, file.content);
+                        }
                     }
 
                     res.Data = respBody.Data;
@@ -3973,7 +4129,23 @@ namespace BPIBR.Controllers
                         temp.fileDesc = dt.Descriptions;
                         temp.fileType = dt.FileExtention;
                         temp.fileSize = 0;
-                        temp.content = await getFileStream(dcParam.Split("!_!")[1], dt.FilePath, dt.UploadDate);
+
+                        if (_compressedFileExtensions.Any(y => y.Equals(dt.FileExtention)))
+                        //if (dt.FileExtention.Equals(".mp4"))
+                        {
+                            string oriPath = dt.FilePath;
+                            string zipPath = Path.ChangeExtension(oriPath, ".zip");
+
+                            byte[] tempContent = new byte[0];
+                            tempContent = await getFileStream(dcParam.Split("!_!")[1], zipPath, dt.UploadDate);
+
+                            temp.content = await getFileStreamfromZip(zipPath, oriPath, tempContent);
+                            temp.content = await compressData(temp.content);
+                        }
+                        else
+                        {
+                            temp.content = await getFileStream(dcParam.Split("!_!")[1], dt.FilePath, dt.UploadDate);
+                        }
 
                         res.Data.Add(temp);
                     }

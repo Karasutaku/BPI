@@ -1,5 +1,6 @@
 ﻿@page "/pettycash/dashboard"
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
 @inject IPettyCashService PettyCashService
 @inject IManagementService ManagementService
 @inject ILoginService LoginService
@@ -317,6 +318,7 @@ else
                                     <option value="ID">Reimburse ID</option>
                                     <option value="LOC">Location</option>
                                     <option value="USER">User Email</option>
+                                    <option value="STATUS">Reimburse Status</option>
                                 </select>
                             </div>
 
@@ -335,32 +337,80 @@ else
 
                         @if (checkReimburseDataPresent())
                         {
+
+                            @if (LoginService.activeUser.userPrivileges.Contains("RL"))
+                            {
+                                <div class="row">
+                                    <div class="col">
+                                        <button type="button" class="btn btn-sm btn-danger fw-bold" @onclick="@(() => selectedReimburse.Clear())">Reset</button>
+                                        <button type="button" class="btn btn-sm btn-primary fw-bold" @onclick="@(() => updateMultiSelectDocumentStatus("Released"))">Multi Release</button>
+                                    </div>
+                                </div>
+                            }
+
                             <div class="my-3">
                                 <div class="table-responsive">
 
                                     <table class="table table-sm table-hover">
                                         <thead>
-                                            <tr>
-                                                <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Reimbursment ID</th>
-                                                <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Location</th>
-                                                <th scope="col" class="text-center align-middle" style="width: 17%; font-size: 15px;">User</th>
-                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Create Date</th>
-                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Apv. Difference</th>
-                                                <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbodyDashboard">
-                                            @foreach (var reim in PettyCashService.reimburses)
+                                            @if (LoginService.activeUser.userPrivileges.Contains("RL"))
                                             {
-                                                <tr @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "MASTER"))" id="previewRow">
-                                                    <td class="text-center align-middle" style="font-size:14px;">@reim.ReimburseID</td>
-                                                    <td class="text-center align-middle" style="font-size:14px;">@reim.LocationID</td>
-                                                    <td class="text-center align-middle" style="font-size:14px;">@reim.Applicant</td>
-                                                    <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseDate.ToString("dd / MM / yyyy")</td>
-                                                    <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;"> @((reim.ReimburseStatus.Equals("Open") || reim.ReimburseStatus.Equals("Confirmed")) ? "0" : Decimal.Subtract(reim.lines.Sum(a => a.Amount), reim.lines.Sum(a => a.ApprovedAmount)).ToString("N0")) </td>
-                                                    <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseStatus</td>
+                                                <tr>
+                                                    <th scope="col" class="text-center align-middle" style="width: 6%; font-size: 15px;">#</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 15%; font-size: 15px;">Reimbursment ID</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 15%; font-size: 15px;">Location</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">User</th>
+                                                    <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 16%; font-size: 15px;">Create Date</th>
+                                                    <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 16%; font-size: 15px;">Apv. Difference</th>
+                                                    <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 16%; font-size: 15px;">Status</th>
                                                 </tr>
                                             }
+                                            else
+                                            {
+                                                <tr>
+                                                    <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Reimbursment ID</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 16%; font-size: 15px;">Location</th>
+                                                    <th scope="col" class="text-center align-middle" style="width: 17%; font-size: 15px;">User</th>
+                                                    <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Create Date</th>
+                                                    <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Apv. Difference</th>
+                                                    <th scope="col" class="d-none d-sm-table-cell text-center align-middle" style="width: 17%; font-size: 15px;">Status</th>
+                                                </tr>
+                                            }
+                                        </thead>
+                                        <tbody id="tbodyDashboard">
+
+                                            @if (LoginService.activeUser.userPrivileges.Contains("RL"))
+                                            {
+                                                @foreach (var reim in PettyCashService.reimburses)
+                                                {
+                                                    <tr id="previewRow">
+                                                        <td class="text-center align-middle" style="font-size:14px;" @onclick="@(() => appendReimburseSelected("Reimburse", reim.ReimburseID, reim.LocationID, reim.ReimburseStatus))">
+                                                            <input class="form-check-input" type="checkbox" id="@reimburse.ReimburseID" checked="@(selectedReimburse.SingleOrDefault(a => a.documentID == reim.ReimburseID) != null ? "checked" : null)" />
+                                                        </td>
+                                                        <td class="text-center align-middle" style="font-size:14px;" @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "MASTER"))">@reim.ReimburseID</td>
+                                                        <td class="text-center align-middle" style="font-size:14px;" @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "MASTER"))">@reim.LocationID</td>
+                                                        <td class="text-center align-middle" style="font-size:14px;" @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "MASTER"))">@reim.Applicant</td>
+                                                        <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;" @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "MASTER"))">@reim.ReimburseDate.ToString("dd / MM / yyyy")</td>
+                                                        <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;" @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "MASTER"))"> @((reim.ReimburseStatus.Equals("Open") || reim.ReimburseStatus.Equals("Confirmed")) ? "0" : Decimal.Subtract(reim.lines.Sum(a => a.Amount), reim.lines.Sum(a => a.ApprovedAmount)).ToString("N0")) </td>
+                                                        <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;" @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "MASTER"))">@reim.ReimburseStatus</td>
+                                                    </tr>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                @foreach (var reim in PettyCashService.reimburses)
+                                                {
+                                                    <tr @onclick="@(() => modalShow(new(), new(), reim, "reimburse", "MASTER"))" id="previewRow">
+                                                        <td class="text-center align-middle" style="font-size:14px;">@reim.ReimburseID</td>
+                                                        <td class="text-center align-middle" style="font-size:14px;">@reim.LocationID</td>
+                                                        <td class="text-center align-middle" style="font-size:14px;">@reim.Applicant</td>
+                                                        <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseDate.ToString("dd / MM / yyyy")</td>
+                                                        <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;"> @((reim.ReimburseStatus.Equals("Open") || reim.ReimburseStatus.Equals("Confirmed")) ? "0" : Decimal.Subtract(reim.lines.Sum(a => a.Amount), reim.lines.Sum(a => a.ApprovedAmount)).ToString("N0")) </td>
+                                                        <td class="d-none d-sm-table-cell text-center align-middle" style="font-size:14px;">@reim.ReimburseStatus</td>
+                                                    </tr>
+                                                }
+                                            }
+                                            
                                         </tbody>
                                     </table>
 
@@ -1837,6 +1887,73 @@ else
                                 }
                             </button>
                             <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="hideExportModal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (showMultiSelectApprovalModal)
+        {
+            <div class="modal fade show" id="processReportModal" tabindex="-2" role="dialog" aria-labelledby="processReportModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);" @onkeydown="hideReportProcessModalonESC">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        @* header *@
+                        <div class="modal-header cus-bg">
+                            <h5 class="modal-title fw-bolder text-white">Process Report</h5>
+
+                            <button type="button" class="close border-0" aria-label="Close" @onclick="(() => showMultiSelectApprovalModal = false)">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered" style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 35%" class="text-center wrap-text align-middle">Document ID</th>
+                                            <th style="width: 25%" class="text-center wrap-text align-middle">Status</th>
+                                            <th style="width: 25%" class="text-center wrap-text align-middle">Result</th>
+                                            <th style="width: 15%;" class="text-center align-middle">#</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (checkFinishedDocumentDataPresent())
+                                        {
+                                            @foreach (var dt in finishedDocument)
+                                            {
+                                                <tr>
+                                                    <td class="text-center align-middle">@dt.Data.documentID</td>
+                                                    <td class="text-center align-middle">@dt.Data.statusValue</td>
+                                                    <td class="text-center align-middle">
+                                                        @if (dt.isSuccess)
+                                                        {
+                                                            <p>Success</p>
+                                                        }
+                                                        else
+                                                        {
+                                                            <p>Failed</p>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center align-middle @(dt.isSuccess.Equals(true) ? "bg-success text-white" : "bg-danger text-white")">
+                                                        @if (dt.isSuccess)
+                                                        {
+                                                            <span class="oi oi-circle-check"></span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="oi oi-circle-x"></span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
                         </div>
                     </div>
                 </div>

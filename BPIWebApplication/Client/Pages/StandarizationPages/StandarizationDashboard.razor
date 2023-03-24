@@ -2,6 +2,7 @@
 @inject IStandarizationService StandarizationService
 @inject ILoginService LoginService
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
 @inject IJSRuntime JS
 @inject NavigationManager navigate
 
@@ -245,10 +246,10 @@ else
 
                                             <div id="attachCard" class="card border-dark mb-1">
                                                 <div class="card-body" @onclick="(() => downloadStandarizationFile(file))">
-                                                    <h6 class="card-title"><b>@file.FilePath.Split("!_!")[1]</b></h6>
-                                                    <small><b>@file.Descriptions</b></small>
+                                                    <h6 class="card-title"><b>@file.Descriptions</b></h6>
+                                                    <small><b>@file.FilePath.Split("!_!")[1]</b></small>
                                                     <br />
-                                                    <small><i>Click To View</i></small>
+                                                    <small><i>Click To Download</i></small>
                                                 </div>
                                             </div>
                                         }

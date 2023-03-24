@@ -1,7 +1,9 @@
 ﻿using BPIWebApplication.Client.Services.CashierLogbookServices;
 using BPIWebApplication.Shared.MainModel.Login;
 using BPIWebApplication.Shared.MainModel.Standarizations;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Components;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
 
 namespace BPIWebApplication.Client.Pages.StandarizationPages
@@ -9,6 +11,8 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
     public partial class StandarizationDashboard : ComponentBase
     {
         private ActiveUser activeUser = new();
+        private UserPrivileges privilegeDataParam = new();
+        private List<string> userPriv = new();
 
         Standarizations previewData = new();
 
@@ -18,6 +22,8 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
         private bool showPreviewModal = false;
         private bool isLoading = false;
         private bool isFilterActive = false;
+
+        private string previousDocumentPreviewed = string.Empty;
 
         private string standarizationFilterType { get; set; } = string.Empty;
         private string standarizationFilterValue { get; set; } = string.Empty;
@@ -38,6 +44,51 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
         protected override async Task OnInitializedAsync()
         {
+            if (!LoginService.activeUser.userPrivileges.IsNullOrEmpty())
+                LoginService.activeUser.userPrivileges.Clear();
+
+            if (syncSessionStorage.ContainKey("PagePrivileges"))
+                syncSessionStorage.RemoveItem("PagePrivileges");
+
+            string tkn = syncSessionStorage.GetItem<string>("token");
+
+            if (syncSessionStorage.ContainKey("userName"))
+            {
+                privilegeDataParam.moduleId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("ModuleId")));
+                privilegeDataParam.UserName = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam = new();
+                privilegeDataParam.userLocationParam.SessionId = syncSessionStorage.GetItem<string>("SessionId");
+                privilegeDataParam.userLocationParam.MacAddress = "";
+                privilegeDataParam.userLocationParam.IpClient = "";
+                privilegeDataParam.userLocationParam.ApplicationId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("AppV")));
+                privilegeDataParam.userLocationParam.LocationId = Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[1];
+                privilegeDataParam.userLocationParam.Name = Base64Decode(syncSessionStorage.GetItem<string>("userName"));
+                privilegeDataParam.userLocationParam.CompanyId = Convert.ToInt32(Base64Decode(syncSessionStorage.GetItem<string>("CompLoc")).Split("_")[0]);
+                privilegeDataParam.userLocationParam.PageIndex = 1;
+                privilegeDataParam.userLocationParam.PageSize = 100;
+                privilegeDataParam.privileges = new();
+            }
+
+            var res = await LoginService.frameworkApiFacadePrivilege(privilegeDataParam, tkn);
+
+            userPriv.Clear();
+
+            if (res.isSuccess)
+            {
+                if (res.Data.privileges.Any())
+                {
+                    foreach (var priv in res.Data.privileges)
+                    {
+                        userPriv.Add(priv.privilegeId);
+                    }
+                }
+
+                syncSessionStorage.SetItem("PagePrivileges", userPriv);
+
+                LoginService.activeUser.userPrivileges = userPriv;
+
+            }
+
             activeUser.token = await sessionStorage.GetItemAsync<string>("token");
             activeUser.userName = Base64Decode(await sessionStorage.GetItemAsync<string>("userName"));
             activeUser.company = Base64Decode(await sessionStorage.GetItemAsync<string>("CompLoc")).Split("_")[0];
@@ -87,7 +138,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                     isLoading = true;
 
                     var content = StandarizationService.fileStreams.SingleOrDefault(x => x.type.Equals(data.StandarizationID) && x.fileName.Equals(data.FilePath)).content;
-                    string filename = data.FilePath.Split("!_!")[1] + data.FileExtention;
+                    string filename = data.FilePath.Split("!_!")[1];
 
                     await HandleDownloadDocument(content, filename);
 
@@ -107,9 +158,9 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
         private void editDocument(Standarizations data)
         {
-            string param = Base64Encode(data.StandarizationID);
+            string param = data.StandarizationID + "!_!" + previousDocumentPreviewed;
 
-            navigate.NavigateTo($"standarization/editstandarization/{param}");
+            navigate.NavigateTo($"standarization/editstandarization/{Base64Encode(param)}");
         }
 
         private async Task previewStandarization(Standarizations data)
@@ -117,16 +168,21 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             try
             {
                 showPreviewModal = true;
-                isLoading = true;
-                StandarizationService.fileStreams.Clear();
+                
+                if (!previousDocumentPreviewed.Equals(data.StandarizationID))
+                {
+                    isLoading = true;
+                    StandarizationService.fileStreams.Clear();
 
-                previewData = data;
+                    previewData = data;
 
-                string temp = data.StandarizationID + "!_!" + data.TypeID;
+                    string temp = data.StandarizationID + "!_!" + data.TypeID;
 
-                await Task.Run(async () => { await StandarizationService.getFileStream(Base64Encode(temp)); });
+                    await Task.Run(async () => { await StandarizationService.getFileStream(Base64Encode(temp)); });
+                }
 
                 isLoading = false;
+                previousDocumentPreviewed = data.StandarizationID;
                 StateHasChanged();
             }
             catch (Exception ex)
@@ -144,8 +200,26 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             if (isFilterActive)
             {
                 string conditions = "";
-                string temp = conditions+ "!_!" + standarizationPageActive.ToString();
+                string temp = "";
 
+                if (standarizationFilterType.Equals("TypeID"))
+                {
+                    conditions = $"WHERE {standarizationFilterType} = \'{standarizationFilterSelectValue}\'";
+                    temp = conditions + "!_!" + standarizationPageActive.ToString();
+                }
+                else if (standarizationFilterType.Equals("TagDescriptions"))
+                {
+                    conditions = $"WHERE StandarizationID IN (SELECT StandarizationID FROM StandarizationTags WHERE CONTAINS({standarizationFilterType}, \' \"{standarizationFilterValue}*\" \'))";
+
+                    temp = conditions + "!_!" + standarizationPageActive.ToString();
+                }
+                else
+                {
+                    conditions = $"WHERE {standarizationFilterType} LIKE \'%{standarizationFilterValue}%\'";
+                    temp = conditions + "!_!" + standarizationPageActive.ToString();
+                }
+
+                StandarizationService.standarizations.Clear();
                 await StandarizationService.getStandarizations(Base64Encode(temp));
             }
             else
@@ -156,6 +230,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
             }
 
             isLoading = false;
+            StateHasChanged();
         }
 
         private async Task standarizationFilter()
@@ -172,17 +247,17 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
 
                 if (standarizationFilterType.Equals("TypeID"))
                 {
-                    conditions = $"WHERE {standarizationFilterType} LIKE \'%{standarizationFilterSelectValue}%\'";
+                    conditions = $"WHERE {standarizationFilterType} = \'{standarizationFilterSelectValue}\'";
                     temp = conditions + "!_!" + standarizationPageActive.ToString();
 
                     mainpz = "StandarizationDetails!_!" + activeUser.location + $"!_!WHERE {standarizationFilterType} LIKE \'%{standarizationFilterSelectValue}%\'";
                 }
                 else if (standarizationFilterType.Equals("TagDescriptions"))
                 {
-                    conditions = $"WHERE StandarizationID IN (SELECT StandarizationID FROM StandarizationTags WHERE CONTAINS({standarizationFilterType}, \'{standarizationFilterValue}\'))";
+                    conditions = $"WHERE StandarizationID IN (SELECT StandarizationID FROM StandarizationTags WHERE CONTAINS({standarizationFilterType}, \' \"{standarizationFilterValue}*\" \'))";
                     temp = conditions + "!_!" + standarizationPageActive.ToString();
 
-                    mainpz = "StandarizationDetails!_!" + activeUser.location + $"!_!WHERE StandarizationID IN (SELECT StandarizationID FROM StandarizationTags WHERE CONTAINS({standarizationFilterType}, \'{standarizationFilterValue}\'))";
+                    mainpz = "StandarizationDetails!_!" + activeUser.location + $"!_!WHERE StandarizationID IN (SELECT StandarizationID FROM StandarizationTags WHERE CONTAINS({standarizationFilterType}, \' \"{standarizationFilterValue}*\" \'))";
                 }
                 else
                 {

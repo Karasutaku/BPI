@@ -4,276 +4,237 @@
 @inject ILoginService LoginService
 @inject IConfiguration config
 @inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject Blazored.SessionStorage.ISyncSessionStorageService syncSessionStorage
 @inject IJSRuntime JS
 
 
 
-@if (LoginService.activeUser.userPrivileges == null || !LoginService.activeUser.userPrivileges.Contains("VW"))
+@if (LoginService.activeUser == null)
 {
-    <div class="container-fluid">
-        <div class="d-flex align-items-center">
-            <h3>User Require Elevation</h3>
-        </div>
-    </div>
+    <p>Loading...</p>
 }
 else
 {
-
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col col-md-12">
-                <div class="d-flex flex-column align-items-start">
-                    @if (param == null)
-                    {
-                        <PageTitle>Procedure - Add Document</PageTitle>
-                        <h3>Standard Operational Procedures</h3>
-                        <small><i>Add Document</i></small>
-                    }
-                    else
-                    {
-                        <PageTitle>Edit Document</PageTitle>
-                        <h3>Standard Operational Procedures</h3>
-                        <small><i>Edit Document</i></small>
-                    }
-                </div>
-            </div>
-        </div>
-
-        @if (alertTrigger)
+    @if (LoginService.activeUser.userPrivileges != null)
+    {
+        @if (!LoginService.activeUser.userPrivileges.Contains("VW"))
         {
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                <strong>@alertMessage</strong> @alertBody
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <h3>User Require Elevation</h3>
+                </div>
             </div>
         }
-
-
-        @if (successAlert)
+        else
         {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <strong>@alertMessage</strong> @alertBody
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        }
-
-        <div class="row">
-            <div class="d-flex flex-column align-items-center">
-                @if (param == null)
-                {
-                    @* ADD DOCUMENT *@
-                    <EditForm Model="@procedure" OnSubmit="@HandleSubmit">
-
-                        <div class="row">
-                            <div class="col">
-                                <label for="doc_no">Document No : </label>
-                                <InputText id="doc_no" @bind-Value="procedure.ProcedureNo" class="form-control"></InputText>
-                                <!-- <input type="text" class="form-control" name="DocumentNo" id="doc_no" /> -->
-                            </div>
-                            <div class="col">
-                                <label for="doc_date">Document Date : </label>
-                                <InputDate id="doc_date" @bind-Value="procedure.ProcedureDate" class="form-control"></InputDate>
-                                <!-- <input type="date" class="form-control" name="DocumentDate" id="doc_date" /> -->
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col">
-                                <label for="doc_name">Document Name : </label>
-                                <InputTextArea id="doc_name" @bind-Value="procedure.ProcedureName" class="form-control"></InputTextArea>
-                                <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
-                            </div>
-                        </div>
-
-                @*
+            <div class="container-fluid">
                 <div class="row">
-                <div class="col">
-                <label for="doc_bisnisunit">Bisnis Unit : </label>
-                <InputSelect @bind-Value="departmentProcedures.Department.BisnisUnit.BisnisUnitID" class="form-control form-select" id="doc_bisnisunit">
-                @foreach (var bisnisunit in ProcedureService.bisnisUnits)
-                {
-                <option value="@bisnisunit.BisnisUnitID">@bisnisunit.BisnisUnitName</option>
-                }
-                </InputSelect>
-                </div>
-                <div class="col">
-                <label for="doc_department">Departemen : </label>
-                <InputSelect @bind-Value="departmentProcedures.Department.DepartmentID" class="form-control form-select" id="doc_department">
-                @foreach (var department in ProcedureService.departments)
-                {
-                <option value="@department.DepartmentID">@department.DepartmentName</option>
-                }
-                </InputSelect>
-                </div>
-                </div>
-                *@
-
-                        @if (!bClearInputFile)
-                        {
-                            <div class="row">
-                                <div class="col">
-                                    <label for="doc_sop">Choose SOP Doc : </label>
-                                    <InputFile class="form-control" id="doc_sop" OnChange="SopUploadHandleSelection"></InputFile>
-                                    <!-- <input type="file" class="form-control" name="DocumentSOP" id="doc_sop" /> -->
-                                </div>
-                                <div class="col">
-                                    <label for="doc_wi">Choose WI Doc : </label>
-                                    <InputFile class="form-control" id="doc_wi" OnChange="WiUploadHandleSelection"></InputFile>
-                                    <!-- <input type="file" class="form-control" name="DocumentWI" id="doc_wi" /> -->
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="row">
-                                <div class="col">
-                                    <label for="doc_sop">Choose SOP Doc : </label>
-                                    <InputFile class="form-control" id="doc_sop" OnChange="SopUploadHandleSelection"></InputFile>
-                                    <!-- <input type="file" class="form-control" name="DocumentSOP" id="doc_sop" /> -->
-                                </div>
-                                <div class="col">
-                                    <label for="doc_wi">Choose WI Doc : </label>
-                                    <InputFile class="form-control" id="doc_wi" OnChange="WiUploadHandleSelection"></InputFile>
-                                    <!-- <input type="file" class="form-control" name="DocumentWI" id="doc_wi" /> -->
-                                </div>
-                            </div>
-                        }
-
-                        <div class="row justify-content-md-end">
-                            <div class="col">
-                                <button type="button" class="btn btn-danger" @onclick="ClearFiles">Reset</button>
-                                <button type="submit" class="btn btn-primary">Add</button>
-                            </div>
+                    <div class="col col-md-12">
+                        <div class="d-flex flex-column align-items-start">
+                            @if (param == null)
+                            {
+                                <PageTitle>Procedure - Add Document</PageTitle>
+                                <h3>Standard Operational Procedures</h3>
+                                <small><i>Add Document</i></small>
+                            }
+                            else
+                            {
+                                <PageTitle>Edit Document</PageTitle>
+                                <h3>Standard Operational Procedures</h3>
+                                <small><i>Edit Document</i></small>
+                            }
                         </div>
-                    </EditForm>
-                }
-                else
-                {
-                    @* EDIT DOCUMENT *@
-                    <EditForm Model="@procedure" OnSubmit="@editProcedure">
-                        <div class="row">
-                            <div class="col">
-                                <label for="doc_no">Document No : </label>
-                                <InputText id="doc_no" @bind-Value="procedure.ProcedureNo" class="form-control" disabled></InputText>
-                                <!-- <input type="text" class="form-control" name="DocumentNo" id="doc_no" /> -->
-                            </div>
-                            <div class="col">
-                                <label for="doc_date">Document Date : </label>
-                                <InputDate id="doc_date" @bind-Value="procedure.ProcedureDate" class="form-control"></InputDate>
-                                <!-- <input type="date" class="form-control" name="DocumentDate" id="doc_date" /> -->
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col">
-                                <label for="doc_name">Document Name : </label>
-                                <InputTextArea id="doc_name" @bind-Value="procedure.ProcedureName" class="form-control"></InputTextArea>
-                                <!-- <input type="text" class="form-control" name="DocumentName" id="doc_name" /> -->
-                            </div>
-                            
-                        </div>
-
-                @*
-                <div class="row">
-                <div class="col">
-                <label for="doc_bisnisunit">Bisnis Unit : </label>
-                <InputSelect @bind-Value="departmentProcedures.Department.BisnisUnit.BisnisUnitID" class="form-control form-select" id="doc_bisnisunit">
-                @foreach (var bisnisunit in ProcedureService.bisnisUnits)
-                {
-                <option value="@bisnisunit.BisnisUnitID">@bisnisunit.BisnisUnitName</option>
-                }
-                </InputSelect>
+                    </div>
                 </div>
-                <div class="col">
-                <label for="doc_department">Departemen : </label>
-                <InputSelect @bind-Value="departmentProcedures.Department.DepartmentID" class="form-control form-select" id="doc_department">
-                @foreach (var department in ProcedureService.departments)
+
+                @if (alertTrigger)
                 {
-                <option value="@department.DepartmentID">@department.DepartmentName</option>
-                }
-                </InputSelect>
-                </div>
-                </div>
-                *@
-
-                        @if (!bClearInputFile)
-                        {
-                            <div class="row">
-                                <div class="col">
-                                    <label for="doc_sop">Choose SOP Doc : </label>
-                                    <InputFile class="form-control" id="doc_sop" OnChange="SopUploadHandleSelection"></InputFile>
-                                    <!-- <input type="file" class="form-control" name="DocumentSOP" id="doc_sop" /> -->
-                                </div>
-                                <div class="col">
-                                    <label for="doc_wi">Choose WI Doc : </label>
-                                    <InputFile class="form-control" id="doc_wi" OnChange="WiUploadHandleSelection"></InputFile>
-                                    <!-- <input type="file" class="form-control" name="DocumentWI" id="doc_wi" /> -->
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="row">
-                                <div class="col">
-                                    <label for="doc_sop">Choose SOP Doc : </label>
-                                    <InputFile class="form-control" id="doc_sop" OnChange="SopUploadHandleSelection"></InputFile>
-                                    <!-- <input type="file" class="form-control" name="DocumentSOP" id="doc_sop" /> -->
-                                </div>
-                                <div class="col">
-                                    <label for="doc_wi">Choose WI Doc : </label>
-                                    <InputFile class="form-control" id="doc_wi" OnChange="WiUploadHandleSelection"></InputFile>
-                                    <!-- <input type="file" class="form-control" name="DocumentWI" id="doc_wi" /> -->
-                                </div>
-                            </div>
-                        }
-
-                        <div class="row justify-content-md-end">
-                            <div class="col">
-                                <button type="submit" class="btn btn-primary">Edit</button>
-                            </div>
-                        </div>
-                    </EditForm>
-                    
-                    <div class="separator"/>
-
-                    <div class="row">
-                        @if (procedure.ProcedureSop.Contains("SOP"))
-                        {
-                            <div class="col">
-                                <div class="card" style="width: 170px;">
-                                    <div class="card-body text-center">
-                                        <h5 class="card-title">SOP Exist</h5>
-                                        <p>Click below to download</p>
-                                        <button class="btn btn-primary" @onclick="(() => handleDownload(procedure.ProcedureSop, procedure.ProcedureNo))">Download</button>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-
-                        @if (procedure.ProcedureWi.Contains("WI"))
-                        {
-                            <div class="col">
-                                <div class="card" style="width: 170px;">
-                                    <div class="card-body text-center">
-                                        <h5 class="card-title">WI Exist</h5>
-                                        <p>Click below to download</p>
-                                        <button class="btn btn-primary" @onclick="(() => handleDownload(procedure.ProcedureWi, procedure.ProcedureNo))">Download</button>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <strong>@alertMessage</strong> @alertBody
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetTrigger">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
                 }
+
+
+                @if (successAlert)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>@alertMessage</strong> @alertBody
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="resetSuccessAlert">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                }
+
+                <div class="row">
+                    <div class="d-flex flex-column align-items-center">
+                        @if (param == null)
+                        {
+                            @* ADD DOCUMENT *@
+                            <EditForm Model="@procedure" OnSubmit="@HandleSubmit">
+
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="doc_no">Document No : </label>
+                                        <InputText id="doc_no" @bind-Value="procedure.ProcedureNo" class="form-control"></InputText>
+                                    </div>
+                                    <div class="col">
+                                        <label for="doc_date">Document Date : </label>
+                                        <InputDate id="doc_date" @bind-Value="procedure.ProcedureDate" class="form-control"></InputDate>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="doc_name">Document Name : </label>
+                                        <InputTextArea id="doc_name" @bind-Value="procedure.ProcedureName" class="form-control"></InputTextArea>
+                                    </div>
+                                </div>
+
+                                @if (!bClearInputFile)
+                                {
+                                    <div class="row">
+                                        <div class="col">
+                                            <label for="doc_sop">Choose SOP Doc : </label>
+                                            <InputFile class="form-control" id="doc_sop" OnChange="SopUploadHandleSelection"></InputFile>
+                                        </div>
+                                        <div class="col">
+                                            <label for="doc_wi">Choose WI Doc : </label>
+                                            <InputFile class="form-control" id="doc_wi" OnChange="WiUploadHandleSelection"></InputFile>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="row">
+                                        <div class="col">
+                                            <label for="doc_sop">Choose SOP Doc : </label>
+                                            <InputFile class="form-control" id="doc_sop" OnChange="SopUploadHandleSelection"></InputFile>
+                                        </div>
+                                        <div class="col">
+                                            <label for="doc_wi">Choose WI Doc : </label>
+                                            <InputFile class="form-control" id="doc_wi" OnChange="WiUploadHandleSelection"></InputFile>
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="row justify-content-md-end">
+                                    <div class="col">
+                                        <button type="button" class="btn btn-danger" @onclick="ClearFiles">Reset</button>
+                                        <button type="submit" class="btn btn-primary">Add</button>
+                                    </div>
+                                </div>
+                            </EditForm>
+                        }
+                        else
+                        {
+                            @* EDIT DOCUMENT *@
+                            <EditForm Model="@procedure" OnSubmit="@editProcedure">
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="doc_no">Document No : </label>
+                                        <InputText id="doc_no" @bind-Value="procedure.ProcedureNo" class="form-control" disabled></InputText>
+                                    </div>
+                                    <div class="col">
+                                        <label for="doc_date">Document Date : </label>
+                                        <InputDate id="doc_date" @bind-Value="procedure.ProcedureDate" class="form-control"></InputDate>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="doc_name">Document Name : </label>
+                                        <InputTextArea id="doc_name" @bind-Value="procedure.ProcedureName" class="form-control"></InputTextArea>
+                                    </div>
+
+                                </div>
+
+                                @if (!bClearInputFile)
+                                {
+                                    <div class="row">
+                                        <div class="col">
+                                            <label for="doc_sop">Choose SOP Doc : </label>
+                                            <InputFile class="form-control" id="doc_sop" OnChange="SopUploadHandleSelection"></InputFile>
+                                        </div>
+                                        <div class="col">
+                                            <label for="doc_wi">Choose WI Doc : </label>
+                                            <InputFile class="form-control" id="doc_wi" OnChange="WiUploadHandleSelection"></InputFile>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="row">
+                                        <div class="col">
+                                            <label for="doc_sop">Choose SOP Doc : </label>
+                                            <InputFile class="form-control" id="doc_sop" OnChange="SopUploadHandleSelection"></InputFile>
+                                        </div>
+                                        <div class="col">
+                                            <label for="doc_wi">Choose WI Doc : </label>
+                                            <InputFile class="form-control" id="doc_wi" OnChange="WiUploadHandleSelection"></InputFile>
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="row justify-content-md-end">
+                                    <div class="col">
+                                        <button type="submit" class="btn btn-primary">Edit</button>
+                                    </div>
+                                </div>
+                            </EditForm>
+
+                            <div class="separator" />
+
+                            <div class="row">
+                                @if (procedure.ProcedureSop.Contains("SOP"))
+                                {
+                                    <div class="col">
+                                        <div class="card" style="width: 170px;">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">SOP Exist</h5>
+                                                <p>Click below to download</p>
+                                                <button class="btn btn-primary" @onclick="(() => handleDownload(procedure.ProcedureSop, procedure.ProcedureNo))">Download</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (procedure.ProcedureWi.Contains("WI"))
+                                {
+                                    <div class="col">
+                                        <div class="card" style="width: 170px;">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">WI Exist</h5>
+                                                <p>Click below to download</p>
+                                                <button class="btn btn-primary" @onclick="(() => handleDownload(procedure.ProcedureWi, procedure.ProcedureNo))">Download</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        }
+    }
+    else
+    {
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col align-middle text-center">
+                    <h3>Fetch Data Privileges in Process</h3>
+                    <small>Refresh Page Using Button Below If There is No Response</small>
+                    <br />
+                    <button type="button" class="btn btn-primary my-4" @onclick="(() => StateHasChanged())"><b>Refresh Page</b></button>
+                </div>
             </div>
         </div>
-
-    </div>
-
-
+    }
 }
 
 
