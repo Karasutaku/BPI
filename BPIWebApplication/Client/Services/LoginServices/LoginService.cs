@@ -100,6 +100,7 @@ namespace BPIWebApplication.Client.Services.LoginServices
 
             try
             {
+                _http.DefaultRequestHeaders.Clear();
                 _http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
                 var result = await _http.PostAsJsonAsync<FacadeUserModule>("api/endUser/Login/getUserModule", data);
 
