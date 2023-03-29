@@ -1649,20 +1649,20 @@ else
                             <div class="col">: @locationCutoffDate.ToString("dd MMMM yyyy HH:mm:ss") </div>
                             </div>
                             <div class="row mt-2">
-                                <div class="col">
-                                    @*ED*@
-                                    @if (LoginService.activeUser.userPrivileges.Contains("ED"))
-                                    {
+                                @*ED*@
+                                @if (LoginService.activeUser.userPrivileges.Contains("ED"))
+                                {
+                                    <div class="col">
                                         <button type="button" class="btn btn-sm btn-warning h-100 w-100 fw-bold" @onclick="(() => triggerCutoffUpdateModal(locBalanceDetails.LocationID))">Edit Cutoff</button>
-                                    }
-                                </div>
-                                <div class="col">
-                                    @*XP*@
-                                    @if (LoginService.activeUser.userPrivileges.Contains("XP"))
-                                    {
+                                    </div>
+                                }
+                                @*XP*@
+                                @if (LoginService.activeUser.userPrivileges.Contains("XP"))
+                                {
+                                    <div class="col">
                                         <button type="button" class="btn btn-sm btn-info h-100 w-100 fw-bold" @onclick="(() => triggerExportModal(locBalanceDetails.LocationID))">Export</button>
-                                    }
-                                </div>
+                                    </div>
+                                }
                             </div>
 
                             <div class="separator my-3">Outstanding Amount</div>

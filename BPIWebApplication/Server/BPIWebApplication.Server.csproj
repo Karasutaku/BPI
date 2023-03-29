@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\BPILibrary\BPILibrary.csproj" />
     <ProjectReference Include="..\Client\BPIWebApplication.Client.csproj" />
     <ProjectReference Include="..\Shared\BPIWebApplication.Shared.csproj" />
   </ItemGroup>
