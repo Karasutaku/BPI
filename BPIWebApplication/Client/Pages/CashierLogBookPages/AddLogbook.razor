@@ -57,7 +57,7 @@ else
 
                 <div class="d-flex flex-column align-items-center">
 
-                    @if (isActiveDocumentExist)
+                    @if (isActiveDocumentExist && param == null)
                     {
                         <div class="alert alert-warning alert-dismissible fade show my-3" role="alert">
                             <strong>Please Proceed with Ongoing Document !</strong>
@@ -350,7 +350,7 @@ else
                                         <button type="button" title="Reset" class="btn btn-sm btn-outline-dark"><b>Reset</b></button>
                                         @if (LoginService.activeUser.userPrivileges.Contains("CR"))
                                         {
-                                            <button type="button" title="Create" class="btn btn-sm btn-primary" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="createLogData">
+                                            <button type="button" title="Create" class="btn btn-sm btn-primary mx-2" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="createLogData">
                                                 <b>Create</b>
                                                 @if (isLoading)
                                                 {
@@ -363,7 +363,7 @@ else
                                     {
                                         @if (LoginService.activeUser.userPrivileges.Contains("ED"))
                                         {
-                                            <button type="button" title="Create" class="btn btn-sm btn-primary" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="editLogData">
+                                            <button type="button" title="Create" class="btn btn-sm btn-primary mx-2" disabled="@(isSuccessUpload.Equals(true) ? "disabled" : null)" @onclick="editLogData">
                                                 <b>Edit</b>
                                                 @if (isLoading)
                                                 {

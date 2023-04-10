@@ -11,6 +11,8 @@ using System.Net.Http.Json;
 using BPIFacade.Models.MainModel.Mailing;
 using BPIFacade.Models.MainModel.CashierLogbook;
 using BPIFacade.Models.MainModel.Standarizations;
+using BPIFacade.Models.MainModel.EPKRS;
+using System.Data;
 
 namespace BPIFacade.Controllers
 {
@@ -3268,6 +3270,167 @@ namespace BPIFacade.Controllers
                 actionResult = BadRequest(res);
             }
 
+            return actionResult;
+        }
+
+        //
+    }
+
+    [Route("api/Facade/EPKRS")]
+    [ApiController]
+    public class EPKRSController : ControllerBase
+    {
+        private readonly HttpClient _http;
+        private readonly IConfiguration _configuration;
+
+        public EPKRSController(HttpClient http, IConfiguration config)
+        {
+            _http = http;
+            _configuration = config;
+            _http.BaseAddress = new Uri(_configuration.GetValue<string>("BaseUri:BpiBR"));
+        }
+
+        [HttpPost("createEPKRSItemCaseDocument")]
+        public async Task<IActionResult> createEPKRSItemCaseDocumentData(ItemCaseStream data)
+        {
+            ResultModel<ItemCaseStream> res = new ResultModel<ItemCaseStream>();
+            IActionResult actionResult = null;
+
+            try
+            {
+
+                var result = await _http.PostAsJsonAsync<ItemCaseStream>($"api/BR/EPKRS/createEPKRSItemCaseDocument", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<ItemCaseStream>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Failure from createEPKRSItemCaseDocument Facade";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createEPKRSIncidentAccidentDocument")]
+        public async Task<IActionResult> createEPKRSIncidentAccidentDocumentData(IncidentAccidentStream data)
+        {
+            ResultModel<IncidentAccidentStream> res = new ResultModel<IncidentAccidentStream>();
+            DataTable dtMainIdentity = new DataTable("Identity");
+            string id = string.Empty;
+            IActionResult actionResult = null;
+
+            try
+            {
+
+                var result = await _http.PostAsJsonAsync<IncidentAccidentStream>($"api/BR/EPKRS/createEPKRSIncidentAccidentDocument", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<IncidentAccidentStream>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Failure from createEPKRSIncidentAccidentDocument Facade";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createEPKRSDocumentDiscussion")]
+        public async Task<IActionResult> createEPKRSDocumentDiscussionData(QueryModel<EPKRSUploadDiscussion> data)
+        {
+            ResultModel<QueryModel<EPKRSUploadDiscussion>> res = new ResultModel<QueryModel<EPKRSUploadDiscussion>>();
+            DataTable dtMainIdentity = new DataTable("Identity");
+            string id = string.Empty;
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<EPKRSUploadDiscussion>>($"api/BR/EPKRS/createEPKRSDocumentDiscussion", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<EPKRSUploadDiscussion>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = $"Failure from createEPKRSDocumentDiscussion BR";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
             return actionResult;
         }
 

@@ -5,6 +5,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
+using BPIWebApplication.Client.Shared.CustomLayout;
 
 namespace BPIWebApplication.Client.Pages.StandarizationPages
 {
@@ -24,6 +25,12 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
         private bool isFilterActive = false;
 
         private string previousDocumentPreviewed = string.Empty;
+
+        // test
+        private bool show = false;
+        private string filetextname = string.Empty;
+        private string fileext = string.Empty;
+        private byte[] filecont = new byte[0];
 
         private string standarizationFilterType { get; set; } = string.Empty;
         private string standarizationFilterValue { get; set; } = string.Empty;
@@ -140,7 +147,17 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                     var content = StandarizationService.fileStreams.SingleOrDefault(x => x.type.Equals(data.StandarizationID) && x.fileName.Equals(data.FilePath)).content;
                     string filename = data.FilePath.Split("!_!")[1];
 
-                    await HandleDownloadDocument(content, filename);
+                    //await HandleDownloadDocument(content, filename);
+
+                    // test
+
+                    filetextname = filename;
+                    FileInfo f = new(filename);
+                    fileext = f.Extension;
+                    filecont = content;
+                    //show = true;
+
+                    FileViewer.setShowModal(true);
 
                     isLoading = false;
                 }

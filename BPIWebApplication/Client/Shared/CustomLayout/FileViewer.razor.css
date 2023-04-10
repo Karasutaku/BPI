@@ -1,0 +1,27 @@
+﻿.viewer {
+    height: 100%;
+    position: relative;
+}
+
+.doc-viewer {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+}
+
+.img-viewer {
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.modal-body {
+    height: 83vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.cus-bg {
+    background: rgb(2,0,36);
+    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,0.41789215686274506) 35%, rgba(27,66,138,0.6643907563025211) 100%);
+}

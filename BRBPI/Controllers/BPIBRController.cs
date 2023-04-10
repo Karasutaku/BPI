@@ -21,6 +21,9 @@ using BPIBR.Models.MainModel.Standarizations;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using System.IO.Compression;
 using System.Threading.Tasks;
+using BPILibrary;
+using DocumentFormat.OpenXml.Office2013.Excel;
+using BPIBR.Models.MainModel.EPKRS;
 
 namespace BPIBR.Controllers
 {
@@ -4221,6 +4224,190 @@ namespace BPIBR.Controllers
                 actionResult = BadRequest(res);
             }
 
+            return actionResult;
+        }
+
+        //
+    }
+
+    [Route("api/BR/EPKRS")]
+    [ApiController]
+    public class EPKRSController : ControllerBase
+    {
+        private readonly HttpClient _http;
+        private readonly IConfiguration _configuration;
+        private readonly string _uploadPath;
+
+        public EPKRSController(HttpClient http, IConfiguration config)
+        {
+            _http = http;
+            _configuration = config;
+            _http.BaseAddress = new Uri(_configuration.GetValue<string>("BaseUri:BpiDA"));
+            _uploadPath = _configuration.GetValue<string>("File:EPKRS:UploadPath");
+        }
+
+        [HttpPost("createEPKRSItemCaseDocument")]
+        public async Task<IActionResult> createEPKRSItemCaseDocumentData(ItemCaseStream data)
+        {
+            ResultModel<ItemCaseStream> res = new ResultModel<ItemCaseStream>();
+            IActionResult actionResult = null;
+
+            try
+            {
+
+                var result = await _http.PostAsJsonAsync<QueryModel<EPKRSUploadItemCase>>($"api/DA/EPKRS/createEPKRSItemCaseDocument", data.mainData);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<EPKRSUploadItemCase>>>();
+
+                    data.files.ForEach(async x =>
+                    {
+                        string path = Path.Combine(_uploadPath, data.mainData.Data.itemCase.DocumentID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), x.fileName);
+
+                        await CommonLibrary.saveFiletoDirectory(path, x.content);
+                    });
+
+                    res.Data.mainData = respBody.Data;
+                    res.Data.files = null;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<EPKRSUploadItemCase>>>();
+
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createEPKRSIncidentAccidentDocument")]
+        public async Task<IActionResult> createEPKRSIncidentAccidentDocumentData(IncidentAccidentStream data)
+        {
+            ResultModel<IncidentAccidentStream> res = new ResultModel<IncidentAccidentStream>();
+            DataTable dtMainIdentity = new DataTable("Identity");
+            string id = string.Empty;
+            IActionResult actionResult = null;
+
+            try
+            {
+
+                var result = await _http.PostAsJsonAsync<QueryModel<EPKRSUploadIncidentAccident>>($"api/DA/EPKRS/createEPKRSIncidentAccidentDocument", data.mainData);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<EPKRSUploadIncidentAccident>>>();
+
+                    data.files.ForEach(async x =>
+                    {
+                        string path = Path.Combine(_uploadPath, data.mainData.Data.incidentAccident.DocumentID, DateTime.Now.Year.ToString(), DateTime.Now.Month.ToString(), DateTime.Now.Day.ToString(), x.fileName);
+
+                        await CommonLibrary.saveFiletoDirectory(path, x.content);
+                    });
+
+                    res.Data.mainData = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<EPKRSUploadItemCase>>>();
+
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createEPKRSDocumentDiscussion")]
+        public async Task<IActionResult> createEPKRSDocumentDiscussionData(QueryModel<EPKRSUploadDiscussion> data)
+        {
+            ResultModel<QueryModel<EPKRSUploadDiscussion>> res = new ResultModel<QueryModel<EPKRSUploadDiscussion>>();
+            DataTable dtMainIdentity = new DataTable("Identity");
+            string id = string.Empty;
+            IActionResult actionResult = null;
+
+            try
+            {
+                var result = await _http.PostAsJsonAsync<QueryModel<EPKRSUploadDiscussion>>($"api/DA/EPKRS/createEPKRSDocumentDiscussion", data);
+
+                if (result.IsSuccessStatusCode)
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<EPKRSUploadDiscussion>>>();
+
+                    res.Data = respBody.Data;
+
+                    res.isSuccess = respBody.isSuccess;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    var respBody = await result.Content.ReadFromJsonAsync<ResultModel<QueryModel<EPKRSUploadItemCase>>>();
+
+                    res.Data = null;
+
+                    res.isSuccess = result.IsSuccessStatusCode;
+                    res.ErrorCode = respBody.ErrorCode;
+                    res.ErrorMessage = respBody.ErrorMessage;
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
             return actionResult;
         }
 

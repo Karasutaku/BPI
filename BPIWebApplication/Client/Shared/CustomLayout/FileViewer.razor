@@ -1,0 +1,56 @@
+﻿@if (showPrevModal)
+{
+    <div class="modal fade show" id="filePreviewModal" tabindex="-10" role="dialog" aria-labelledby="filePreviewModalLabel" aria-hidden="true" style="display:block; background: rgba(0,0,0, 0.7);">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+            <div class="modal-content">
+                @* header *@
+                <div class="modal-header cus-bg">
+                    <h5 class="modal-title fw-bolder text-white">Preview Document @(fileName != null ? fileName : "File Name not Defined")</h5>
+
+                    <button type="button" class="close border-0" aria-label="Close" @onclick="(() => showPrevModal = false)">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    @if (fileExtension != null && fileContent != null)
+                    {
+                        @if (documentTypeFileView.Any(x => x.Equals(fileExtension)))
+                        {
+                            <div class="viewer" oncontextmenu="return false;" @oncontextmenu:preventDefault="true">
+                                <iframe style="width: 100%; height: 100%;" id="doc-viewer" src="data:@(fileMimeType.SingleOrDefault(x => x.Key.Equals(fileExtension)).Value);base64, @Convert.ToBase64String(fileContent, 0, fileContent.Length) #toolbar=0" @oncontextmenu:preventDefault="true">
+                                    <p>Your browser doesn't support preview document.</p>
+                                </iframe>
+                            </div>
+                        }
+                        else if (videoTypeFileExtensions.Any(x => x.Equals(fileExtension)))
+                        {
+                            <div class="viewer" oncontextmenu="return false;" @oncontextmenu:preventDefault="true">
+                                <video autoplay style="width: 100%; height: 100%;" @oncontextmenu:preventDefault="true">
+                                    <source type="@(fileMimeType.SingleOrDefault(x => x.Key.Equals(fileExtension)).Value)" src="data:@(fileMimeType.SingleOrDefault(x => x.Key.Equals(fileExtension)).Value);base64, @Convert.ToBase64String(fileContent, 0, fileContent.Length)" />
+                                </video>
+                            </div>
+                        }
+                        else if (imageTypeFileExtensions.Any(x => x.Equals(fileExtension)))
+                        {
+                            <div class="viewer" oncontextmenu="return false;" @oncontextmenu:preventDefault="true">
+                                <img class="img-viewer" src="data:@(fileMimeType.SingleOrDefault(x => x.Key.Equals(fileExtension)).Value);base64, @Convert.ToBase64String(fileContent, 0, fileContent.Length)" oncontextmenu="return false;" @oncontextmenu:preventDefault="true" />
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col align-middle text-center">
+                                <h3>File Extension not Defined</h3>
+                                <small>Please recheck Previewed File Extensions</small>
+                            </div>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+}

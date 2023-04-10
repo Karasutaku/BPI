@@ -345,10 +345,9 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                 }
                 else
                 {
-                    isLoading = true;
-
                     if (LoginService.activeUser.userPrivileges.Contains("CR"))
                     {
+                        isLoading = true;
 
                         StandarizationStream uploadData = new();
 

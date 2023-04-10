@@ -17,6 +17,8 @@ using BPIDA.Models.MainModel.CashierLogbook;
 using System.Reflection;
 using BPIDA.Models.MainModel.Standarizations;
 using BPILibrary;
+using BPIDA.Models.MainModel.EPKRS;
+using System.Drawing;
 
 namespace BPIDA.Controllers
 {
@@ -1369,7 +1371,7 @@ namespace BPIDA.Controllers
                     command.CommandTimeout = 1000;
 
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@RowPerPage", filData.locationId);
+                    command.Parameters.AddWithValue("@LocationID", filData.locationId);
                     command.Parameters.AddWithValue("@RowPerPage", filData.rowPerPage);
                     command.Parameters.AddWithValue("@FilterNo", filData.filterNo);
                     command.Parameters.AddWithValue("@FilterName", filData.filterName);
@@ -8708,6 +8710,435 @@ namespace BPIDA.Controllers
                 actionResult = BadRequest(res);
             }
 
+            return actionResult;
+        }
+
+        //
+    }
+
+    [Route("api/DA/EPKRS")]
+    [ApiController]
+    public class EPKRSController : ControllerBase
+    {
+        private readonly IConfiguration _configuration;
+        private readonly string _conString;
+        private readonly int _rowPerPage;
+
+        public EPKRSController(IConfiguration config)
+        {
+            _configuration = config;
+            _conString = _configuration.GetValue<string>("ConnectionStrings:Bpi");
+            _rowPerPage = _configuration.GetValue<int>("Paging:EPKRS:RowPerPage");
+        }
+
+        internal DataTable createIDData(string docType)
+        {
+            DataTable dt = new DataTable("Data");
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createID]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@DocumentName", docType);
+
+                    SqlDataAdapter da = new SqlDataAdapter();
+                    da.SelectCommand = command;
+                    da.Fill(dt);
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return dt;
+        }
+
+        internal bool createEPKRSItemCaseDocument(QueryModel<ItemCase> data, DataTable dataItemLines, DataTable dataAttachments)
+        {
+            bool flag = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createEPKRSItemCaseData]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@RiskID", data.Data.RiskID);
+                    command.Parameters.AddWithValue("@DocumentID", data.Data.DocumentID);
+                    command.Parameters.AddWithValue("@SiteReporter", data.Data.SiteReporter);
+                    command.Parameters.AddWithValue("@SiteSender", data.Data.SiteSender);
+                    command.Parameters.AddWithValue("@ReportDate", data.Data.ReportDate);
+                    command.Parameters.AddWithValue("@ItemPickupDate", data.Data.ItemPickupDate);
+                    command.Parameters.AddWithValue("@LoadingDocumentID", data.Data.LoadingDocumentID);
+                    command.Parameters.AddWithValue("@LoadingDocumentDate", data.Data.LoadingDocumentDate);
+                    command.Parameters.AddWithValue("@VarianceDate", data.Data.VarianceDate);
+                    command.Parameters.AddWithValue("@isLate", data.Data.isLate);
+                    command.Parameters.AddWithValue("@isCCTVCoverable", data.Data.isCCTVCoverable);
+                    command.Parameters.AddWithValue("@isReportedtoSender", data.Data.isReportedtoSender);
+                    command.Parameters.AddWithValue("@DocumentStatus", data.Data.DocumentStatus);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.Parameters.AddWithValue("@LinesData", dataItemLines);
+                    command.Parameters.AddWithValue("@AttachLines", dataAttachments);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret > 0)
+                        flag = true;
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        internal bool createEPKRSIncidentAccidentDocument(QueryModel<IncidentAccident> data, DataTable dataAttachments)
+        {
+            bool flag = false;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createEPKRSIncidentAccidentDocument]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@RiskID", data.Data.RiskID);
+                    command.Parameters.AddWithValue("@DocumentID", data.Data.DocumentID);
+                    command.Parameters.AddWithValue("@ReportDate", data.Data.ReportDate);
+                    command.Parameters.AddWithValue("@OccurenceDate", data.Data.OccurenceDate);
+                    command.Parameters.AddWithValue("@SiteReporter", data.Data.SiteReporter);
+                    command.Parameters.AddWithValue("@DepartmentReporter", data.Data.DepartmentReporter);
+                    command.Parameters.AddWithValue("@RiskRPName", data.Data.RiskRPName);
+                    command.Parameters.AddWithValue("@RiskRPEmail", data.Data.RiskRPEmail);
+                    command.Parameters.AddWithValue("@DORMName", data.Data.DORMName);
+                    command.Parameters.AddWithValue("@DORMEmail", data.Data.DORMEmail);
+                    command.Parameters.AddWithValue("@CaseDescription", data.Data.CaseDescription);
+                    command.Parameters.AddWithValue("@DepartmentAffected", data.Data.DepartmentAffected);
+                    command.Parameters.AddWithValue("@Cronology", data.Data.Cronology);
+                    command.Parameters.AddWithValue("@RootCause", data.Data.RootCause);
+                    command.Parameters.AddWithValue("@LossDescription", data.Data.LossDescription);
+                    command.Parameters.AddWithValue("@LossEstimation", data.Data.LossEstimation);
+                    command.Parameters.AddWithValue("@ReturnAmount", data.Data.ReturnAmount);
+                    command.Parameters.AddWithValue("@RiskDescription", data.Data.RiskDescription);
+                    command.Parameters.AddWithValue("@CauseDescription", data.Data.CauseDescription);
+                    command.Parameters.AddWithValue("@PIC", data.Data.PIC);
+                    command.Parameters.AddWithValue("@ActionPlan", data.Data.ActionPlan);
+                    command.Parameters.AddWithValue("@TargetDate", data.Data.TargetDate);
+                    command.Parameters.AddWithValue("@MitigationPlan", data.Data.MitigationPlan);
+                    command.Parameters.AddWithValue("@MitigationDate", data.Data.MitigationDate);
+                    command.Parameters.AddWithValue("@ExtendedRootCause", data.Data.ExtendedRootCause);
+                    command.Parameters.AddWithValue("@ExtendedMitigationPlan", data.Data.ExtendedMitigationPlan);
+                    command.Parameters.AddWithValue("@DocumentStatus", data.Data.DocumentStatus);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    command.Parameters.AddWithValue("@AttachLines", dataAttachments);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret > 0)
+                        flag = true;
+
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        internal bool createEPKRSDocumentDiscussion(QueryModel<DocumentDiscussion> data, string location)
+        {
+            bool flag = false;
+            int conInt = 0;
+
+            using (SqlConnection con = new SqlConnection(_conString))
+            {
+                con.Open();
+                SqlCommand command = new SqlCommand();
+
+                try
+                {
+                    // create and check schema table
+                    command.Connection = con;
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "[createEPKRSDocumentDiscussionSchema]";
+                    command.CommandTimeout = 1000;
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", location);
+
+                    var scalar = command.ExecuteScalar();
+                    conInt = Convert.ToInt32(scalar);
+
+                    // create data
+                    command.CommandText = "[createEPKRSDocumentDiscussion]";
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@LocationID", location);
+                    command.Parameters.AddWithValue("@DocumentID", data.Data.DocumentID);
+                    command.Parameters.AddWithValue("@UserName", data.Data.UserName);
+                    command.Parameters.AddWithValue("@CommentDate", data.Data.CommentDate);
+                    command.Parameters.AddWithValue("@Comment", data.Data.Comment);
+                    command.Parameters.AddWithValue("@isEdited", data.Data.isEdited);
+                    command.Parameters.AddWithValue("@AuditUser", data.userEmail);
+                    command.Parameters.AddWithValue("@AuditAction", data.userAction);
+                    command.Parameters.AddWithValue("@AuditActionDate", data.userActionDate);
+
+                    int ret = command.ExecuteNonQuery();
+
+                    if (ret > 0)
+                        flag = true;
+                    
+                }
+                catch (SqlException ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    con.Close();
+                }
+            }
+
+            return flag;
+        }
+
+        [HttpPost("createEPKRSItemCaseDocument")]
+        public async Task<IActionResult> createEPKRSItemCaseDocumentData(QueryModel<EPKRSUploadItemCase> data)
+        {
+            ResultModel<QueryModel<EPKRSUploadItemCase>> res = new ResultModel<QueryModel<EPKRSUploadItemCase>>();
+            DataTable dtMainIdentity = new DataTable("Identity");
+            string id = string.Empty;
+            IActionResult actionResult = null;
+
+            try
+            {
+                
+                dtMainIdentity = createIDData("EPKRS");
+                var x = dtMainIdentity.AsEnumerable().First();
+
+                // 8 for date yyyyMMdd
+                string zero = string.Empty;
+                int idLength = x["Code"].ToString().Length + x["DocNumber"].ToString().Length + x["Parity"].ToString().Length + 8;
+                int maxLength = 18;
+
+                zero = new String('0', maxLength - idLength);
+
+                id = x["Code"].ToString() + 
+                    DateTime.Now.Year.ToString() + 
+                    DateTime.Now.ToString("MM") + 
+                    DateTime.Now.ToString("dd") + 
+                    zero + 
+                    x["DocNumber"].ToString() + 
+                    x["Parity"].ToString();
+
+                QueryModel<ItemCase> dtMain = new();
+                dtMain.Data = new();
+
+                dtMain.Data = data.Data.itemCase;
+                dtMain.Data.DocumentID = id;
+                dtMain.userEmail = data.userEmail;
+                dtMain.userAction = data.userAction;
+                dtMain.userActionDate = data.userActionDate;
+                var dtLines = CommonLibrary.ListToDataTable<ItemLine>(data.Data.itemLine, data.userEmail, data.userAction, data.userActionDate, "ItemCaseLines");
+                var dtAttach = CommonLibrary.ListToDataTable<CaseAttachment>(data.Data.attachment, data.userEmail, data.userAction, data.userActionDate, "ItemCaseAttachment");
+
+                if (createEPKRSItemCaseDocument(dtMain, dtLines, dtAttach))
+                {
+                    res.Data = data;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = data;
+                    res.isSuccess = false;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Create Data Failed ! SP Fail to Execute";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createEPKRSIncidentAccidentDocument")]
+        public async Task<IActionResult> createEPKRSIncidentAccidentDocumentData(QueryModel<EPKRSUploadIncidentAccident> data)
+        {
+            ResultModel<QueryModel<EPKRSUploadIncidentAccident>> res = new ResultModel<QueryModel<EPKRSUploadIncidentAccident>>();
+            DataTable dtMainIdentity = new DataTable("Identity");
+            string id = string.Empty;
+            IActionResult actionResult = null;
+
+            try
+            {
+
+                dtMainIdentity = createIDData("EPKRS");
+                var x = dtMainIdentity.AsEnumerable().First();
+
+                // 8 for date yyyyMMdd
+                string zero = string.Empty;
+                int idLength = x["Code"].ToString().Length + x["DocNumber"].ToString().Length + x["Parity"].ToString().Length + 8;
+                int maxLength = 18;
+
+                zero = new String('0', maxLength - idLength);
+
+                id = x["Code"].ToString() +
+                    DateTime.Now.Year.ToString() +
+                    DateTime.Now.ToString("MM") +
+                    DateTime.Now.ToString("dd") +
+                    zero +
+                    x["DocNumber"].ToString() +
+                    x["Parity"].ToString();
+
+                QueryModel<IncidentAccident> dtMain = new();
+                dtMain.Data = new();
+
+                dtMain.Data = data.Data.incidentAccident;
+                dtMain.Data.DocumentID = id;
+                dtMain.userEmail = data.userEmail;
+                dtMain.userAction = data.userAction;
+                dtMain.userActionDate = data.userActionDate;
+                var dtAttach = CommonLibrary.ListToDataTable<CaseAttachment>(data.Data.attachment, data.userEmail, data.userAction, data.userActionDate, "ItemCaseAttachment");
+
+                if (createEPKRSIncidentAccidentDocument(dtMain, dtAttach))
+                {
+                    res.Data = data;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = data;
+                    res.isSuccess = false;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Create Data Failed ! SP Fail to Execute";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
+            return actionResult;
+        }
+
+        [HttpPost("createEPKRSDocumentDiscussion")]
+        public async Task<IActionResult> createEPKRSDocumentDiscussionData(QueryModel<EPKRSUploadDiscussion> data)
+        {
+            ResultModel<QueryModel<EPKRSUploadDiscussion>> res = new ResultModel<QueryModel<EPKRSUploadDiscussion>>();
+            DataTable dtMainIdentity = new DataTable("Identity");
+            string id = string.Empty;
+            IActionResult actionResult = null;
+
+            try
+            {
+                QueryModel<DocumentDiscussion> dt = new();
+                dt.Data = new();
+
+                dt.Data = data.Data.discussion;
+                dt.userEmail = data.userEmail;
+                dt.userAction = data.userAction;
+                dt.userActionDate = data.userActionDate;
+
+                if (createEPKRSDocumentDiscussion(dt, data.Data.LocationID))
+                {
+                    res.Data = data;
+                    res.isSuccess = true;
+                    res.ErrorCode = "00";
+                    res.ErrorMessage = "";
+
+                    actionResult = Ok(res);
+                }
+                else
+                {
+                    res.Data = data;
+                    res.isSuccess = false;
+                    res.ErrorCode = "01";
+                    res.ErrorMessage = "Create Data Failed ! SP Fail to Execute";
+
+                    actionResult = Ok(res);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                res.Data = null;
+                res.isSuccess = false;
+                res.ErrorCode = "99";
+                res.ErrorMessage = ex.Message;
+
+                actionResult = BadRequest(res);
+            }
             return actionResult;
         }
 

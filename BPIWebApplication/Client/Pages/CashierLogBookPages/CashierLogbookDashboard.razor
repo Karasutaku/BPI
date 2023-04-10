@@ -704,7 +704,8 @@ else
                             <div class="modal-footer cus-bg">
                                 @if (LoginService.activeUser.userPrivileges.Contains("CF"))
                                 {
-                                    <button type="button" class="btn btn-sm btn-success fw-bold" disabled="@(activeLog.LogStatus.Equals("Partial") ? "disabled" : null)" @onclick="(() => confirmLog())">Confirm</button>
+                                    @*<button type="button" class="btn btn-sm btn-success fw-bold" disabled="@(activeLog.LogStatus.Equals("Partial") ? "disabled" : null)" @onclick="(() => confirmLog())">Confirm</button>*@
+                                    <button type="button" class="btn btn-sm btn-success fw-bold" @onclick="(() => confirmLog())">Confirm</button>
                                 }
                                 <button type="button" class="btn btn-danger mx-3 fw-bold" @onclick="(() => confirmModal = false)">No</button>
                             </div>

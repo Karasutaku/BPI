@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BPIBR", "BRBPI\BPIBR.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BPIDA", "DABPI\BPIDA.csproj", "{8F213E2A-203B-4536-BEE2-7F99D9FF62F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BPILibrary", "BPILibrary\BPILibrary.csproj", "{17F68539-8B86-4665-8B0D-A9F398E36288}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BPILibrary", "BPILibrary\BPILibrary.csproj", "{17F68539-8B86-4665-8B0D-A9F398E36288}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
