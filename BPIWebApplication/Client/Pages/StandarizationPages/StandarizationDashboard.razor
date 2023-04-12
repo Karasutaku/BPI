@@ -126,7 +126,7 @@ else
                                             <td class="align-middle text-center">
                                                 <button class="btn btn-sm btn-primary-cus" @onclick="(() => previewStandarization(stdData))"><span class="oi oi-magnifying-glass"></span></button>
 
-                                                @if (LoginService.activeUser.userPrivileges != null || LoginService.activeUser.userPrivileges.Contains("ED"))
+                                                @if (LoginService.activeUser.userPrivileges != null && LoginService.activeUser.userPrivileges.Contains("ED"))
                                                 {
                                                     <button class="btn btn-sm btn-primary-cus mx-1" @onclick="(() => editDocument(stdData))"><span class="oi oi-pencil"></span></button>
                                                 }

@@ -100,6 +100,7 @@ namespace BPIWebApplication.Client.Pages.PettyCashPages
                 syncSessionStorage.SetItem("PagePrivileges", userPriv);
 
                 LoginService.activeUser.userPrivileges = userPriv;
+                syncSessionStorage.RemoveItem("ModuleId");
 
             }
             //

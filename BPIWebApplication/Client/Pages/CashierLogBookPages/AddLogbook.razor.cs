@@ -99,6 +99,7 @@ namespace BPIWebApplication.Client.Pages.CashierLogBookPages
                 syncSessionStorage.SetItem("PagePrivileges", userPriv);
 
                 LoginService.activeUser.userPrivileges = userPriv;
+                syncSessionStorage.RemoveItem("ModuleId");
 
             }
             //

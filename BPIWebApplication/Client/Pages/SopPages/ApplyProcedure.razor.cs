@@ -79,6 +79,7 @@ namespace BPIWebApplication.Client.Pages.SopPages
                 syncSessionStorage.SetItem("PagePrivileges", userPriv);
 
                 LoginService.activeUser.userPrivileges = userPriv;
+                syncSessionStorage.RemoveItem("ModuleId");
 
             }
             //

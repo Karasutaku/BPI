@@ -86,6 +86,7 @@ namespace BPIWebApplication.Client.Pages.StandarizationPages
                 syncSessionStorage.SetItem("PagePrivileges", userPriv);
 
                 LoginService.activeUser.userPrivileges = userPriv;
+                syncSessionStorage.RemoveItem("ModuleId");
 
             }
 
