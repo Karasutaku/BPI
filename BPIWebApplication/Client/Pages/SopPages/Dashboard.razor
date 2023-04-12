@@ -79,7 +79,7 @@ else
                                 <th scope="col" class="d-none d-sm-table-cell">Departemen</th>
                                 <th scope="col">Link SOP</th>
                                 <th scope="col">Link WI</th>
-                                @if (LoginService.activeUser.userPrivileges != null || LoginService.activeUser.userPrivileges.Contains("ED"))
+                                @if (LoginService.activeUser.userPrivileges != null && LoginService.activeUser.userPrivileges.Contains("ED"))
                                 {
                                     <th scope="col">Action</th>
                                 }
@@ -102,7 +102,7 @@ else
                                     <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureSop.Contains("SOP") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureSop, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-magnifying-glass"></span></button></td>
                                     <td><button class="btn btn-sm btn-info" disabled="@(departmentProcedure.Procedure.ProcedureWi.Contains("WI") ? false : true)" @onclick="(() => handleDownload(departmentProcedure.Procedure.ProcedureWi, departmentProcedure.ProcedureNo, departmentProcedure.Procedure.ProcedureName))"><span class="oi oi-magnifying-glass"></span></button></td>
 
-                                    @if (LoginService.activeUser.userPrivileges != null || LoginService.activeUser.userPrivileges.Contains("ED"))
+                                    @if (LoginService.activeUser.userPrivileges != null && LoginService.activeUser.userPrivileges.Contains("ED"))
                                     {
                                         <td><button class="btn btn-sm btn-primary-cus" @onclick="(() => redirectProcedure(departmentProcedure.ProcedureNo))">Edit</button></td>
                                     }
@@ -139,7 +139,6 @@ else
                         <li class="page-item disabled dis-paging-style"><span class="page-link">. . .</span></li>
                         <li class="page-item px-1 disabled dis-paging-style"><span class="page-link">Next</span></li>
                     }
-
 
                     @* <li class="page-item disabled"><span class="page-link">..</span></li> *@
                 </ul>
